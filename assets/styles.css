@@ -39,75 +39,119 @@
 }
 
 /* ==========================================================================
-   Global Mobile-First Canvas & Phone Preview Shell
+   Global Mobile-First Canvas & Realistic iPhone Device Shell
    ========================================================================== */
 html, body {
     margin: 0;
     padding: 0;
-    background-color: #F4ECEF !important;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    background-color: #ECE3E8 !important; /* Soft desk surface backdrop */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", sans-serif !important;
     color: var(--text-primary) !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 .stApp {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    background-color: #F4ECEF !important; /* Subtle desktop backdrop */
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", sans-serif !important;
+    background-color: #ECE3E8 !important;
     color: var(--text-primary) !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
     display: flex !important;
     justify-content: center !important;
-    align-items: stretch !important;
-    overflow-x: hidden !important;
+    align-items: center !important;
 }
 
 [data-testid="stAppViewContainer"] {
     background-color: transparent !important;
     display: flex !important;
     justify-content: center !important;
+    align-items: center !important;
     width: 100% !important;
-    overflow-x: hidden !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
 }
 
 [data-testid="stAppViewContainer"] > .main {
     display: flex !important;
     justify-content: center !important;
+    align-items: center !important;
     width: 100% !important;
-    overflow-x: hidden !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
 }
 
-/* Centered Mobile Phone Canvas */
-.block-container {
-    max-width: 414px !important;
-    width: 100% !important;
-    min-width: 320px !important;
-    background-color: #FFFAF9 !important; /* Warm off-white phone screen */
-    margin: 0 auto !important;
-    min-height: 100vh !important;
-    padding: 0.6rem 1rem 110px 1rem !important; /* Bottom padding keeps content clear of fixed bottom nav */
-    box-shadow: 0 0 32px rgba(185, 95, 123, 0.12) !important;
-    border-left: 1px solid #F0E2E7 !important;
-    border-right: 1px solid #F0E2E7 !important;
-    box-sizing: border-box !important;
+/* ==========================================================================
+   Centered Realistic iPhone Device Shell (Desktop Preview)
+   ========================================================================== */
+@media (min-width: 501px) {
+    .block-container {
+        width: 390px !important;
+        max-width: 390px !important;
+        min-width: 320px !important;
+        height: calc(100vh - 20px) !important;
+        height: calc(100dvh - 20px) !important;
+        max-height: 844px !important;
+        background-color: #FFFAF9 !important; /* Warm off-white phone screen */
+        margin: auto !important;
+        border: 8px solid #231E21 !important; /* Matte titanium iPhone outer bezel */
+        border-radius: 46px !important; /* iPhone screen corner curvature */
+        box-shadow: 0 24px 60px rgba(45, 25, 35, 0.28), 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        overflow-y: auto !important; /* Internal screen scrolling only! */
+        overflow-x: hidden !important;
+        padding: 4px 16px 85px 16px !important; /* Keeps content clear of fixed bottom tab bar */
+        box-sizing: border-box !important;
+        position: relative !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .block-container::-webkit-scrollbar {
+        width: 4px;
+    }
+    .block-container::-webkit-scrollbar-thumb {
+        background: #E8D8DE;
+        border-radius: 4px;
+    }
 }
 
-/* On real mobile viewports, occupy 100% of available width seamlessly */
-@media (max-width: 480px) {
+/* On real mobile viewports, occupy 100% of available viewport naturally */
+@media (max-width: 500px) {
     html, body, .stApp {
         background-color: #FFFAF9 !important;
+        height: 100% !important;
+        overflow-x: hidden !important;
     }
     .block-container {
+        width: 100% !important;
         max-width: 100% !important;
-        border-left: none !important;
-        border-right: none !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
-        padding: 0.5rem 0.85rem 105px 0.85rem !important;
+        padding: 6px 14px calc(75px + env(safe-area-inset-bottom, 0px)) 14px !important;
+        overflow-y: auto !important;
     }
 }
 
 [data-testid="stHeader"] {
-    background: transparent !important;
-    height: 2.2rem !important;
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
 }
 
 [data-testid="stDecoration"] {
@@ -512,49 +556,85 @@ div[data-testid="stMetricValue"] {
 }
 
 /* ==========================================================================
-   Mobile Bottom Navigation (st.bottom) - Pinned inside Phone Canvas
+   Mobile Bottom Navigation (st.bottom) - Anchored inside iPhone Shell
    ========================================================================== */
-div[data-testid="stBottom"] {
-    display: block !important;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    max-width: 414px !important;
-    margin: 0 auto !important;
-    background: #FFFFFF !important;
-    border-top: 1px solid var(--border-subtle) !important;
-    border-left: 1px solid var(--border-subtle) !important;
-    border-right: 1px solid var(--border-subtle) !important;
-    border-radius: 18px 18px 0 0 !important;
-    box-shadow: 0 -4px 20px rgba(185, 95, 123, 0.10) !important;
-    z-index: 999999 !important;
-    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 8px !important;
-    box-sizing: border-box !important;
+@media (min-width: 501px) {
+    div[data-testid="stBottom"] {
+        display: block !important;
+        position: fixed !important;
+        bottom: calc((100vh - min(844px, calc(100vh - 20px))) / 2 + 8px) !important;
+        bottom: calc((100dvh - min(844px, calc(100dvh - 20px))) / 2 + 8px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 374px !important;
+        max-width: 374px !important;
+        margin: 0 auto !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border-top: 1px solid rgba(240, 226, 231, 0.95) !important;
+        border-left: 1px solid rgba(240, 226, 231, 0.95) !important;
+        border-right: 1px solid rgba(240, 226, 231, 0.95) !important;
+        border-bottom: none !important;
+        border-radius: 0 0 38px 38px !important;
+        box-shadow: 0 -3px 16px rgba(185, 95, 123, 0.07) !important;
+        z-index: 999999 !important;
+        padding: 4px 6px 3px 6px !important;
+        box-sizing: border-box !important;
+    }
+}
+
+@media (max-width: 500px) {
+    div[data-testid="stBottom"] {
+        display: block !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: rgba(255, 255, 255, 0.97) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border-top: 1px solid rgba(240, 226, 231, 0.95) !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        border-radius: 16px 16px 0 0 !important;
+        box-shadow: 0 -3px 16px rgba(185, 95, 123, 0.07) !important;
+        z-index: 999999 !important;
+        padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px)) 6px !important;
+        box-sizing: border-box !important;
+    }
 }
 
 div[data-testid="stBottom"] .block-container {
     max-width: 100% !important;
     min-width: unset !important;
+    height: auto !important;
+    max-height: unset !important;
     margin: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
     background: transparent !important;
     min-height: unset !important;
+    overflow: visible !important;
 }
 
 div[data-testid="stBottom"] div.stButton > button {
-    min-height: 44px !important;
+    min-height: 40px !important;
+    max-height: 44px !important;
     border-radius: 10px !important;
-    font-size: 0.82rem !important;
+    font-size: 0.72rem !important; /* Compact iOS caption font */
     font-weight: 600 !important;
-    padding: 0.3rem 0.2rem !important;
+    padding: 2px 2px !important;
     border: none !important;
     background: transparent !important;
     color: var(--text-secondary) !important;
     box-shadow: none !important;
     white-space: nowrap !important;
+    letter-spacing: -0.01em !important;
 }
 
 div[data-testid="stBottom"] div.stButton > button:hover {
@@ -566,15 +646,72 @@ div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
     background: var(--soft-blush) !important;
     color: var(--primary-rose) !important;
     font-weight: 700 !important;
-    border-bottom: 2.5px solid var(--primary-rose) !important;
+    border-bottom: 2px solid var(--primary-rose) !important;
 }
 
-@media (max-width: 480px) {
-    div[data-testid="stBottom"] {
-        max-width: 100% !important;
-        border-left: none !important;
-        border-right: none !important;
-        border-radius: 16px 16px 0 0 !important;
+/* ==========================================================================
+   Simulated iOS Status Bar, Dynamic Island & Home Indicator (Desktop Preview)
+   ========================================================================== */
+.iphone-status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px 4px 10px;
+    margin-bottom: 4px;
+    user-select: none;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+}
+
+.status-time {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1E1B1D;
+    letter-spacing: -0.02em;
+    width: 48px;
+}
+
+.dynamic-island-pill {
+    width: 86px;
+    height: 22px;
+    background-color: #000000;
+    border-radius: 12px;
+    margin: 0 auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.status-icons {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1E1B1D;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 54px;
+}
+
+.iphone-home-indicator {
+    width: 120px;
+    height: 4px;
+    background-color: #1E1B1D;
+    border-radius: 2px;
+    margin: 4px auto 2px auto;
+    opacity: 0.35;
+}
+
+.compact-list-container {
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 0.2rem 0.85rem;
+    margin-bottom: 0.6rem;
+    box-shadow: var(--shadow-soft);
+}
+
+@media (max-width: 500px) {
+    .iphone-status-bar,
+    .dynamic-island-pill,
+    .iphone-home-indicator {
+        display: none !important;
     }
 }
 

@@ -180,13 +180,28 @@ first_name = active_profile.display_name.split(" ")[0].replace("(", "").strip()
 
 
 # ==========================================
-# Minimal Top Navigation Bar (Compact Wordmark & Profile Pill)
+# Simulated iOS Status Bar & Dynamic Island (Desktop Preview Only)
+# ==========================================
+st.markdown("""
+    <div class="iphone-status-bar">
+        <span class="status-time">9:41</span>
+        <div class="dynamic-island-pill"></div>
+        <div class="status-icons">
+            <span style="font-size: 11px; letter-spacing: -1px; margin-right: 4px;">●●●●</span>
+            <span style="font-size: 11px; margin-right: 4px;">📶</span>
+            <span style="font-size: 12px;">🔋</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
+# ==========================================
+# Compact Mobile App Header
 # ==========================================
 head_col1, head_col2 = st.columns([3, 1])
 with head_col1:
     st.markdown("""
-        <div class="brand-wordmark" style="padding-top: 5px;">
-            <span style="font-size: 1.25rem;">🌸</span> HERPath AI
+        <div class="brand-wordmark" style="font-size: 1.15rem; font-weight: 700; color: #B95F7B; display: flex; align-items: center; gap: 6px; padding-top: 2px;">
+            <span>🌸</span> HERPath <span style="font-size: 0.72rem; opacity: 0.85; font-weight: 600; background: #F9E4EA; padding: 2px 6px; border-radius: 6px; color: #8A3750;">AI</span>
         </div>
     """, unsafe_allow_html=True)
 with head_col2:
@@ -195,30 +210,28 @@ with head_col2:
 
 
 # ==========================================
-# SCREEN 1: HOME (Simple, Elegant Mobile Wellness Hub)
+# SCREEN 1: HOME (iOS-Inspired Personal Wellness Companion)
 # ==========================================
 if st.session_state["navigation"] == "Home Dashboard":
     # 1. Warm Personal Greeting
     today_formatted = date.today().strftime("%A, %b %d")
     st.markdown(f"""
-        <div class="greeting-title">Hi, {first_name} 🌸</div>
-        <div class="greeting-date">Today is {today_formatted} &bull; <i>Welcome back</i></div>
-    """, unsafe_allow_html=True)
-
-    # 2. Hero Action Card: "How are you feeling today?" with ONE Prominent Button
-    st.markdown("""
-        <div class="action-hero-card">
-            <div class="action-hero-question">How are you feeling today?</div>
-            <div class="action-hero-hint">Record what your body is experiencing in just a few taps.</div>
+        <div class="greeting-section" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+            <div class="greeting-title" style="font-family: 'Outfit', -apple-system, sans-serif; font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">Good evening, {first_name} 🌸</div>
+            <div class="greeting-subtitle" style="font-size: 0.86rem; color: var(--text-secondary); margin-top: 2px;">
+                How are you feeling today? &bull; <i>{today_formatted}</i> &bull; <span style="font-size: 0.8rem; color: var(--text-muted);">Welcome back</span>
+            </div>
         </div>
     """, unsafe_allow_html=True)
 
-    # Single prominent primary action
-    if st.button("➕ Log a New Symptom", use_container_width=True, type="primary"):
+    # 2. Primary Action: One elegant, full-width primary button in dusty rose
+    if st.button("＋ Log a symptom", use_container_width=True, type="primary", key="home_btn_log_symptom"):
         navigate_to("Symptom Journal")
 
-    # Secondary quick navigation actions kept in subtle collapsed menu to prevent multi-column button clutter
-    with st.expander("⚡ More Quick Health Actions", expanded=False):
+    # Secondary quick navigation actions kept in subtle collapsed menu
+    with st.expander("⚡ Quick Health Actions", expanded=False):
+        if st.button("➕ Log a New Symptom", key="home_quick_log_new", use_container_width=True):
+            navigate_to("Symptom Journal")
         if st.button("🛡️ Check Symptoms in Care Navigator", key="home_quick_care", use_container_width=True):
             navigate_to("Care Navigator")
         if st.button("📄 Export Clinician Health Report", key="home_quick_report", use_container_width=True):
@@ -229,17 +242,15 @@ if st.session_state["navigation"] == "Home Dashboard":
     engine = InsightsEngine(user_entries)
     metrics = engine.calculate_summary_metrics()
 
-    st.markdown("<br/>", unsafe_allow_html=True)
-
-    # 3. Daily Check-in Card (Compact card with simple check-in action)
+    # 3. Daily Wellbeing: Compact card titled "Your daily check-in"
     st.markdown("""
-        <div class="clean-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1rem;">
-            <div class="clean-card-title" style="font-size: 1rem;">Daily check-in</div>
-            <div class="clean-card-subtext" style="font-size: 0.85rem;">Take a moment to check in with yourself &bull; Daily Vitality</div>
+        <div class="clean-card" style="margin-top: 0.65rem; margin-bottom: 0.45rem; padding: 0.8rem 0.95rem;">
+            <div class="clean-card-title" style="font-size: 0.98rem; font-weight: 600;">Your daily check-in</div>
+            <div class="clean-card-subtext" style="font-size: 0.82rem; color: var(--text-secondary);">Take a moment to check in with yourself &bull; Daily Vitality Pulse</div>
         </div>
     """, unsafe_allow_html=True)
 
-    with st.expander("✨ Check in (Daily Vitality Pulse)", expanded=False):
+    with st.expander("✨ Check in with yourself", expanded=False):
         st.markdown(
             "<div class='clean-card-subtext' style='margin-bottom: 0.8rem;'>"
             "Rate your baseline energy, sleep, and emotional resilience. "
@@ -276,47 +287,46 @@ if st.session_state["navigation"] == "Home Dashboard":
             st.success(f"Recorded today's Vitality Pulse ({pulse_score}%)!")
             st.rerun()
 
-    # 4. Recent Activity (At most 3 compact list items)
-    st.markdown("#### Recent activity")
+    # 4. Recent Activity: Compact list rows with subtle dividers
+    st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0.75rem 0 0.35rem 0;'>Recent activity</div>", unsafe_allow_html=True)
     if metrics["total_entries"] == 0:
         st.markdown("""
-            <div class="clean-card" style="text-align: center; padding: 1.1rem;">
-                <div style="font-size: 1.1rem; margin-bottom: 0.2rem;">🌸</div>
-                <div class="clean-card-title" style="font-size: 0.95rem;">No symptoms logged yet</div>
-                <div class="clean-card-subtext" style="font-size: 0.84rem;">You're all clear. Tap "Log a New Symptom" above when you notice anything.</div>
+            <div class="clean-card" style="text-align: center; padding: 1rem;">
+                <div style="font-size: 0.92rem; font-weight: 600;">No symptoms logged yet</div>
+                <div style="font-size: 0.80rem; color: var(--text-muted); margin-top: 2px;">Tap '＋ Log a symptom' above to record your first entry.</div>
             </div>
         """, unsafe_allow_html=True)
     else:
         recent_entries = user_entries[:3]
-        for entry in recent_entries:
+        st.markdown('<div class="compact-list-container">', unsafe_allow_html=True)
+        for i, entry in enumerate(recent_entries):
             sev_badge = (
-                "<span class='severity-pill-mild'>Mild (1–3)</span>" if entry.severity <= 3
-                else "<span class='severity-pill-moderate'>Moderate (4–6)</span>" if entry.severity <= 6
-                else "<span class='severity-pill-severe'>Severe (7–10)</span>"
+                f"<span class='severity-pill-mild'>Mild {entry.severity}</span>" if entry.severity <= 3
+                else f"<span class='severity-pill-moderate'>Mod {entry.severity}</span>" if entry.severity <= 6
+                else f"<span class='severity-pill-severe'>Sev {entry.severity}</span>"
             )
+            border_bottom = "border-bottom: 1px solid #F0E2E7;" if i < len(recent_entries) - 1 else ""
             st.markdown(f"""
-                <div class="clean-card" style="padding: 0.75rem 0.9rem; margin-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary);">{entry.symptom}</div>
-                            <div style="font-size: 0.76rem; color: var(--text-muted);">{entry.onset_date} &bull; {entry.category}</div>
-                        </div>
-                        <div>{sev_badge}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.1rem; {border_bottom}">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">{entry.symptom}</div>
+                        <div style="font-size: 0.74rem; color: var(--text-muted);">{entry.onset_date} &bull; {entry.category}</div>
                     </div>
+                    <div>{sev_badge}</div>
                 </div>
             """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-        if st.button("View all &rarr;", key="home_view_all_btn", use_container_width=True):
+        if st.button("View all →", key="home_view_all_btn", use_container_width=True):
             navigate_to("Symptom Journal")
 
-    # 5. Health Insight (At most ONE useful evidence-grounded insight)
-    st.markdown("<br/>", unsafe_allow_html=True)
-    st.markdown("#### Health insight")
+    # 5. Health Insight: One small insight based on real saved records
+    st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0.75rem 0 0.35rem 0;'>Health insight</div>", unsafe_allow_html=True)
     if metrics["total_entries"] == 0:
         st.markdown("""
-            <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 0.85rem 1rem;">
-                <div class="clean-card-title" style="font-size: 0.92rem;">Building your baseline</div>
-                <div class="clean-card-subtext" style="font-size: 0.84rem;">Record entries over time to uncover explainable pattern insights.</div>
+            <div class="clean-card" style="border-left: 3px solid var(--border-subtle); padding: 0.75rem 0.9rem;">
+                <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">Building your baseline</div>
+                <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px;">Record entries over time to uncover explainable pattern insights.</div>
             </div>
         """, unsafe_allow_html=True)
     else:
@@ -324,9 +334,16 @@ if st.session_state["navigation"] == "Home Dashboard":
         primary_insight = insights[0] if insights else None
         if primary_insight:
             st.markdown(f"""
-                <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); padding: 0.85rem 1rem;">
-                    <div class="clean-card-title" style="font-size: 0.92rem;">{primary_insight['title']}</div>
-                    <div class="clean-card-subtext" style="font-size: 0.84rem;">{primary_insight['observation']}</div>
+                <div class="clean-card" style="border-left: 3px solid var(--primary-rose); padding: 0.75rem 0.9rem;">
+                    <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">{primary_insight['title']}</div>
+                    <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">{primary_insight['observation']}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+                <div class="clean-card" style="border-left: 3px solid var(--border-subtle); padding: 0.75rem 0.9rem;">
+                    <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">Baseline Stable</div>
+                    <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px;">No significant clustering or severity spikes observed in recent logs.</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -1068,8 +1085,7 @@ elif st.session_state["navigation"] == "Privacy and Settings":
 
 
 # ==========================================
-# Fixed Mobile Bottom Navigation Bar (4 Main Tabs)
-# (Hidden on Desktop >= 769px via CSS to avoid duplicate navigation)
+# Fixed iOS Bottom Tab Bar (4 Destinations)
 # ==========================================
 with st.bottom:
     nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
@@ -1094,3 +1110,5 @@ with st.bottom:
         is_active = curr_nav in ["Women's Health Library", "Ask HERPath"]
         if st.button("📚 Learn", key="bnav_learn", use_container_width=True, type="primary" if is_active else "secondary"):
             navigate_to("Women's Health Library")
+
+    st.markdown('<div class="iphone-home-indicator"></div>', unsafe_allow_html=True)
