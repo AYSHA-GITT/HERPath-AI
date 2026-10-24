@@ -60,9 +60,12 @@ from data.seed_data import seed_demo_data
 st.set_page_config(
     page_title=f"{APP_TITLE} | Women's Health Companion",
     page_icon="🌸",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="collapsed"
 )
+
+# Mobile Viewport Meta Tag
+st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">', unsafe_allow_html=True)
 
 # Load Custom Mobile-First CSS
 css_file = Path(__file__).parent / "assets" / "styles.css"
@@ -179,14 +182,16 @@ first_name = active_profile.display_name.split(" ")[0].replace("(", "").strip()
 # ==========================================
 # Minimal Top Navigation Bar (Compact Wordmark & Profile Pill)
 # ==========================================
-st.markdown(f"""
-    <div class="minimal-top-bar">
-        <div class="brand-wordmark">🌸 HERPath AI</div>
-        <div class="user-pill-btn">
-            👤 <b>{first_name}</b>
+head_col1, head_col2 = st.columns([3, 1])
+with head_col1:
+    st.markdown("""
+        <div class="brand-wordmark" style="padding-top: 5px;">
+            <span style="font-size: 1.25rem;">🌸</span> HERPath AI
         </div>
-    </div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+with head_col2:
+    if st.button(f"👤 {first_name}", key="top_user_pill", help="Open Settings & Profiles", use_container_width=True):
+        navigate_to("Privacy and Settings")
 
 
 # ==========================================
@@ -212,13 +217,11 @@ if st.session_state["navigation"] == "Home Dashboard":
     if st.button("➕ Log a New Symptom", use_container_width=True, type="primary"):
         navigate_to("Symptom Journal")
 
-    # Secondary quick navigation actions
-    sec_col1, sec_col2 = st.columns(2)
-    with sec_col1:
-        if st.button("🛡️ Check Symptoms in Care Navigator", use_container_width=True):
+    # Secondary quick navigation actions kept in subtle collapsed menu to prevent multi-column button clutter
+    with st.expander("⚡ More Quick Health Actions", expanded=False):
+        if st.button("🛡️ Check Symptoms in Care Navigator", key="home_quick_care", use_container_width=True):
             navigate_to("Care Navigator")
-    with sec_col2:
-        if st.button("📄 Export Clinician Health Report", use_container_width=True):
+        if st.button("📄 Export Clinician Health Report", key="home_quick_report", use_container_width=True):
             navigate_to("My Health Report")
 
     # Fetch user records
@@ -228,9 +231,15 @@ if st.session_state["navigation"] == "Home Dashboard":
 
     st.markdown("<br/>", unsafe_allow_html=True)
 
-    # 3. Daily Check-in Card (Sliders hidden inside expander by default)
-    st.markdown("#### ✨ Your daily check-in (Daily Vitality Pulse)")
-    with st.expander("Take a moment to check in with yourself", expanded=False):
+    # 3. Daily Check-in Card (Compact card with simple check-in action)
+    st.markdown("""
+        <div class="clean-card" style="margin-bottom: 0.5rem; padding: 0.85rem 1rem;">
+            <div class="clean-card-title" style="font-size: 1rem;">Daily check-in</div>
+            <div class="clean-card-subtext" style="font-size: 0.85rem;">Take a moment to check in with yourself &bull; Daily Vitality</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    with st.expander("✨ Check in (Daily Vitality Pulse)", expanded=False):
         st.markdown(
             "<div class='clean-card-subtext' style='margin-bottom: 0.8rem;'>"
             "Rate your baseline energy, sleep, and emotional resilience. "
@@ -267,14 +276,14 @@ if st.session_state["navigation"] == "Home Dashboard":
             st.success(f"Recorded today's Vitality Pulse ({pulse_score}%)!")
             st.rerun()
 
-    # 4. Your Recent Activity (At most 3 recent symptom entries)
-    st.markdown("#### Your recent activity")
+    # 4. Recent Activity (At most 3 compact list items)
+    st.markdown("#### Recent activity")
     if metrics["total_entries"] == 0:
         st.markdown("""
-            <div class="clean-card" style="text-align: center; padding: 1.2rem;">
-                <div style="font-size: 1.1rem; margin-bottom: 0.3rem;">🌸</div>
-                <div class="clean-card-title">No symptoms logged yet</div>
-                <div class="clean-card-subtext">You're all clear. Tap "Log a symptom" when you notice anything worth noting.</div>
+            <div class="clean-card" style="text-align: center; padding: 1.1rem;">
+                <div style="font-size: 1.1rem; margin-bottom: 0.2rem;">🌸</div>
+                <div class="clean-card-title" style="font-size: 0.95rem;">No symptoms logged yet</div>
+                <div class="clean-card-subtext" style="font-size: 0.84rem;">You're all clear. Tap "Log a New Symptom" above when you notice anything.</div>
             </div>
         """, unsafe_allow_html=True)
     else:
@@ -286,11 +295,11 @@ if st.session_state["navigation"] == "Home Dashboard":
                 else "<span class='severity-pill-severe'>Severe (7–10)</span>"
             )
             st.markdown(f"""
-                <div class="clean-card" style="padding: 0.85rem 1rem; margin-bottom: 0.6rem;">
+                <div class="clean-card" style="padding: 0.75rem 0.9rem; margin-bottom: 0.5rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div>
-                            <div style="font-weight: 600; font-size: 0.96rem; color: var(--text-primary);">{entry.symptom}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted);">{entry.onset_date} &bull; {entry.category}</div>
+                            <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary);">{entry.symptom}</div>
+                            <div style="font-size: 0.76rem; color: var(--text-muted);">{entry.onset_date} &bull; {entry.category}</div>
                         </div>
                         <div>{sev_badge}</div>
                     </div>
@@ -305,9 +314,9 @@ if st.session_state["navigation"] == "Home Dashboard":
     st.markdown("#### Health insight")
     if metrics["total_entries"] == 0:
         st.markdown("""
-            <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle);">
-                <div class="clean-card-title">Building your baseline</div>
-                <div class="clean-card-subtext">Record a few entries over the coming days to uncover explainable pattern insights.</div>
+            <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 0.85rem 1rem;">
+                <div class="clean-card-title" style="font-size: 0.92rem;">Building your baseline</div>
+                <div class="clean-card-subtext" style="font-size: 0.84rem;">Record entries over time to uncover explainable pattern insights.</div>
             </div>
         """, unsafe_allow_html=True)
     else:
@@ -315,27 +324,13 @@ if st.session_state["navigation"] == "Home Dashboard":
         primary_insight = insights[0] if insights else None
         if primary_insight:
             st.markdown(f"""
-                <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose);">
-                    <div class="clean-card-title">{primary_insight['title']}</div>
-                    <div class="clean-card-subtext">{primary_insight['observation']}</div>
+                <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); padding: 0.85rem 1rem;">
+                    <div class="clean-card-title" style="font-size: 0.92rem;">{primary_insight['title']}</div>
+                    <div class="clean-card-subtext" style="font-size: 0.84rem;">{primary_insight['observation']}</div>
                 </div>
             """, unsafe_allow_html=True)
 
-    # 6. Educational Tip (One compact card, does not dominate)
-    rec_resources = health_library.get_recommended_resources_for_symptom("Pelvic & Menstrual")
-    if rec_resources:
-        tip = rec_resources[0]
-        st.markdown(f"""
-            <div class="clean-card" style="margin-top: 0.6rem; padding: 0.85rem 1rem;">
-                <div style="font-size: 0.74rem; font-weight: 700; color: var(--primary-rose); text-transform: uppercase;">
-                    💡 {tip['source_org']} &bull; Health Tip
-                </div>
-                <div style="font-weight: 600; font-size: 0.92rem; margin: 0.2rem 0; color: var(--text-primary);">{tip['title']}</div>
-                <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">{tip['summary'][:130]}...</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # 7. Anatomical Health Focus Explorer (Preserved inside clean expander for accessibility & tests)
+    # 6. Anatomical Health Focus Explorer (Preserved inside clean expander for accessibility & tests)
     st.markdown("#### 🌸 Anatomical Health Focus Explorer")
     with st.expander("Explore body focus areas", expanded=False):
         st.caption("Quickly log targeted symptoms by body focus area:")
@@ -995,8 +990,43 @@ elif st.session_state["navigation"] == "Privacy and Settings":
     st.markdown("### ⚙️ Privacy & Settings")
     st.caption("Local SQLite storage. Zero cloud tracking.")
 
+    # Profile Management Moved from Sidebar
+    st.markdown("#### 👤 Health Profile Management")
+    all_profiles = list_profiles()
+    p_map = {p.id: p for p in all_profiles}
+    current_pid = st.session_state.get("current_profile_id", all_profiles[0].id)
+    if current_pid not in p_map:
+        current_pid = all_profiles[0].id
+        st.session_state["current_profile_id"] = current_pid
+
+    p_keys = [p.id for p in all_profiles]
+    selected_pid = st.selectbox(
+        "Active Profile",
+        p_keys,
+        index=p_keys.index(current_pid),
+        format_func=lambda pid: p_map[pid].display_name,
+        key="settings_active_prof_selector"
+    )
+    if selected_pid != st.session_state["current_profile_id"]:
+        st.session_state["current_profile_id"] = selected_pid
+        st.session_state["editing_entry_id"] = None
+        st.rerun()
+
+    with st.expander("➕ Create New Profile", expanded=False):
+        with st.form("settings_create_profile_form"):
+            new_pid = st.text_input("Profile ID (unique, e.g. maya_pcos)").strip().lower()
+            new_pname = st.text_input("Display Name (e.g. Maya - Wellness)").strip()
+            if st.form_submit_button("Create Profile", type="primary"):
+                if new_pid and new_pname:
+                    create_profile(new_pid, new_pname)
+                    st.session_state["current_profile_id"] = new_pid
+                    st.success(f"Profile '{new_pname}' created!")
+                    st.rerun()
+                else:
+                    st.error("Please provide both an ID and Display Name.")
+
     st.markdown("""
-        <div class="clean-card">
+        <div class="clean-card" style="margin-top: 0.8rem;">
             <div class="clean-card-title">Privacy & Data Protection Architecture</div>
             <div class="clean-card-subtext">
                 100% Local SQLite Storage. All symptom records, notes, and profiles remain strictly on this device.

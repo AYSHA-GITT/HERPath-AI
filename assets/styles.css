@@ -39,26 +39,84 @@
 }
 
 /* ==========================================================================
-   Global Mobile-First Canvas
+   Global Mobile-First Canvas & Phone Preview Shell
    ========================================================================== */
-html, body, .stApp, [data-testid="stAppViewContainer"] {
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #F4ECEF !important;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    background-color: var(--bg-canvas) !important;
     color: var(--text-primary) !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Centered Mobile Wellness Container */
+.stApp {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background-color: #F4ECEF !important; /* Subtle desktop backdrop */
+    color: var(--text-primary) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: stretch !important;
+    overflow-x: hidden !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background-color: transparent !important;
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+[data-testid="stAppViewContainer"] > .main {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+}
+
+/* Centered Mobile Phone Canvas */
 .block-container {
-    max-width: 580px !important;
+    max-width: 414px !important;
+    width: 100% !important;
+    min-width: 320px !important;
+    background-color: #FFFAF9 !important; /* Warm off-white phone screen */
     margin: 0 auto !important;
-    padding: 0.75rem 1rem 110px 1rem !important; /* Bottom padding keeps content clear of bottom nav */
+    min-height: 100vh !important;
+    padding: 0.6rem 1rem 110px 1rem !important; /* Bottom padding keeps content clear of fixed bottom nav */
+    box-shadow: 0 0 32px rgba(185, 95, 123, 0.12) !important;
+    border-left: 1px solid #F0E2E7 !important;
+    border-right: 1px solid #F0E2E7 !important;
+    box-sizing: border-box !important;
+}
+
+/* On real mobile viewports, occupy 100% of available width seamlessly */
+@media (max-width: 480px) {
+    html, body, .stApp {
+        background-color: #FFFAF9 !important;
+    }
+    .block-container {
+        max-width: 100% !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        padding: 0.5rem 0.85rem 105px 0.85rem !important;
+    }
 }
 
 [data-testid="stHeader"] {
     background: transparent !important;
-    height: 2.5rem !important;
+    height: 2.2rem !important;
+}
+
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+#MainMenu, footer {
+    visibility: hidden !important;
+    display: none !important;
 }
 
 /* Typography */
@@ -453,32 +511,50 @@ div[data-testid="stMetricValue"] {
     color: var(--primary-rose) !important;
 }
 
-/* ==========================================
-   Mobile Bottom Navigation (st.bottom)
-   ========================================== */
+/* ==========================================================================
+   Mobile Bottom Navigation (st.bottom) - Pinned inside Phone Canvas
+   ========================================================================== */
 div[data-testid="stBottom"] {
-    background: var(--surface) !important;
+    display: block !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 414px !important;
+    margin: 0 auto !important;
+    background: #FFFFFF !important;
     border-top: 1px solid var(--border-subtle) !important;
-    box-shadow: 0 -3px 14px rgba(185, 95, 123, 0.05) !important;
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px !important;
+    border-left: 1px solid var(--border-subtle) !important;
+    border-right: 1px solid var(--border-subtle) !important;
+    border-radius: 18px 18px 0 0 !important;
+    box-shadow: 0 -4px 20px rgba(185, 95, 123, 0.10) !important;
+    z-index: 999999 !important;
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom, 0px)) 8px !important;
+    box-sizing: border-box !important;
 }
 
 div[data-testid="stBottom"] .block-container {
-    max-width: 580px !important;
-    margin: 0 auto !important;
+    max-width: 100% !important;
+    min-width: unset !important;
+    margin: 0 !important;
     padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+    min-height: unset !important;
 }
 
 div[data-testid="stBottom"] div.stButton > button {
-    min-height: 42px !important;
+    min-height: 44px !important;
     border-radius: 10px !important;
     font-size: 0.82rem !important;
     font-weight: 600 !important;
-    padding: 0.3rem 0.4rem !important;
+    padding: 0.3rem 0.2rem !important;
     border: none !important;
     background: transparent !important;
     color: var(--text-secondary) !important;
     box-shadow: none !important;
+    white-space: nowrap !important;
 }
 
 div[data-testid="stBottom"] div.stButton > button:hover {
@@ -493,52 +569,31 @@ div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
     border-bottom: 2.5px solid var(--primary-rose) !important;
 }
 
-/* ==========================================
-   Responsive Rules: Hide Sidebar on Mobile,
-   Hide Bottom Nav on Desktop (No Duplication!)
-   ========================================== */
-
-/* Narrow Mobile Screens (< 768px) */
-@media (max-width: 768px) {
-    /* Hide desktop sidebar entirely on mobile */
-    [data-testid="stSidebar"],
-    [data-testid="stSidebarCollapsedControl"],
-    section[data-testid="stSidebar"] {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-    }
-
-    /* Fixed bottom navigation on mobile */
+@media (max-width: 480px) {
     div[data-testid="stBottom"] {
-        display: block !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 99999 !important;
-    }
-
-    .block-container {
-        padding: 0.6rem 0.85rem 105px 0.85rem !important;
+        max-width: 100% !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-radius: 16px 16px 0 0 !important;
     }
 }
 
-/* Desktop Screens (>= 769px) */
-@media (min-width: 769px) {
-    /* Hide bottom nav on desktop so navigation is NOT duplicated! */
-    div[data-testid="stBottom"] {
-        display: none !important;
-    }
-
-    /* Clean, quiet, minimal sidebar on desktop */
-    [data-testid="stSidebar"] {
-        background-color: #FFFFFF !important;
-        border-right: 1px solid var(--border-subtle) !important;
-        box-shadow: none !important;
-    }
-
-    [data-testid="stSidebar"] .block-container {
-        padding-top: 1.5rem !important;
-    }
+/* ==========================================================================
+   Completely Hide Desktop Sidebar, Drawer, and Controls (ALL VIEWPORTS)
+   ========================================================================== */
+[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+section[data-testid="stSidebar"],
+div[data-testid="collapsedControl"],
+button[data-testid="stSidebarCollapseButton"],
+button[kind="header"] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
+
