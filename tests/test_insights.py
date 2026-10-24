@@ -93,3 +93,21 @@ def test_explainable_insights_non_diagnostic():
         assert "you have endometriosis" not in text
         assert "cancer" not in text
         assert "diagnosed with" not in text
+
+
+def test_calendar_heatmap_generation():
+    """Ensures monthly calendar heatmap generates valid Plotly figure with multi-day data."""
+    # Test empty returns None
+    empty_engine = InsightsEngine([])
+    assert empty_engine.plot_calendar_symptom_heatmap() is None
+
+    # Test populated entries
+    entries = [
+        SymptomEntry(id=1, profile_id="p1", category="Cat A", symptom="Migraine", onset_date="2026-10-18", severity=7),
+        SymptomEntry(id=2, profile_id="p1", category="Cat B", symptom="Fatigue", onset_date="2026-10-18", severity=5),
+        SymptomEntry(id=3, profile_id="p1", category="Cat A", symptom="Migraine", onset_date="2026-10-19", severity=8),
+    ]
+    engine = InsightsEngine(entries)
+    fig = engine.plot_calendar_symptom_heatmap()
+    assert fig is not None
+    assert len(fig.data) > 0

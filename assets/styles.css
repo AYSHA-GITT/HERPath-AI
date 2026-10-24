@@ -1,73 +1,137 @@
 /* ==========================================================================
-   HERPath AI - Modern Women's Healthcare Intelligence Platform Stylesheet
-   Designed with soft lavender, warm white, muted teal, and subtle rose.
+   HERPath AI - Luxury Modern Healthcare Intelligence Platform Stylesheet
+   Designed with Google Fonts (Outfit & Plus Jakarta Sans),
+   Glassmorphism, Ethereal Gradients, Subtle Micro-Animations, and Fluid Aesthetics.
    ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700;800;900&display=swap');
 
 /* Root Variables */
 :root {
     --primary: #7B61FF;
-    --primary-light: #EFEBFC;
+    --primary-gradient: linear-gradient(135deg, #7B61FF 0%, #9D84FF 50%, #684AE2 100%);
+    --primary-light: #F0EDFF;
     --primary-hover: #674EDB;
-    --lavender-bg: #F4F1FA;
-    --warm-white: #FAF9FC;
-    --teal: #2A9D8F;
-    --teal-light: #E7F6F4;
-    --teal-dark: #1E6B62;
-    --rose: #E76F7C;
-    --rose-light: #FDF0F2;
-    --rose-dark: #B94957;
-    --amber: #E9A13B;
-    --amber-light: #FDF6E9;
-    --text-primary: #1C192B;
-    --text-secondary: #5C5770;
-    --text-muted: #8E8A9E;
-    --border-color: #E6E1F0;
-    --border-subtle: #F0EDF7;
-    --card-bg: #FFFFFF;
-    --shadow-sm: 0 2px 8px rgba(123, 97, 255, 0.05);
-    --shadow-md: 0 4px 16px rgba(123, 97, 255, 0.08);
-    --shadow-lg: 0 8px 24px rgba(123, 97, 255, 0.12);
-    --radius-sm: 8px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
+    --lavender-bg: #F7F5FC;
+    --warm-white: #FAF9FD;
+    --teal: #14B8A6;
+    --teal-gradient: linear-gradient(135deg, #14B8A6 0%, #0D9488 100%);
+    --teal-light: #E6FBF8;
+    --teal-dark: #0F766E;
+    --rose: #F43F5E;
+    --rose-gradient: linear-gradient(135deg, #FB7185 0%, #F43F5E 100%);
+    --rose-light: #FFF1F3;
+    --rose-dark: #BE123C;
+    --amber: #F59E0B;
+    --amber-light: #FEF3C7;
+    --amber-dark: #B45309;
+    --text-primary: #1E1B4B;
+    --text-secondary: #475569;
+    --text-muted: #94A3B8;
+    --border-color: rgba(226, 232, 240, 0.85);
+    --border-subtle: rgba(241, 245, 249, 0.9);
+    --border-glow: rgba(123, 97, 255, 0.35);
+    --card-bg: rgba(255, 255, 255, 0.88);
+    --card-hover-bg: #FFFFFF;
+    --shadow-sm: 0 2px 10px rgba(123, 97, 255, 0.05);
+    --shadow-md: 0 8px 24px -4px rgba(123, 97, 255, 0.09), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 16px 36px -6px rgba(123, 97, 255, 0.15), 0 8px 20px -4px rgba(20, 184, 166, 0.06);
+    --shadow-glow: 0 0 25px rgba(123, 97, 255, 0.22);
+    --radius-sm: 10px;
+    --radius-md: 16px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
 }
 
-/* Global Font & Spacing Adjustments */
-html, body, [class*="css"] {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+/* Global Font & Antialiasing */
+html, body, [class*="css"], .stApp {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    color: var(--text-primary);
+    background-color: var(--warm-white);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', -apple-system, sans-serif !important;
+    font-weight: 700;
+    letter-spacing: -0.02em;
     color: var(--text-primary);
 }
 
-/* Header & Banner */
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: #F1EFF8;
+}
+::-webkit-scrollbar-thumb {
+    background: #D4CBF2;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #9D84FF;
+}
+
+/* ==========================================================================
+   Header & Brand Banner (Luxury Glassmorphic Aurora)
+   ========================================================================== */
 .herpath-header {
-    background: linear-gradient(135deg, #7B61FF 0%, #9D84FF 50%, #2A9D8F 100%);
-    padding: 2.2rem 2.4rem;
+    background: linear-gradient(135deg, #6C4DE6 0%, #8862F8 30%, #3B82F6 70%, #0D9488 100%);
+    background-size: 200% 200%;
+    animation: auroraGlow 14s ease infinite;
+    padding: 2.2rem 2.6rem;
     border-radius: var(--radius-lg);
     color: #FFFFFF;
     margin-bottom: 2rem;
-    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.2);
+    box-shadow: 0 16px 40px -8px rgba(108, 77, 230, 0.35);
     position: relative;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+@keyframes auroraGlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.herpath-header::before {
+    content: "";
+    position: absolute;
+    top: -60px;
+    right: -40px;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .herpath-header::after {
     content: "";
     position: absolute;
-    top: -50px;
-    right: -50px;
-    width: 220px;
-    height: 220px;
-    background: rgba(255, 255, 255, 0.1);
+    bottom: -80px;
+    left: 20%;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.28) 0%, rgba(20, 184, 166, 0) 70%);
     border-radius: 50%;
     pointer-events: none;
 }
 
 .herpath-header h1 {
-    font-size: 2.2rem;
+    font-size: 2.4rem;
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     margin: 0;
     color: #FFFFFF !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
 }
 
 .herpath-header p {
@@ -76,167 +140,374 @@ html, body, [class*="css"] {
     opacity: 0.95;
     font-weight: 400;
     color: #FFFFFF !important;
+    letter-spacing: 0.01em;
 }
 
-/* Metric / Stat Card */
+.header-badges-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.header-badge {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #FFFFFF;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.8rem;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* ==========================================================================
+   Metric / Stat Cards (Glassmorphism with Hover Elevation)
+   ========================================================================== */
 .stat-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(230, 225, 245, 0.9);
     border-radius: var(--radius-md);
-    padding: 1.3rem 1.4rem;
+    padding: 1.4rem 1.5rem;
     box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #7B61FF, #14B8A6);
+    opacity: 0.8;
+    transition: height 0.3s ease;
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    border-color: #D3CBEC;
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--border-glow);
+    background: #FFFFFF;
+}
+
+.stat-card:hover::before {
+    height: 5px;
 }
 
 .stat-label {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.78rem;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--text-secondary);
     margin-bottom: 0.4rem;
 }
 
 .stat-value {
-    font-size: 1.9rem;
-    font-weight: 700;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 2.1rem;
+    font-weight: 800;
     color: var(--primary);
-    line-height: 1.2;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
 }
 
 .stat-subtext {
     font-size: 0.82rem;
     color: var(--text-muted);
     margin-top: 0.4rem;
+    font-weight: 500;
 }
 
-/* Feature & Section Cards */
+/* ==========================================================================
+   Feature & Section Cards
+   ========================================================================== */
 .content-card {
-    background: var(--card-bg);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 1.6rem;
+    padding: 1.6rem 1.8rem;
     margin-bottom: 1.5rem;
     box-shadow: var(--shadow-sm);
+    transition: all 0.25s ease;
+}
+
+.content-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #D3CBEC;
 }
 
 .content-card-title {
+    font-family: 'Outfit', sans-serif;
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    letter-spacing: -0.01em;
 }
 
-/* Clinical Triage Badges */
+/* ==========================================================================
+   Daily Vitality & Holistic Wellness Pulse Widget
+   ========================================================================== */
+.vitality-container {
+    background: linear-gradient(135deg, #FFFFFF 0%, #FAF8FE 100%);
+    border: 1px solid rgba(123, 97, 255, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px -10px rgba(123, 97, 255, 0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+.vitality-container::after {
+    content: "";
+    position: absolute;
+    bottom: -60px;
+    right: -40px;
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, rgba(123, 97, 255, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.vitality-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+}
+
+.vitality-score-box {
+    background: linear-gradient(135deg, #7B61FF 0%, #14B8A6 100%);
+    color: #FFFFFF;
+    padding: 0.8rem 1.4rem;
+    border-radius: var(--radius-md);
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(123, 97, 255, 0.25);
+}
+
+.vitality-score-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.vitality-score-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.92;
+    margin-top: 0.2rem;
+}
+
+/* ==========================================================================
+   Anatomical / Body Focus Cards
+   ========================================================================== */
+.focus-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.2rem 1.3rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.focus-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: 0 10px 24px -6px rgba(123, 97, 255, 0.18);
+    background: #FAF8FE;
+}
+
+.focus-icon {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+}
+
+.focus-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.2rem;
+}
+
+.focus-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Clinical Triage & Status Badges
+   ========================================================================== */
 .badge-emergency {
     background: var(--rose-light);
     color: var(--rose-dark);
-    border: 1px solid rgba(231, 111, 124, 0.4);
-    padding: 0.35rem 0.8rem;
-    border-radius: 20px;
+    border: 1px solid rgba(244, 63, 94, 0.4);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
-    display: inline-block;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .badge-prompt {
     background: var(--amber-light);
-    color: #9A6014;
-    border: 1px solid rgba(233, 161, 59, 0.4);
-    padding: 0.35rem 0.8rem;
-    border-radius: 20px;
+    color: var(--amber-dark);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 700;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .badge-routine {
     background: var(--teal-light);
     color: var(--teal-dark);
-    border: 1px solid rgba(42, 157, 143, 0.4);
-    padding: 0.35rem 0.8rem;
-    border-radius: 20px;
+    border: 1px solid rgba(20, 184, 166, 0.45);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 700;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .badge-selfcare {
     background: var(--primary-light);
     color: var(--primary);
-    border: 1px solid rgba(123, 97, 255, 0.3);
-    padding: 0.35rem 0.8rem;
-    border-radius: 20px;
+    border: 1px solid rgba(123, 97, 255, 0.35);
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
     font-size: 0.8rem;
     font-weight: 700;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
-/* Disclaimer Banner */
+/* Pulsing Status Dot */
+.pulsing-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #10B981;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* ==========================================================================
+   Disclaimers & Urgency Callouts
+   ========================================================================== */
 .disclaimer-box {
-    background: #F8F7FC;
+    background: linear-gradient(135deg, #F8F7FC 0%, #F3EFFB 100%);
     border-left: 4px solid var(--primary);
-    padding: 0.9rem 1.2rem;
+    padding: 1rem 1.4rem;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     margin: 1.2rem 0;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.55;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
 .disclaimer-urgent {
-    background: #FFF5F6;
-    border-left: 4px solid var(--rose);
-    padding: 1.1rem 1.3rem;
+    background: linear-gradient(135deg, #FFF5F6 0%, #FEE8EB 100%);
+    border-left: 5px solid var(--rose);
+    padding: 1.2rem 1.5rem;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    margin: 1.2rem 0;
-    font-size: 0.92rem;
-    color: #7D232F;
-    line-height: 1.5;
+    margin: 1.4rem 0;
+    font-size: 0.94rem;
+    color: #881337;
+    line-height: 1.55;
+    box-shadow: 0 4px 16px rgba(244, 63, 94, 0.12);
 }
 
-/* Resource Card in Library */
+/* ==========================================================================
+   Resource Cards (Health Library)
+   ========================================================================== */
 .resource-card {
-    background: #FFFFFF;
+    background: rgba(255, 255, 255, 0.95);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 1.4rem;
-    margin-bottom: 1.2rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    padding: 1.5rem 1.6rem;
+    margin-bottom: 1.3rem;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-sm);
 }
 
 .resource-card:hover {
     border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-3px);
 }
 
 .resource-source {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--teal);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--teal-dark);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     margin-bottom: 0.3rem;
 }
 
 .resource-title {
-    font-size: 1.15rem;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
@@ -245,48 +516,188 @@ html, body, [class*="css"] {
 .resource-desc {
     font-size: 0.92rem;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.55;
     margin-bottom: 0.8rem;
 }
 
-/* Severity Pill Indicator */
+/* ==========================================================================
+   Severity Indicators
+   ========================================================================== */
 .severity-pill-mild {
-    background: #E8F5E9;
-    color: #2E7D32;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
+    background: #ECFDF5;
+    color: #065F46;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
     font-size: 0.82rem;
+    border: 1px solid #A7F3D0;
+    display: inline-block;
 }
 
 .severity-pill-moderate {
-    background: #FFF8E1;
-    color: #F57F17;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
+    background: #FFFBEB;
+    color: #92400E;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
     font-size: 0.82rem;
+    border: 1px solid #FDE68A;
+    display: inline-block;
 }
 
 .severity-pill-severe {
-    background: #FFEBEE;
-    color: #C62828;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 12px;
+    background: #FFF1F2;
+    color: #9F1239;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 9999px;
     font-size: 0.82rem;
+    border: 1px solid #FECDD3;
+    display: inline-block;
 }
 
-/* Privacy Notice Pill */
+/* Privacy Notice Badge */
 .privacy-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    background: #EFFCF9;
-    color: #1A7F73;
-    border: 1px solid #B8EBE3;
-    padding: 0.35rem 0.75rem;
-    border-radius: 20px;
+    gap: 0.5rem;
+    background: #F0FDF4;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+    padding: 0.4rem 0.85rem;
+    border-radius: 9999px;
     font-size: 0.82rem;
     font-weight: 600;
+}
+
+/* ==========================================================================
+   Streamlit Native Elements Reskins (Tabs, Buttons, Sliders, Sidebar)
+   ========================================================================== */
+
+/* Modern Rounded Buttons */
+div.stButton > button {
+    border-radius: 12px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    padding: 0.55rem 1.25rem !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+div.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px -2px rgba(123, 97, 255, 0.18) !important;
+}
+
+div.stButton > button:active {
+    transform: scale(0.98) !important;
+}
+
+div.stButton > button[kind="primary"] {
+    background: var(--primary-gradient) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(123, 97, 255, 0.28) !important;
+}
+
+div.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 8px 22px rgba(123, 97, 255, 0.4) !important;
+}
+
+/* Download Button */
+div.stDownloadButton > button {
+    border-radius: 12px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    padding: 0.6rem 1.4rem !important;
+    transition: all 0.2s ease !important;
+}
+
+div.stDownloadButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 18px rgba(123, 97, 255, 0.22) !important;
+}
+
+/* Clean Modern Tabs */
+div[data-baseweb="tab-list"] {
+    gap: 8px !important;
+    border-bottom: 2px solid #EBE7F5 !important;
+    padding-bottom: 4px !important;
+}
+
+div[data-baseweb="tab"] {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600 !important;
+    font-size: 0.92rem !important;
+    color: var(--text-secondary) !important;
+    padding: 8px 18px !important;
+    transition: all 0.2s ease !important;
+}
+
+div[data-baseweb="tab"]:hover {
+    color: var(--primary) !important;
+    background: rgba(123, 97, 255, 0.05) !important;
+}
+
+div[data-baseweb="tab"][aria-selected="true"] {
+    color: var(--primary) !important;
+    border-bottom: 3px solid var(--primary) !important;
+    background: rgba(123, 97, 255, 0.07) !important;
+}
+
+/* Native Metrics Reskin */
+div[data-testid="stMetric"] {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.1rem 1.3rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.25s ease;
+}
+
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-glow);
+}
+
+div[data-testid="stMetricLabel"] {
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    color: var(--text-secondary) !important;
+}
+
+div[data-testid="stMetricValue"] {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.85rem !important;
+    font-weight: 800 !important;
+    color: var(--primary) !important;
+}
+
+/* Forms & Expanders */
+div[data-testid="stExpander"] {
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
+    margin-bottom: 0.8rem !important;
+}
+
+/* Sidebar Refinements */
+section[data-testid="stSidebar"] {
+    background-color: #F8F6FD !important;
+    border-right: 1px solid rgba(230, 225, 245, 0.8) !important;
+}
+
+/* Form fields focus glow */
+div[data-baseweb="input"] {
+    border-radius: 10px !important;
+}
+
+div[data-baseweb="select"] {
+    border-radius: 10px !important;
 }

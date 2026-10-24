@@ -86,6 +86,9 @@ if "navigation" not in st.session_state:
 if "editing_entry_id" not in st.session_state:
     st.session_state["editing_entry_id"] = None
 
+if "selected_body_focus" not in st.session_state:
+    st.session_state["selected_body_focus"] = None
+
 
 # Helper to switch pages
 def navigate_to(page_name: str):
@@ -169,8 +172,23 @@ with st.sidebar:
 # ==========================================
 st.markdown(f"""
     <div class="herpath-header">
-        <h1>HERPath AI</h1>
-        <p>{APP_TAGLINE} &bull; <i>{HACKATHON_EVENT}</i></p>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1>🌸 HERPath AI</h1>
+                <p>{APP_TAGLINE} &bull; <i>{HACKATHON_EVENT}</i></p>
+            </div>
+            <div style="text-align: right;">
+                <div class="header-badge" style="background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);">
+                    <span class="pulsing-dot"></span> Active Profile: <b>{active_profile.display_name.split(' ')[0]}</b>
+                </div>
+            </div>
+        </div>
+        <div class="header-badges-row">
+            <span class="header-badge">🔒 100% On-Device SQLite</span>
+            <span class="header-badge">📋 Frameworks: WHO &bull; ACOG &bull; NHS</span>
+            <span class="header-badge">⚡ Zero Cloud Transmission</span>
+            <span class="header-badge">🛡️ Clinical Non-Diagnostic Safety Core</span>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -246,6 +264,131 @@ if st.session_state["navigation"] == "Home Dashboard":
     with q3:
         if st.button("📄 Export Clinician Health Report", use_container_width=True):
             navigate_to("My Health Report")
+
+    # ==========================================
+    # Interactive Feature 1: Daily Vitality & Holistic Wellness Pulse
+    # ==========================================
+    st.markdown("<br/>", unsafe_allow_html=True)
+    with st.expander("✨ **Daily Vitality & Holistic Wellbeing Pulse (Interactive 10-Sec Check-In)**", expanded=True):
+        st.write("Track daily baseline energy, sleep restfulness, and emotional resilience to uncover subtle systemic patterns alongside your symptoms.")
+        v_col1, v_col2 = st.columns([2.4, 1.2])
+        with v_col1:
+            vit_c1, vit_c2, vit_c3 = st.columns(3)
+            with vit_c1:
+                v_energy = st.slider("⚡ Energy Level", 1, 10, value=7, key="vit_energy", help="1: Exhausted / drained, 10: Vibrant & active")
+            with vit_c2:
+                v_sleep = st.slider("🌙 Sleep Restfulness", 1, 10, value=8, key="vit_sleep", help="1: Insomnia / restless, 10: Deep restorative")
+            with vit_c3:
+                v_stress = st.slider("🧘 Calm & Resilience", 1, 10, value=7, key="vit_stress", help="1: Overwhelmed / tense, 10: Centered and tranquil")
+
+        # Dynamic Holistic Score calculation
+        total_score = int(round(((v_energy + v_sleep + v_stress) / 30.0) * 100))
+        if total_score >= 75:
+            score_color = "#14B8A6"
+            score_status = "Optimal Vitality Balance"
+            score_msg = "Baseline energy, restorative sleep, and emotional equilibrium are strong."
+        elif total_score >= 50:
+            score_color = "#F59E0B"
+            score_status = "Moderate Functional Strain"
+            score_msg = "Consider gentle hydration, micro-rests, and mindful pacing today."
+        else:
+            score_color = "#F43F5E"
+            score_status = "Elevated Physiological Depletion"
+            score_msg = "Prioritize restorative rest, reduced cognitive load, and supportive care."
+
+        with v_col2:
+            st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #FAF8FE 0%, #FFFFFF 100%); border: 1px solid rgba(123,97,255,0.25); border-radius: 14px; padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(123,97,255,0.08);">
+                    <div style="font-size: 0.74rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em;">Daily Vitality Index</div>
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; color: {score_color}; line-height: 1.1; margin: 0.2rem 0;">{total_score}%</div>
+                    <div style="font-size: 0.82rem; font-weight: 700; color: {score_color};">{score_status}</div>
+                    <div style="font-size: 0.74rem; color: #64748B; margin-top: 0.3rem;">{score_msg}</div>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("💾 Log Today's Vitality Pulse", key="btn_save_vitality", use_container_width=True):
+                today_str = str(date.today())
+                sleep_qual = "Restful (7-9 hrs)" if v_sleep >= 7 else "Disrupted / Fragmented" if v_sleep <= 4 else "Average (5-7 hrs)"
+                stress_lvl = "Low / Calm" if v_stress >= 7 else "Severe Stress / Burnout" if v_stress <= 4 else "Moderate"
+                energy_lvl = "High Vitality" if v_energy >= 7 else "Fatigued / Low" if v_energy <= 4 else "Moderate"
+
+                SymptomTrackerService.record_symptom(
+                    profile_id=active_profile.id,
+                    category="Systemic & Energy",
+                    symptom="Daily Vitality Baseline",
+                    onset_date=today_str,
+                    severity=max(1, 11 - int(round(total_score / 10.0))),
+                    duration_hours=None,
+                    status="Resolved",
+                    impact="None",
+                    notes=f"Daily Vitality: {total_score}% ({score_status}). Energy: {v_energy}/10, Sleep: {v_sleep}/10, Calm: {v_stress}/10.",
+                    context={"sleep": sleep_qual, "stress": stress_lvl, "energy": energy_lvl, "cycle_phase": "Follicular / Mid-cycle"}
+                )
+                st.success(f"✅ Recorded today's Vitality Pulse ({total_score}%) to database!")
+                st.rerun()
+
+    # ==========================================
+    # Interactive Feature 2: Anatomical Health Focus Explorer
+    # ==========================================
+    st.markdown("<br/>", unsafe_allow_html=True)
+    st.markdown("#### 🌸 Anatomical Health Focus Explorer")
+    st.caption("Select a physiological area to filter insights or initiate targeted symptom logging:")
+
+    b_col1, b_col2, b_col3, b_col4, b_col5 = st.columns(5)
+    with b_col1:
+        st.markdown("""
+            <div class="focus-card">
+                <div class="focus-icon">🧠</div>
+                <div class="focus-title">Head & Neuro</div>
+                <div class="focus-desc">Migraine &bull; Fog &bull; Vertigo</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Explore Head & Neuro", key="focus_neuro", use_container_width=True):
+            st.session_state["selected_body_focus"] = "Neurological & Head"
+            navigate_to("Symptom Journal")
+    with b_col2:
+        st.markdown("""
+            <div class="focus-card">
+                <div class="focus-icon">🌸</div>
+                <div class="focus-title">Pelvic & Cycle</div>
+                <div class="focus-desc">Cramps &bull; Flow &bull; Pelvic Pain</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Explore Pelvic Care", key="focus_pelvic", use_container_width=True):
+            st.session_state["selected_body_focus"] = "Pelvic & Menstrual"
+            navigate_to("Symptom Journal")
+    with b_col3:
+        st.markdown("""
+            <div class="focus-card">
+                <div class="focus-icon">🫀</div>
+                <div class="focus-title">Hormonal</div>
+                <div class="focus-desc">Hot Flashes &bull; Sweats &bull; Mood</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Explore Hormonal", key="focus_hormonal", use_container_width=True):
+            st.session_state["selected_body_focus"] = "Hormonal & Vasomotor"
+            navigate_to("Symptom Journal")
+    with b_col4:
+        st.markdown("""
+            <div class="focus-card">
+                <div class="focus-icon">⚡</div>
+                <div class="focus-title">Energy & Iron</div>
+                <div class="focus-desc">Fatigue &bull; Chills &bull; Aches</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Explore Systemic", key="focus_systemic", use_container_width=True):
+            st.session_state["selected_body_focus"] = "Systemic & Energy"
+            navigate_to("Symptom Journal")
+    with b_col5:
+        st.markdown("""
+            <div class="focus-card">
+                <div class="focus-icon">💧</div>
+                <div class="focus-title">Pelvic Floor</div>
+                <div class="focus-desc">Urgency &bull; Pain &bull; Pressure</div>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("Explore Pelvic Floor", key="focus_urinary", use_container_width=True):
+            st.session_state["selected_body_focus"] = "Urinary & Pelvic Floor"
+            navigate_to("Symptom Journal")
 
     st.markdown("---")
 
@@ -331,6 +474,9 @@ elif st.session_state["navigation"] == "Symptom Journal":
             cat_default_idx = 0
             if edit_entry and edit_entry.category in categories:
                 cat_default_idx = categories.index(edit_entry.category)
+            elif st.session_state.get("selected_body_focus") in categories:
+                cat_default_idx = categories.index(st.session_state["selected_body_focus"])
+                st.session_state["selected_body_focus"] = None
 
             with col_cat:
                 selected_category = st.selectbox(
@@ -656,11 +802,12 @@ elif st.session_state["navigation"] == "Health Insights":
 
     # Visualizations
     st.markdown("#### 📈 Interactive Charts & Distributions")
-    tab_chart1, tab_chart2, tab_chart3, tab_chart4 = st.tabs([
+    tab_chart1, tab_chart2, tab_chart3, tab_chart4, tab_chart5 = st.tabs([
         "Symptom Timeline",
         "Frequency Breakdown",
         "Contextual Comparison",
-        "Co-Occurrence Matrix"
+        "Co-Occurrence Matrix",
+        "📅 Monthly Calendar Grid"
     ])
 
     with tab_chart1:
@@ -691,6 +838,13 @@ elif st.session_state["navigation"] == "Health Insights":
         else:
             st.info("Log multiple symptoms across shared dates to generate the co-occurrence matrix.")
 
+    with tab_chart5:
+        cal_fig = engine.plot_calendar_symptom_heatmap()
+        if cal_fig:
+            st.plotly_chart(cal_fig, use_container_width=True)
+        else:
+            st.info("Log symptoms across one or more days to generate the monthly calendar density view.")
+
     st.markdown("---")
 
     # Interactive Doctor Consultation Prep Kit
@@ -718,9 +872,9 @@ elif st.session_state["navigation"] == "Health Insights":
             <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.6rem;">
                 <b>Evidence Baseline:</b> {agenda['data_summary']}
             </div>
-            <div style="background: #FFFFFF; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 0.8rem;">
-                <b style="color: var(--primary);">Opening Statement (Your 30-Second Summary):</b>
-                <p style="font-style: italic; color: var(--text-primary); margin-top: 0.3rem;">"{agenda['opening_statement']}"</p>
+            <div style="background: #FFFFFF; padding: 1.1rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
+                <b style="color: var(--primary);">Opening Statement (Your 30-Second Patient Summary):</b>
+                <p style="font-style: italic; color: var(--text-primary); margin-top: 0.4rem; font-size: 0.95rem; line-height: 1.5;">"{agenda['opening_statement']}"</p>
             </div>
             <b>Key Questions to Discuss:</b>
             <ul style="margin-top: 0.4rem; padding-left: 1.2rem; line-height: 1.6;">
@@ -728,6 +882,17 @@ elif st.session_state["navigation"] == "Health Insights":
             </ul>
         </div>
     """, unsafe_allow_html=True)
+
+    with st.expander("📋 One-Click Copyable Summary for Patient Portal / Medical Notes"):
+        summary_text = (
+            f"CLINICAL CONSULTATION AGENDA — {active_profile.display_name}\n"
+            f"Objective: {agenda['goal']}\n"
+            f"Baseline: {agenda['data_summary']}\n\n"
+            f"30-Second Opening Statement:\n\"{agenda['opening_statement']}\"\n\n"
+            f"Key Discussion Questions:\n" +
+            "\n".join([f"- {q}" for q in agenda['suggested_questions']])
+        )
+        st.code(summary_text, language="markdown")
 
 
 
@@ -744,6 +909,13 @@ elif st.session_state["navigation"] == "Care Navigator":
     st.markdown(f"""
         <div class="disclaimer-box">
             <b>Safety Notice:</b> {CLINICAL_DISCLAIMER}
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Clinical Triage Tiers:</span>
+            <span class="badge-emergency">🚨 Emergency (Immediate 911 / 112)</span>
+            <span class="badge-prompt">⚠️ Prompt Medical (24–48h)</span>
+            <span class="badge-routine">🩺 Routine Consultation</span>
+            <span class="badge-selfcare">🌸 Self-Care & Monitoring</span>
         </div>
     """, unsafe_allow_html=True)
 

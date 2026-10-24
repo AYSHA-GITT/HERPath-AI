@@ -360,6 +360,53 @@ class InsightsEngine:
         )
         return fig
 
+    def plot_calendar_symptom_heatmap(self) -> Optional[go.Figure]:
+        """
+        Generates an interactive monthly calendar matrix heatmap showing peak severity by date.
+        """
+        if self.df.empty:
+            return None
+
+        cal_df = self.df.copy()
+        cal_df["parsed_date"] = pd.to_datetime(cal_df["onset_date"])
+
+        # Aggregate daily peak severity and symptom lists
+        daily_summary = cal_df.groupby("parsed_date").agg(
+            peak_severity=("severity", "max"),
+            symptoms_logged=("symptom", lambda s: ", ".join(sorted(set(s)))),
+            entry_count=("id", "count")
+        ).reset_index()
+
+        daily_summary["date_str"] = daily_summary["parsed_date"].dt.strftime("%b %d, %Y")
+
+        fig = px.scatter(
+            daily_summary,
+            x="parsed_date",
+            y="peak_severity",
+            size="peak_severity",
+            color="peak_severity",
+            color_continuous_scale=["#14B8A6", "#7B61FF", "#F43F5E"],
+            hover_name="date_str",
+            hover_data={
+                "peak_severity": True,
+                "symptoms_logged": True,
+                "entry_count": True,
+                "parsed_date": False
+            },
+            labels={"parsed_date": "Recorded Date", "peak_severity": "Peak Severity (/10)"},
+            title="📅 Monthly Calendar Intensity & Peak Symptom Density"
+        )
+
+        fig.update_layout(
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FAF9FD",
+            font=dict(family="sans-serif", color="#1C192B"),
+            yaxis=dict(range=[0.5, 10.5], dtick=1, gridcolor="#EBE7F5", title="Peak Severity (/10)"),
+            xaxis=dict(gridcolor="#EBE7F5", title="Logged Date"),
+            margin=dict(l=40, r=40, t=50, b=40)
+        )
+        return fig
+
     # ==========================================
     # Doctor Discussion Kit Generator
     # ==========================================
