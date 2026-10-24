@@ -40,10 +40,13 @@
 ### Slide 4 — Functional Features & End-to-End Workflow
 1. **Local Profile Selection:** Switch between user profiles with distinct isolated health histories and customizable tracking preferences.
 2. **Smart Symptom Journal:** Log onset date, severity (1-10), duration, daily impact, sleep quality, and stress levels with instant database persistence.
-3. **Personal Health Insights:** Interactive Plotly timelines and explainable pattern statements based strictly on database records.
-4. **Care Guidance & Safety Navigator:** Real-time triage evaluation with transparent rationales and emergency warning flags.
-5. **Verified Women's Health Library:** Searchable evidence-based guides from WHO, NHS, CDC, ACOG, and Mayo Clinic.
-6. **Clinician Report Generator:** One-click ReportLab PDF export complete with doctor discussion points.
+3. **Medication & Treatment Tracker:** Log prescriptions, over-the-counter supplements, and lifestyle therapies linked with symptoms.
+4. **Personal Health Insights:** Interactive Plotly timelines, co-occurrence correlation matrix heatmaps, and explainable pattern statements.
+5. **Interactive Doctor Consultation Prep Kit:** Generates tailored 10-minute appointment talking points, opening statements, and doctor questions.
+6. **Care Guidance & Safety Navigator:** Real-time triage evaluation with transparent rationales and regional emergency SOS numbers (112, 1091, 911, 999).
+7. **Verified Women's Health Library:** Searchable evidence-based guides from WHO, NHS, CDC, ACOG, and Mayo Clinic.
+8. **Clinician Report Generator:** One-click ReportLab PDF export complete with active medications and doctor discussion points.
+9. **Privacy-First Data Portability:** Export complete JSON backups and CSV spreadsheets, plus JSON restore functionality.
 
 ---
 
@@ -66,8 +69,9 @@
 
 ### Slide 7 — Verification Evidence & Current Limitations
 - **Verification Evidence:**
-  - Automated test suite: **28 unit tests passing with 100% pass rate**.
-  - Verified across database CRUD, foreign-key isolation, input validation, statistical null-handling, triage safety hierarchy, and PDF generation.
+  - Automated test suite: **45 automated tests passing with 100% pass rate** (28 unit tests, 9 backend e2e tests, 8 frontend AppTest UI tests).
+  - Verified across database CRUD, medications, data portability, foreign-key isolation, input validation, statistical null-handling, triage safety hierarchy, and PDF generation.
+
   - Real database records drive all charts, KPIs, and reports without mock sample data.
 - **Current Prototype Limitations:**
   - Single-device local database (not an enterprise cloud EHR).

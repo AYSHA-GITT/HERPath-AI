@@ -16,8 +16,11 @@ root_dir = str(Path(__file__).resolve().parent.parent)
 if root_dir not in sys.path:
     sys.path.insert(0, root_dir)
 
-from database import init_db, add_symptom, clear_profile_symptoms, get_profile, create_profile
-from models import SymptomEntry
+from database import (
+    init_db, add_symptom, clear_profile_symptoms, get_profile,
+    create_profile, add_medication, get_medications
+)
+from models import SymptomEntry, MedicationEntry
 
 
 def seed_demo_data(db_path: Optional[str] = None) -> None:
@@ -134,7 +137,55 @@ def seed_demo_data(db_path: Optional[str] = None) -> None:
             context={"sleep": slp, "stress": strss, "energy": enrgy, "cycle_phase": cyc}
         ), db_path)
 
+    # 4. Seed Demonstration Medications
+    if not get_medications("demo_priya", db_path):
+        add_medication(MedicationEntry(
+            id=None,
+            profile_id="demo_priya",
+            name="Sumatriptan",
+            category="Prescription",
+            dosage="50 mg",
+            frequency="As needed at migraine onset",
+            started_date="2026-06-01",
+            notes="Relieves aura within 90 minutes. Must not exceed 200mg/24h."
+        ), db_path)
+        add_medication(MedicationEntry(
+            id=None,
+            profile_id="demo_priya",
+            name="Myo-Inositol & D-Chiro Inositol",
+            category="OTC / Supplement",
+            dosage="2000 mg",
+            frequency="Twice daily with meals",
+            started_date="2026-05-15",
+            notes="For ovarian metabolic regulation & insulin sensitivity."
+        ), db_path)
+
+    if not get_medications("demo_ananya", db_path):
+        add_medication(MedicationEntry(
+            id=None,
+            profile_id="demo_ananya",
+            name="Magnesium Glycinate",
+            category="OTC / Supplement",
+            dosage="300 mg",
+            frequency="Nightly before bed",
+            started_date="2026-07-01",
+            notes="Helps reduce sleep latency and muscle restlessness."
+        ), db_path)
+
+    if not get_medications("demo_elena", db_path):
+        add_medication(MedicationEntry(
+            id=None,
+            profile_id="demo_elena",
+            name="Naproxen Sodium",
+            category="Prescription",
+            dosage="550 mg",
+            frequency="Every 12 hours with food during cycle days 1-3",
+            started_date="2026-04-10",
+            notes="Prostaglandin inhibitor for acute dysmenorrhea."
+        ), db_path)
+
 
 if __name__ == "__main__":
     seed_demo_data()
     print("Realistic demonstration data populated successfully!")
+

@@ -19,7 +19,13 @@ from database import (
     list_profiles,
     delete_profile,
     update_profile_preferences,
-    clear_profile_symptoms
+    clear_profile_symptoms,
+    add_medication,
+    get_medications,
+    delete_medication,
+    export_profile_data_json,
+    export_symptoms_csv,
+    import_profile_data_json
 )
 from symptom_tracker import SymptomTrackerService
 from insights_engine import InsightsEngine
@@ -32,7 +38,7 @@ from safety_navigator import (
 )
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
-from models import UserProfile, SymptomEntry
+from models import UserProfile, SymptomEntry, MedicationEntry
 
 
 @pytest.fixture
@@ -249,3 +255,122 @@ def test_backend_report_generator_pdf_validation(isolated_db):
     assert len(pdf_bytes) > 1000
     assert pdf_bytes.startswith(b"%PDF")
     assert b"HERPath AI" in pdf_bytes or len(pdf_bytes) > 2000
+
+
+def test_backend_medication_crud(isolated_db):
+    """Verifies adding, retrieving, and deleting medications."""
+    create_profile("med_test_user", "Med User", db_path=isolated_db)
+    med = MedicationEntry(
+        id=None,
+        profile_id="med_test_user",
+        name="Sumatriptan",
+        category="Prescription",
+        dosage="50 mg",
+        frequency="As needed at migraine onset",
+        started_date="2026-06-01",
+        notes="Take with plenty of water."
+    )
+    m_id = add_medication(med, db_path=isolated_db)
+    assert m_id > 0
+
+    meds = get_medications("med_test_user", db_path=isolated_db)
+    assert len(meds) == 1
+    assert meds[0].name == "Sumatriptan"
+    assert meds[0].dosage == "50 mg"
+
+    deleted = delete_medication(m_id, "med_test_user", db_path=isolated_db)
+    assert deleted is True
+    assert len(get_medications("med_test_user", db_path=isolated_db)) == 0
+
+
+def test_backend_data_portability_export_import(isolated_db):
+    """Verifies complete JSON and CSV data backup export and subsequent restoration."""
+    create_profile("export_user", "Export User", db_path=isolated_db)
+    SymptomTrackerService.record_symptom(
+        profile_id="export_user",
+        category="Neurological & Head",
+        symptom="Migraine",
+        onset_date="2026-10-20",
+        severity=7,
+        db_path=isolated_db
+    )
+    add_medication(MedicationEntry(
+        id=None,
+        profile_id="export_user",
+        name="Naproxen",
+        category="Prescription",
+        dosage="550 mg"
+    ), db_path=isolated_db)
+
+    # Export to JSON
+    json_str = export_profile_data_json("export_user", db_path=isolated_db)
+    assert "Migraine" in json_str
+    assert "Naproxen" in json_str
+
+    # Export to CSV
+    csv_str = export_symptoms_csv("export_user", db_path=isolated_db)
+    assert "Migraine" in csv_str
+    assert "Onset Date" in csv_str
+
+    # Restore into a second profile
+    create_profile("import_user", "Import User", db_path=isolated_db)
+    syms_count, meds_count = import_profile_data_json("import_user", json_str, db_path=isolated_db)
+    assert syms_count == 1
+    assert meds_count == 1
+
+    restored_syms = SymptomTrackerService.get_history("import_user", db_path=isolated_db)
+    restored_meds = get_medications("import_user", db_path=isolated_db)
+    assert len(restored_syms) == 1
+    assert restored_syms[0].symptom == "Migraine"
+    assert len(restored_meds) == 1
+    assert restored_meds[0].name == "Naproxen"
+
+
+def test_backend_doctor_agenda_builder(isolated_db):
+    """Verifies that InsightsEngine generates tailored clinical consultation talking points."""
+    create_profile("agenda_user", "Agenda User", db_path=isolated_db)
+    for i in range(3):
+        SymptomTrackerService.record_symptom(
+            profile_id="agenda_user",
+            category="Pelvic & Menstrual",
+            symptom="Pelvic Pain",
+            onset_date=f"2026-10-1{i}",
+            severity=6 + i,
+            db_path=isolated_db
+        )
+
+    entries = SymptomTrackerService.get_history("agenda_user", db_path=isolated_db)
+    engine = InsightsEngine(entries)
+
+    agenda = engine.generate_doctor_talking_points("Diagnostic Evaluation")
+    assert agenda["goal"] == "Diagnostic Evaluation"
+    assert "Pelvic Pain" in agenda["opening_statement"]
+    assert len(agenda["suggested_questions"]) >= 3
+
+
+def test_backend_cooccurrence_heatmap(isolated_db):
+    """Verifies that plot_cooccurrence_heatmap produces a valid Plotly Figure."""
+    create_profile("co_user", "Co User", db_path=isolated_db)
+    # Add pairs on same date
+    SymptomTrackerService.record_symptom(
+        profile_id="co_user",
+        category="Neurological & Head",
+        symptom="Migraine",
+        onset_date="2026-10-20",
+        severity=7,
+        db_path=isolated_db
+    )
+    SymptomTrackerService.record_symptom(
+        profile_id="co_user",
+        category="Systemic & Energy",
+        symptom="Severe Fatigue",
+        onset_date="2026-10-20",
+        severity=5,
+        db_path=isolated_db
+    )
+
+    entries = SymptomTrackerService.get_history("co_user", db_path=isolated_db)
+    engine = InsightsEngine(entries)
+    fig = engine.plot_cooccurrence_heatmap()
+    assert fig is not None
+

@@ -170,3 +170,31 @@ def test_frontend_privacy_settings_and_profile_switch():
     combined_md = " ".join([m.value for m in at.markdown])
     assert "Privacy & Data Protection Architecture" in combined_md
     assert "100% Local SQLite Storage" in combined_md or "Local Storage Only" in combined_md
+
+
+def test_frontend_medication_tracker():
+    """Tests navigation to Medication & Treatments view and adding a treatment."""
+    at = AppTest.from_file(APP_FILE, default_timeout=30)
+    at.run()
+
+    # Switch to Medication & Treatments
+    at.sidebar.radio[0].set_value("Medication & Treatments").run()
+    assert not at.exception
+
+    # Verify page title
+    assert any("Medication & Health Intervention Tracker" in m.value for m in at.markdown)
+
+    # Check form exists
+    assert len(at.form) > 0
+    med_form = at.form[0]
+
+    # Fill form
+    assert len(med_form.text_input) > 0
+    med_form.text_input[0].set_value("Magnesium Glycinate")
+    med_form.selectbox[0].set_value("OTC / Supplement")
+
+    # Submit form
+    med_form.form_submit_button[0].click().run()
+    assert not at.exception
+    assert len(at.success) > 0
+

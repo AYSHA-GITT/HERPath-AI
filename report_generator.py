@@ -17,7 +17,7 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether, HRFlowable
 )
 
-from models import SymptomEntry, UserProfile
+from models import SymptomEntry, UserProfile, MedicationEntry
 from config import APP_TITLE, APP_TAGLINE, CLINICAL_DISCLAIMER
 from insights_engine import InsightsEngine
 
@@ -25,11 +25,19 @@ from insights_engine import InsightsEngine
 class ClinicianReportGenerator:
     """Generates PDF health summaries designed for review during clinical consultations."""
 
-    def __init__(self, profile: UserProfile, entries: List[SymptomEntry], start_date: str, end_date: str):
+    def __init__(
+        self,
+        profile: UserProfile,
+        entries: List[SymptomEntry],
+        start_date: str,
+        end_date: str,
+        medications: Optional[List[MedicationEntry]] = None
+    ):
         self.profile = profile
         self.entries = entries
         self.start_date = start_date
         self.end_date = end_date
+        self.medications = medications or []
         self.insights_engine = InsightsEngine(entries)
 
     def generate_pdf_bytes(self) -> bytes:
@@ -159,10 +167,41 @@ class ClinicianReportGenerator:
         story.append(Paragraph(summary_text, body_style))
         story.append(Spacer(1, 12))
 
-        # 4. Detailed Symptom Table
-        story.append(Paragraph("2. Detailed Chronological Log", section_heading))
+        # 4. Current Medications & Treatments (if any recorded)
+        if self.medications:
+            story.append(Paragraph("2. Current Medications & Health Interventions", section_heading))
+            med_rows = [[
+                Paragraph("Medication / Treatment", table_header_style),
+                Paragraph("Category", table_header_style),
+                Paragraph("Dosage & Frequency", table_header_style),
+                Paragraph("Notes", table_header_style),
+            ]]
+            for m in self.medications:
+                med_rows.append([
+                    Paragraph(f"<b>{m.name}</b>", table_cell_style),
+                    Paragraph(m.category, table_cell_style),
+                    Paragraph(f"{m.dosage} ({m.frequency})" if m.dosage or m.frequency else "-", table_cell_style),
+                    Paragraph(m.notes or "-", table_cell_style),
+                ])
+            med_table = Table(med_rows, colWidths=[130, 95, 135, 165])
+            med_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2A9D8F")),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#B8EBE3")),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F2FAF9")]),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ]))
+            story.append(med_table)
+            story.append(Spacer(1, 10))
+
+        # 5. Detailed Symptom Table
+        log_section_num = "3" if self.medications else "2"
+        story.append(Paragraph(f"{log_section_num}. Detailed Chronological Log", section_heading))
 
         if not self.entries:
+
             story.append(Paragraph("<i>No symptom records were found for the selected reporting period.</i>", body_style))
         else:
             table_rows = [

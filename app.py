@@ -36,8 +36,15 @@ from database import (
     create_profile,
     delete_profile,
     update_profile_preferences,
-    clear_profile_symptoms
+    clear_profile_symptoms,
+    add_medication,
+    get_medications,
+    delete_medication,
+    export_profile_data_json,
+    export_symptoms_csv,
+    import_profile_data_json
 )
+from models import MedicationEntry
 from symptom_tracker import SymptomTrackerService
 from insights_engine import InsightsEngine
 from safety_navigator import SafetyNavigator
@@ -129,6 +136,7 @@ with st.sidebar:
     nav_options = [
         "Home Dashboard",
         "Symptom Journal",
+        "Medication & Treatments",
         "Health Insights",
         "Care Navigator",
         "Women's Health Library",
@@ -136,6 +144,7 @@ with st.sidebar:
         "Ask HERPath",
         "Privacy and Settings"
     ]
+
 
     selected_nav = st.radio(
         "📍 Platform Navigation",
@@ -511,9 +520,96 @@ elif st.session_state["navigation"] == "Symptom Journal":
 
 
 # ==========================================
-# Page 3: Personal Health Insights
+# Page: Medication & Treatments Tracker
+# ==========================================
+elif st.session_state["navigation"] == "Medication & Treatments":
+    st.markdown("### 💊 Medication & Health Intervention Tracker")
+    st.write(
+        "Track prescribed medications, over-the-counter supplements, and supportive therapies "
+        "(such as heating pads, tens therapy, or diet adjustments) to build a complete picture of your care routine."
+    )
+
+    tab_med_add, tab_med_list = st.tabs(["➕ Add Medication / Intervention", "📋 Current Regimen & History"])
+
+    with tab_med_add:
+        with st.form("add_medication_form", clear_on_submit=True):
+            st.markdown("##### 1. Treatment Details")
+            col_m1, col_m2 = st.columns(2)
+            with col_m1:
+                med_name = st.text_input("Medication / Treatment Name *", placeholder="e.g. Sumatriptan, Naproxen, Myo-Inositol, Heating Pad")
+            with col_m2:
+                med_cat = st.selectbox("Category *", ["Prescription", "OTC / Supplement", "Lifestyle / Physical Therapy"])
+
+            col_m3, col_m4, col_m5 = st.columns(3)
+            with col_m3:
+                med_dosage = st.text_input("Dosage / Strength", placeholder="e.g. 50 mg, 2000 mg, 1 tablet")
+            with col_m4:
+                med_freq = st.selectbox("Frequency", [
+                    "As needed at symptom onset",
+                    "Once daily in morning",
+                    "Once daily at bedtime",
+                    "Twice daily with meals",
+                    "During menstruation days 1-3",
+                    "Other / Weekly"
+                ])
+            with col_m5:
+                med_start = st.date_input("Date Started", value=date.today())
+
+            med_notes = st.text_area("Clinical Notes / Instructions", placeholder="e.g. Prescribed by gynecologist; take with plenty of water.")
+
+            med_submit = st.form_submit_button("💾 Save Medication / Treatment", type="primary")
+
+            if med_submit:
+                if not med_name or not med_name.strip():
+                    st.error("Medication or treatment name is required.")
+                else:
+                    new_med = MedicationEntry(
+                        id=None,
+                        profile_id=active_profile.id,
+                        name=med_name.strip(),
+                        category=med_cat,
+                        dosage=med_dosage.strip() if med_dosage else "",
+                        frequency=med_freq,
+                        started_date=str(med_start),
+                        notes=med_notes.strip() if med_notes else ""
+                    )
+                    add_medication(new_med)
+                    st.success(f"✅ Successfully added '{med_name.strip()}' to your regimen!")
+
+    with tab_med_list:
+
+        profile_meds = get_medications(active_profile.id)
+        st.caption(f"Showing **{len(profile_meds)}** active treatments for **{active_profile.display_name}**.")
+
+        if not profile_meds:
+            st.info("No medications or health interventions have been recorded yet.")
+        else:
+            for med in profile_meds:
+                badge_style = "badge-routine" if med.category == "Prescription" else "badge-selfcare" if med.category == "OTC / Supplement" else "badge-prompt"
+                st.markdown(f"""
+                    <div class="resource-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                            <span class="{badge_style}">{med.category}</span>
+                            <span style="font-size: 0.82rem; color: var(--text-muted);">Started: {med.started_date}</span>
+                        </div>
+                        <div class="content-card-title">{med.name}</div>
+                        <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+                            <b>Dosage & Frequency:</b> {med.dosage or 'Standard dose'} &bull; <i>{med.frequency}</i>
+                        </p>
+                        <p style="font-size: 0.88rem; color: var(--text-muted);">{med.notes or 'No additional instructions.'}</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                if st.button(f"🗑️ Remove {med.name}", key=f"del_med_{med.id}", type="secondary"):
+                    delete_medication(med.id, active_profile.id)
+                    st.warning(f"Removed {med.name}.")
+                    st.rerun()
+
+
+# ==========================================
+# Page: Personal Health Insights
 # ==========================================
 elif st.session_state["navigation"] == "Health Insights":
+
     st.markdown("### 📊 Personal Health Insights & Pattern Discovery")
     st.write(
         "Explainable analytics derived deterministically from your actual logged entries. "
@@ -560,7 +656,12 @@ elif st.session_state["navigation"] == "Health Insights":
 
     # Visualizations
     st.markdown("#### 📈 Interactive Charts & Distributions")
-    tab_chart1, tab_chart2, tab_chart3 = st.tabs(["Symptom Timeline", "Frequency Breakdown", "Contextual Comparison"])
+    tab_chart1, tab_chart2, tab_chart3, tab_chart4 = st.tabs([
+        "Symptom Timeline",
+        "Frequency Breakdown",
+        "Contextual Comparison",
+        "Co-Occurrence Matrix"
+    ])
 
     with tab_chart1:
         timeline_fig = engine.plot_severity_timeline()
@@ -582,6 +683,52 @@ elif st.session_state["navigation"] == "Health Insights":
             st.plotly_chart(context_fig, use_container_width=True)
         else:
             st.info("Log symptoms with Sleep Quality observations to generate contextual comparison charts.")
+
+    with tab_chart4:
+        heatmap_fig = engine.plot_cooccurrence_heatmap()
+        if heatmap_fig:
+            st.plotly_chart(heatmap_fig, use_container_width=True)
+        else:
+            st.info("Log multiple symptoms across shared dates to generate the co-occurrence matrix.")
+
+    st.markdown("---")
+
+    # Interactive Doctor Consultation Prep Kit
+    st.markdown("#### 📋 Interactive Doctor Consultation Prep Kit")
+    st.write(
+        "Prepare for a high-impact, focused 10-15 minute consultation with your physician. "
+        "Select your primary appointment objective to generate tailored talking points grounded in your tracked data."
+    )
+
+    goal_selection = st.radio(
+        "Primary Consultation Objective:",
+        [
+            "Diagnostic Evaluation",
+            "Medication & Treatment Review",
+            "Transitional Care (Perimenopause / Cycle Changes)"
+        ],
+        horizontal=True
+    )
+
+    agenda = engine.generate_doctor_talking_points(goal_selection)
+
+    st.markdown(f"""
+        <div class="content-card" style="border-left: 4px solid var(--primary); background: #FAF9FC;">
+            <div class="content-card-title">🎯 Appointment Agenda: {agenda['goal']}</div>
+            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+                <b>Evidence Baseline:</b> {agenda['data_summary']}
+            </div>
+            <div style="background: #FFFFFF; padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 0.8rem;">
+                <b style="color: var(--primary);">Opening Statement (Your 30-Second Summary):</b>
+                <p style="font-style: italic; color: var(--text-primary); margin-top: 0.3rem;">"{agenda['opening_statement']}"</p>
+            </div>
+            <b>Key Questions to Discuss:</b>
+            <ul style="margin-top: 0.4rem; padding-left: 1.2rem; line-height: 1.6;">
+                {''.join([f"<li><b>{q}</b></li>" for q in agenda['suggested_questions']])}
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+
 
 
 # ==========================================
@@ -702,6 +849,54 @@ elif st.session_state["navigation"] == "Care Navigator":
                 for r in recs:
                     st.markdown(f"- **[{r['title']}]({r['source_url']})** &bull; *{r['source_org']}* ({r['category']})")
 
+    st.markdown("---")
+    st.markdown("#### 🚨 Emergency SOS & Regional Helplines Guide")
+    st.write("Keep these immediate emergency contact numbers accessible if you or someone around you experiences acute distress:")
+
+    sos1, sos2, sos3 = st.columns(3)
+    with sos1:
+        st.markdown("""
+            <div class="content-card" style="border-top: 4px solid var(--rose);">
+                <b style="color: var(--rose-dark); font-size: 1.1rem;">🚑 National Emergency</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">112 / 911 / 999</p>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                    India & EU: <b>112</b> &bull; US: <b>911</b> &bull; UK: <b>999</b><br/>Immediate police, fire, and ambulance dispatch.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with sos2:
+        st.markdown("""
+            <div class="content-card" style="border-top: 4px solid var(--teal);">
+                <b style="color: var(--teal-dark); font-size: 1.1rem;">🌸 Women's Helplines</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">1091 / 181</p>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                    India National Women's Helpline: <b>181</b> &bull; Women Police Helpline: <b>1091</b><br/>24/7 confidential safety & medical support.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with sos3:
+        st.markdown("""
+            <div class="content-card" style="border-top: 4px solid var(--primary);">
+                <b style="color: var(--primary); font-size: 1.1rem;">🧠 Mental Health & Advice</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">988 / 111 / 14416</p>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">
+                    US Crisis: <b>988</b> &bull; NHS UK: <b>111</b> &bull; India Tele-MANAS: <b>14416</b><br/>Free mental health and clinical advice.
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with st.expander("🏥 Emergency Room Preparation Checklist"):
+        st.markdown("""
+            - [ ] **Identification & Details:** Government ID, insurance or health scheme card.
+            - [ ] **Current Medication List:** Bring your bottles or export your HERPath Medication list.
+            - [ ] **Symptom Timeline:** Exact time acute onset began, peak severity, and triggers.
+            - [ ] **HERPath Clinician Report:** Download your PDF from the 'My Health Report' tab.
+            - [ ] **Do Not Drive Alone:** In severe acute conditions (syncope, heavy bleeding, chest pain), call an ambulance or have a trusted adult drive you.
+        """)
+
+
 
 # ==========================================
 # Page 5: Women's Health Library
@@ -794,8 +989,10 @@ elif st.session_state["navigation"] == "My Health Report":
         profile=active_profile,
         entries=report_entries,
         start_date=str(rep_start),
-        end_date=str(rep_end)
+        end_date=str(rep_end),
+        medications=get_medications(active_profile.id)
     )
+
 
     try:
         pdf_bytes = generator.generate_pdf_bytes()
@@ -957,10 +1154,48 @@ elif st.session_state["navigation"] == "Privacy and Settings":
                     except Exception as e:
                         st.error(f"Error creating profile: {str(e)}")
 
+    # Data Portability & Backup
+    st.markdown("##### 💾 Data Portability & Backup (Privacy First)")
+    st.write("Export your complete health logs for spreadsheet analysis or to create an offline backup. You can also restore a previous JSON backup.")
+
+    port1, port2 = st.columns(2)
+    with port1:
+        json_backup_str = export_profile_data_json(active_profile.id)
+        st.download_button(
+            label="📥 Download Complete Backup (JSON)",
+            data=json_backup_str,
+            file_name=f"HERPath_Backup_{active_profile.id}_{date.today()}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+
+    with port2:
+        csv_history_str = export_symptoms_csv(active_profile.id)
+        st.download_button(
+            label="📊 Download Symptoms for Spreadsheets (CSV)",
+            data=csv_history_str,
+            file_name=f"HERPath_Symptoms_{active_profile.id}_{date.today()}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+
+    with st.expander("📤 Restore Data from JSON Backup"):
+        uploaded_backup = st.file_uploader("Upload previously exported HERPath JSON backup file", type=["json"])
+        if uploaded_backup is not None:
+            if st.button("Apply Backup to Active Profile"):
+                try:
+                    content_str = uploaded_backup.read().decode("utf-8")
+                    imported_s, imported_m = import_profile_data_json(active_profile.id, content_str)
+                    st.success(f"✅ Successfully restored {imported_s} symptoms and {imported_m} medications into {active_profile.display_name}!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error restoring backup: {str(e)}")
+
     st.markdown("---")
 
     # Data Actions
     st.markdown("##### 🗄️ Database & Demo Data Controls")
+
     col_d1, col_d2, col_d3 = st.columns(3)
 
     with col_d1:

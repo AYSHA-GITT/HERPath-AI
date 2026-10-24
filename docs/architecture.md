@@ -93,10 +93,22 @@ The SQLite relational database (`data/herpath.db`) uses strict foreign-key const
 - `created_at` (TEXT NOT NULL): Timestamp of entry creation.
 - `updated_at` (TEXT NOT NULL): Timestamp of entry modification.
 
+### `medications` Table
+- `id` (INTEGER PRIMARY KEY AUTOINCREMENT): Unique medication entry ID.
+- `profile_id` (TEXT NOT NULL): Foreign key referencing `profiles(id)` with `ON DELETE CASCADE`.
+- `name` (TEXT NOT NULL): Name of medication or intervention.
+- `category` (TEXT NOT NULL): `Prescription`, `OTC / Supplement`, or `Lifestyle / Physical Therapy`.
+- `dosage` (TEXT): Strength or dose (e.g. `50 mg`).
+- `frequency` (TEXT): Administration frequency.
+- `started_date` (TEXT NOT NULL): Date regimen began.
+- `notes` (TEXT): Clinical instructions or doctor notes.
+- `created_at` (TEXT NOT NULL): Timestamp of entry.
+
 ### Indices
 - `idx_symptoms_profile_date`: Optimizes chronologically sorted queries scoped by profile.
 - `idx_symptoms_category`: Accelerates categorical filtering.
 - `idx_symptoms_name`: Optimizes frequency calculations.
+- `idx_medications_profile`: Optimizes medication lookups scoped by profile.
 
 ---
 

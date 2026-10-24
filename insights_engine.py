@@ -324,3 +324,86 @@ class InsightsEngine:
                 })
 
         return insights
+
+    # ==========================================
+    # Advanced Multi-Symptom Co-Occurrence Heatmap
+    # ==========================================
+
+    def plot_cooccurrence_heatmap(self) -> Optional[go.Figure]:
+        """
+        Calculates and plots a 2D co-occurrence heatmap of symptoms recorded on the same dates.
+        """
+        if self.df.empty or self.df["symptom"].nunique() < 2:
+            return None
+
+        date_sym = self.df.groupby(["onset_date", "symptom"]).size().unstack(fill_value=0)
+        date_sym_binary = (date_sym > 0).astype(int)
+
+        co_matrix = date_sym_binary.T.dot(date_sym_binary)
+        top_syms = self.df["symptom"].value_counts().head(6).index
+        sub_matrix = co_matrix.loc[top_syms, top_syms]
+
+        fig = px.imshow(
+            sub_matrix,
+            labels=dict(x="Co-Occurring Symptom", y="Reference Symptom", color="Shared Days"),
+            x=sub_matrix.columns,
+            y=sub_matrix.index,
+            color_continuous_scale=["#FAF9FC", "#D3CBEC", "#7B61FF"],
+            text_auto=True,
+            title="Symptom Co-Occurrence Matrix (Days Logged Together)"
+        )
+        fig.update_layout(
+            paper_bgcolor="#FFFFFF",
+            plot_bgcolor="#FAF9FC",
+            font=dict(family="sans-serif", color="#1C192B"),
+            margin=dict(l=40, r=40, t=50, b=40)
+        )
+        return fig
+
+    # ==========================================
+    # Doctor Discussion Kit Generator
+    # ==========================================
+
+    def generate_doctor_talking_points(self, primary_goal: str = "Diagnostic Evaluation") -> Dict[str, Any]:
+        """
+        Produces a personalized, prioritized 10-minute clinical visit talking-points agenda.
+        """
+        metrics = self.calculate_summary_metrics()
+        top_sym = metrics["top_symptom"]
+        avg_sev = metrics["avg_severity"]
+        total_logs = metrics["total_entries"]
+
+        goals_map = {
+            "Diagnostic Evaluation": {
+                "opening": f"I have tracked {total_logs} symptom entries over recent weeks. My most frequent symptom is '{top_sym}' with an average severity of {avg_sev}/10. I would like to discuss appropriate diagnostic evaluations (such as hormonal profiling, pelvic ultrasound, or ferritin levels).",
+                "questions": [
+                    f"What specific conditions (such as PCOS, endometriosis, or hormonal migraine) might explain the cluster of '{top_sym}' and related symptoms?",
+                    "Are there baseline laboratory tests (Complete Blood Count, thyroid panel, fasting insulin) you would recommend?",
+                    "What specific changes in my symptoms should prompt urgent evaluation?"
+                ]
+            },
+            "Medication & Treatment Review": {
+                "opening": f"I am experiencing recurring episodes of '{top_sym}' with peak severity reaching {metrics['max_severity']}/10. I would like to review my current medications and discuss evidence-based treatment options.",
+                "questions": [
+                    "Is my current treatment regimen providing optimal relief, or should we consider dosage adjustment?",
+                    "What are the typical side effects or contraindications I should monitor?",
+                    "Are there non-pharmacological or lifestyle adjuncts (e.g. dietary or physical therapy) that have proven efficacy?"
+                ]
+            },
+            "Transitional Care (Perimenopause / Cycle Changes)": {
+                "opening": f"I have recorded notable shifts in cycle regularity and systemic symptoms like '{top_sym}'. I want to understand whether these align with perimenopausal hormonal transitions.",
+                "questions": [
+                    "Do my symptom trajectories and cycle changes suggest perimenopause?",
+                    "What are the risks and benefits of hormone replacement therapy (HRT) or non-hormonal options for my specific profile?",
+                    "How should I track symptoms going forward to assess progression?"
+                ]
+            }
+        }
+        selected = goals_map.get(primary_goal, goals_map["Diagnostic Evaluation"])
+        return {
+            "goal": primary_goal,
+            "opening_statement": selected["opening"],
+            "suggested_questions": selected["questions"],
+            "data_summary": f"{total_logs} entries logged, average severity {avg_sev}/10, primary symptom '{top_sym}'."
+        }
+

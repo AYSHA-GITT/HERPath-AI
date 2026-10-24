@@ -37,11 +37,15 @@ Women's health challenges are frequently compounded by systemic barriers:
 |---|---|:---:|
 | **1. Multi-Profile & Privacy** | Local profile creation, pseudonyms, isolated records, optional menstrual tracking preference, user-controlled data erasure. | ✅ Complete |
 | **2. Smart Symptom Journal** | Full CRUD: Record, edit, delete, view, and filter symptoms. Captures category, severity (1–10), duration, onset date/time, functional impact, and sleep/stress context. | ✅ Complete |
-| **3. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, and explainable pattern statements based strictly on database records. | ✅ Complete |
-| **4. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy: Emergency Evaluation, Prompt Medical Review (24–48h), Routine Consultation, and Supportive Self-Care. | ✅ Complete |
-| **5. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
-| **6. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, trajectories, and physician discussion questions. | ✅ Complete |
-| **7. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **3. Medication & Treatments** | Track prescriptions, OTC supplements, and lifestyle therapies (dosage, frequency, started date) linked with active profiles. | ✅ Complete |
+| **4. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
+| **5. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
+| **6. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
+| **7. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
+| **8. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
+| **9. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
+| **10. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+
 
 ---
 

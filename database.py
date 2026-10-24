@@ -11,7 +11,7 @@ from datetime import datetime
 from contextlib import contextmanager
 
 from config import DATABASE_PATH
-from models import UserProfile, SymptomEntry
+from models import UserProfile, SymptomEntry, MedicationEntry
 from validators import validate_symptom_payload, ValidationError
 
 
@@ -95,7 +95,27 @@ def init_db(db_path: Optional[str] = None) -> None:
             ON symptom_entries(profile_id, symptom);
         """)
 
-        # 4. Seed initial default demo profile if empty
+        # 4. Medications Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS medications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                profile_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                dosage TEXT,
+                frequency TEXT,
+                started_date TEXT NOT NULL,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+            );
+        """)
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_medications_profile 
+            ON medications(profile_id);
+        """)
+
+        # 5. Seed initial default demo profile if empty
         cursor.execute("SELECT COUNT(*) FROM profiles;")
         if cursor.fetchone()[0] == 0:
             default_profiles = [
@@ -344,3 +364,155 @@ def clear_profile_symptoms(profile_id: str, db_path: Optional[str] = None) -> in
     with db_session(db_path) as cursor:
         cursor.execute("DELETE FROM symptom_entries WHERE profile_id = ?;", (profile_id,))
         return cursor.rowcount
+
+
+# ==========================================
+# Medication Operations (Profile-Scoped)
+# ==========================================
+
+def add_medication(med: MedicationEntry, db_path: Optional[str] = None) -> int:
+    """Records a new medication or health intervention for the profile."""
+    now_iso = datetime.now().isoformat()
+    with db_session(db_path) as cursor:
+        cursor.execute("""
+            INSERT INTO medications (
+                profile_id, name, category, dosage, frequency, started_date, notes, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+            med.profile_id,
+            med.name.strip(),
+            med.category,
+            med.dosage or "",
+            med.frequency or "",
+            med.started_date or str(datetime.now().date()),
+            med.notes or "",
+            now_iso
+        ))
+        return cursor.lastrowid
+
+
+def get_medications(profile_id: str, db_path: Optional[str] = None) -> List[MedicationEntry]:
+    """Retrieves all logged medications and interventions for a profile."""
+    with db_session(db_path) as cursor:
+        cursor.execute("""
+            SELECT id, profile_id, name, category, dosage, frequency, started_date, notes, created_at
+            FROM medications
+            WHERE profile_id = ?
+            ORDER BY id DESC;
+        """, (profile_id,))
+        rows = cursor.fetchall()
+        return [MedicationEntry.from_row(r) for r in rows]
+
+
+def delete_medication(med_id: int, profile_id: str, db_path: Optional[str] = None) -> bool:
+    """Deletes a medication entry owned by the profile."""
+    with db_session(db_path) as cursor:
+        cursor.execute("DELETE FROM medications WHERE id = ? AND profile_id = ?;", (med_id, profile_id))
+        return cursor.rowcount > 0
+
+
+# ==========================================
+# Privacy-First Data Portability (Export & Import)
+# ==========================================
+
+def export_profile_data_json(profile_id: str, db_path: Optional[str] = None) -> str:
+    """Exports a user's entire profile, symptoms, and medications as clean JSON."""
+    profile = get_profile(profile_id, db_path)
+    if not profile:
+        raise ValueError(f"Profile {profile_id} not found.")
+
+    symptoms = get_symptoms(profile_id, db_path=db_path)
+    medications = get_medications(profile_id, db_path=db_path)
+
+    export_obj = {
+        "version": "1.0",
+        "exported_at": datetime.now().isoformat(),
+        "profile": profile.to_dict(),
+        "symptoms": [s.to_dict() for s in symptoms],
+        "medications": [m.to_dict() for m in medications]
+    }
+    return json.dumps(export_obj, indent=2)
+
+
+def export_symptoms_csv(profile_id: str, db_path: Optional[str] = None) -> str:
+    """Exports a user's symptom history as CSV formatted string."""
+    symptoms = get_symptoms(profile_id, db_path=db_path)
+    import io
+    import csv
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "ID", "Onset Date", "Onset Time", "Category", "Symptom",
+        "Severity (1-10)", "Duration (hours)", "Status", "Daily Impact",
+        "Sleep Quality", "Stress Level", "Energy Level", "Cycle Phase", "Notes"
+    ])
+
+    for s in symptoms:
+        ctx = s.context or {}
+        writer.writerow([
+            s.id,
+            s.onset_date,
+            s.onset_time or "",
+            s.category,
+            s.symptom,
+            s.severity,
+            s.duration_hours or "",
+            s.status,
+            s.impact or "",
+            ctx.get("sleep", ""),
+            ctx.get("stress", ""),
+            ctx.get("energy", ""),
+            ctx.get("cycle_phase", ""),
+            s.notes or ""
+        ])
+
+    return output.getvalue()
+
+
+def import_profile_data_json(profile_id: str, json_str: str, db_path: Optional[str] = None) -> tuple[int, int]:
+    """
+    Imports symptoms and medications from a valid backup JSON.
+    Returns: (imported_symptoms_count, imported_medications_count)
+    """
+    data = json.loads(json_str)
+    symptoms_list = data.get("symptoms", [])
+    meds_list = data.get("medications", [])
+
+    imported_syms = 0
+    imported_meds = 0
+
+    for s in symptoms_list:
+        entry = SymptomEntry(
+            id=None,
+            profile_id=profile_id,
+            category=s.get("category", "General"),
+            symptom=s.get("symptom", "Symptom"),
+            onset_date=s.get("onset_date", str(datetime.now().date())),
+            severity=s.get("severity", 5),
+            duration_hours=s.get("duration_hours"),
+            status=s.get("status", "Ongoing"),
+            onset_time=s.get("onset_time"),
+            impact=s.get("impact", "None"),
+            notes=s.get("notes", ""),
+            context=s.get("context", {})
+        )
+        add_symptom(entry, db_path)
+        imported_syms += 1
+
+    for m in meds_list:
+        med_entry = MedicationEntry(
+            id=None,
+            profile_id=profile_id,
+            name=m.get("name", "Medication"),
+            category=m.get("category", "Prescription"),
+            dosage=m.get("dosage", ""),
+            frequency=m.get("frequency", ""),
+            started_date=m.get("started_date", str(datetime.now().date())),
+            notes=m.get("notes", "")
+        )
+        add_medication(med_entry, db_path)
+        imported_meds += 1
+
+    return imported_syms, imported_meds
+
