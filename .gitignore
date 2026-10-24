@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local Database & Sensitive Data (Privacy First)
+*.db
+*.sqlite
+*.sqlite3
+herpath_user_*.db
+herpath_data.db
+
+# Generated reports & artifacts
+reports/*.pdf
+*.pdf
+
+# Environment variables & secrets
+.env
+.env.local
+.streamlit/secrets.toml
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Testing & IDE caches
+.pytest_cache/
+.coverage
+htmlcov/
+.vscode/
+.idea/
+.DS_Store

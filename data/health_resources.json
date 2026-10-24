@@ -1,0 +1,162 @@
+[
+  {
+    "id": "res-pcos-01",
+    "title": "Understanding Polycystic Ovary Syndrome (PCOS)",
+    "category": "PCOS Education",
+    "summary": "PCOS is a common endocrine and metabolic condition affecting hormonal balance, ovulation, and metabolic regulation in women of reproductive age.",
+    "key_points": [
+      "Common signs include irregular or absent periods, excess androgen symptoms (such as facial hair or acne), and polycystic ovaries on ultrasound.",
+      "Insulin resistance is a frequent underlying metabolic factor, independent of body weight.",
+      "Management focuses on symptom control, hormonal balance, lifestyle modifications, and proactive cardiovascular/metabolic monitoring.",
+      "A clinician consultation with blood hormone profiling and pelvic ultrasound is essential for accurate evaluation."
+    ],
+    "source_org": "World Health Organization (WHO)",
+    "source_title": "Polycystic Ovary Syndrome Fact Sheet",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/polycystic-ovary-syndrome",
+    "last_reviewed": "2024-03-15"
+  },
+  {
+    "id": "res-endo-01",
+    "title": "Endometriosis: Symptoms, Progression, and Clinical Care",
+    "category": "Endometriosis Education",
+    "summary": "Endometriosis occurs when tissue similar to the lining of the uterus grows outside the uterus, causing localized inflammation, chronic pain, and scar tissue.",
+    "key_points": [
+      "Key symptoms include severe dysmenorrhea (painful periods), chronic pelvic pain, pain during intercourse, and bowel or urinary discomfort.",
+      "Severe menstrual pain that interferes with school, work, or basic functioning is not normal and warrants clinical investigation.",
+      "Average diagnosis historically experienced delays of 7–10 years; keeping structured symptom diaries accelerates clinician consultations.",
+      "Treatment strategies range from hormonal therapies and pain management to laparoscopic surgical excision."
+    ],
+    "source_org": "World Health Organization (WHO)",
+    "source_title": "Endometriosis Fact Sheet",
+    "source_url": "https://www.who.int/news-room/fact-sheets/detail/endometriosis",
+    "last_reviewed": "2024-04-10"
+  },
+  {
+    "id": "res-anemia-01",
+    "title": "Iron Deficiency Anemia in Women: Recognition and Management",
+    "category": "Anemia & Iron Deficiency",
+    "summary": "Iron deficiency anemia occurs when the body lacks sufficient iron to produce hemoglobin, common in women due to menstrual blood loss or nutritional insufficiency.",
+    "key_points": [
+      "Signs include persistent fatigue, pale skin, cold extremities, shortness of breath on exertion, lightheadedness, and brittle nails.",
+      "Heavy menstrual bleeding (menorrhagia) is a leading cause among women of reproductive age.",
+      "A simple Complete Blood Count (CBC) and serum ferritin test can confirm diagnosis.",
+      "Never self-prescribe high-dose iron without a lab test; iron supplementation should be guided by a doctor."
+    ],
+    "source_org": "National Health Service (NHS)",
+    "source_title": "Iron Deficiency Anaemia Overview",
+    "source_url": "https://www.nhs.uk/conditions/iron-deficiency-anaemia/",
+    "last_reviewed": "2024-01-20"
+  },
+  {
+    "id": "res-menopause-01",
+    "title": "Perimenopause and Menopause: Navigating Hormonal Transitions",
+    "category": "Menopause",
+    "summary": "Perimenopause is the natural transitional phase leading up to menopause, characterized by fluctuating estrogen and progesterone levels.",
+    "key_points": [
+      "Symptoms can begin years before periods stop, including hot flashes, night sweats, sleep disturbances, mood swings, and cycle irregularity.",
+      "Brain fog, fatigue, and vaginal dryness are commonly reported due to hormonal shifts.",
+      "Hormone replacement therapy (HRT) and non-hormonal lifestyle options can significantly improve quality of life when clinically indicated.",
+      "Post-menopausal bleeding (any bleeding >12 months after your last period) always requires prompt medical evaluation."
+    ],
+    "source_org": "National Institute on Aging (NIH)",
+    "source_title": "What Is Menopause? Symptoms and Care",
+    "source_url": "https://www.nia.nih.gov/health/menopause/what-menopause",
+    "last_reviewed": "2024-02-18"
+  },
+  {
+    "id": "res-breast-01",
+    "title": "Breast Health Awareness, Self-Awareness, and Warning Signs",
+    "category": "Breast Health",
+    "summary": "Being familiar with the normal texture and appearance of your breast tissue helps identify changes early and promptly.",
+    "key_points": [
+      "Normal breast tissue can vary with menstrual cycles, often becoming more tender or nodular prior to menstruation.",
+      "Warning signs requiring clinical assessment: a new distinct lump, dimpling or puckering of breast skin, nipple inversion, or bloody discharge.",
+      "Most breast lumps are benign (such as fibroadenomas or fluid cysts), but every new lump must be evaluated by a healthcare professional.",
+      "Routine screening mammograms according to local guidelines (typically starting between 40–50 or earlier if family history exists) save lives."
+    ],
+    "source_org": "Centers for Disease Control and Prevention (CDC)",
+    "source_title": "What Are the Symptoms of Breast Cancer?",
+    "source_url": "https://www.cdc.gov/cancer/breast/basic_info/symptoms.htm",
+    "last_reviewed": "2024-05-01"
+  },
+  {
+    "id": "res-urinary-01",
+    "title": "Urinary Tract Health & Pelvic Floor Function",
+    "category": "Urinary Health",
+    "summary": "Urinary tract infections (UTIs) and pelvic floor dysfunctions disproportionately affect women due to anatomical and hormonal factors.",
+    "key_points": [
+      "UTI symptoms include burning sensation during urination, persistent urgency, cloudy or strong-smelling urine, and pelvic discomfort.",
+      "Fever, chills, nausea, or flank/back pain suggest a potential upper urinary tract/kidney infection requiring urgent medical care.",
+      "Pelvic floor physical therapy is highly effective for addressing urgency, incontinence, and pelvic pain.",
+      "Hydration and post-coital urination are simple, evidence-based preventive habits."
+    ],
+    "source_org": "Mayo Clinic",
+    "source_title": "Urinary Tract Infection (UTI) Guide",
+    "source_url": "https://www.mayoclinic.org/diseases-conditions/urinary-tract-infection/symptoms-causes/syc-20353447",
+    "last_reviewed": "2024-03-10"
+  },
+  {
+    "id": "res-menstrual-01",
+    "title": "The Menstrual Cycle: Normal Physiology and When to Seek Care",
+    "category": "Menstrual Health",
+    "summary": "A typical menstrual cycle lasts 21 to 35 days, with menstruation lasting between 2 to 7 days.",
+    "key_points": [
+      "Cycle variability can be influenced by acute stress, travel, illness, intense exercise, and rapid weight changes.",
+      "Red flags: soaking through one or more pads/tampons every hour for consecutive hours, large blood clots, or bleeding lasting >8 days.",
+      "Tracking cycle day 1, flow severity, and associated symptoms provides essential diagnostic context for gynecologists.",
+      "Premenstrual Dysphoric Disorder (PMDD) is a recognized neuroendocrine condition that causes severe mood disruption during the luteal phase."
+    ],
+    "source_org": "ACOG (American College of Obstetricians and Gynecologists)",
+    "source_title": "Abnormal Uterine Bleeding FAQs",
+    "source_url": "https://www.acog.org/womens-health/faqs/abnormal-uterine-bleeding",
+    "last_reviewed": "2023-11-12"
+  },
+  {
+    "id": "res-migraine-01",
+    "title": "Hormonal Migraines and Neurological Health in Women",
+    "category": "Neurological & Head",
+    "summary": "Women experience migraines at three times the rate of men, often linked to rapid drops in estrogen levels prior to menstruation.",
+    "key_points": [
+      "Menstrual migraines typically occur between two days before menstrual flow and the third day of flow.",
+      "Symptoms often include throbbing unilateral headache, nausea, extreme photophobia, and sensory aura.",
+      "A headache described as 'the worst of your life' (thunderclap), or accompanied by high fever, neck stiffness, or neurological deficits requires emergency care.",
+      "Preventive strategies and targeted triptans can be prescribed based on accurate tracking of headache timing relative to cycle phases."
+    ],
+    "source_org": "Johns Hopkins Medicine",
+    "source_title": "How Hormones Affect Migraines in Women",
+    "source_url": "https://www.hopkinsmedicine.org/health/conditions-and-diseases/headache/how-hormones-affect-headaches-in-women",
+    "last_reviewed": "2024-02-05"
+  },
+  {
+    "id": "res-sleep-01",
+    "title": "Sleep Architecture, Circadian Rhythms, and Female Hormones",
+    "category": "General Wellbeing & Sleep",
+    "summary": "Progesterone and estrogen significantly influence sleep architecture, body temperature regulation, and REM sleep phases.",
+    "key_points": [
+      "The premenstrual and perimenopausal periods are vulnerable windows for fragmented sleep and elevated body temperature.",
+      "Chronic poor sleep elevates systemic cortisol, exacerbating pain sensitivity and insulin resistance.",
+      "Sleep hygiene practices: consistent sleep-wake timing, cool bedroom temperature (18-20°C / 65-68°F), and avoiding blue-light screens before bed.",
+      "Persistent insomnia lasting >3 months merits evaluation for sleep apnea or restless legs syndrome."
+    ],
+    "source_org": "Sleep Foundation",
+    "source_title": "Women and Sleep: How Hormones Impact Rest",
+    "source_url": "https://www.sleepfoundation.org/women-sleep",
+    "last_reviewed": "2024-01-15"
+  },
+  {
+    "id": "res-stress-01",
+    "title": "Stress, Cortisol, and the Hypothalamic-Pituitary-Ovarian (HPO) Axis",
+    "category": "Stress & Mental Wellbeing",
+    "summary": "Psychological stress triggers adrenal cortisol release, which can suppress gonadotropin-releasing hormone (GnRH) and disrupt ovulation.",
+    "key_points": [
+      "Chronic elevated stress can lead to functional hypothalamic amenorrhea (missed periods) or shortened luteal phases.",
+      "Mind-body modalities such as diaphragmatic breathing, cognitive behavioral therapy (CBT), and low-impact movement reduce sympathetic nervous system tone.",
+      "Acknowledging emotional strain without self-judgment is an important pillar of holistic healthcare.",
+      "If anxiety or depressive symptoms persist for more than two weeks, seek support from a licensed mental health professional."
+    ],
+    "source_org": "Cleveland Clinic",
+    "source_title": "How Stress Affects the Female Reproductive System",
+    "source_url": "https://my.clevelandclinic.org/health/articles/12115-stress-and-your-health",
+    "last_reviewed": "2024-04-02"
+  }
+]

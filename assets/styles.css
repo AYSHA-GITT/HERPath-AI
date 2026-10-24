@@ -1,0 +1,292 @@
+/* ==========================================================================
+   HERPath AI - Modern Women's Healthcare Intelligence Platform Stylesheet
+   Designed with soft lavender, warm white, muted teal, and subtle rose.
+   ========================================================================== */
+
+/* Root Variables */
+:root {
+    --primary: #7B61FF;
+    --primary-light: #EFEBFC;
+    --primary-hover: #674EDB;
+    --lavender-bg: #F4F1FA;
+    --warm-white: #FAF9FC;
+    --teal: #2A9D8F;
+    --teal-light: #E7F6F4;
+    --teal-dark: #1E6B62;
+    --rose: #E76F7C;
+    --rose-light: #FDF0F2;
+    --rose-dark: #B94957;
+    --amber: #E9A13B;
+    --amber-light: #FDF6E9;
+    --text-primary: #1C192B;
+    --text-secondary: #5C5770;
+    --text-muted: #8E8A9E;
+    --border-color: #E6E1F0;
+    --border-subtle: #F0EDF7;
+    --card-bg: #FFFFFF;
+    --shadow-sm: 0 2px 8px rgba(123, 97, 255, 0.05);
+    --shadow-md: 0 4px 16px rgba(123, 97, 255, 0.08);
+    --shadow-lg: 0 8px 24px rgba(123, 97, 255, 0.12);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+}
+
+/* Global Font & Spacing Adjustments */
+html, body, [class*="css"] {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-primary);
+}
+
+/* Header & Banner */
+.herpath-header {
+    background: linear-gradient(135deg, #7B61FF 0%, #9D84FF 50%, #2A9D8F 100%);
+    padding: 2.2rem 2.4rem;
+    border-radius: var(--radius-lg);
+    color: #FFFFFF;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.herpath-header::after {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 220px;
+    height: 220px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.herpath-header h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: #FFFFFF !important;
+}
+
+.herpath-header p {
+    font-size: 1.05rem;
+    margin: 0.6rem 0 0 0;
+    opacity: 0.95;
+    font-weight: 400;
+    color: #FFFFFF !important;
+}
+
+/* Metric / Stat Card */
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.3rem 1.4rem;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: #D3CBEC;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.stat-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.stat-subtext {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+}
+
+/* Feature & Section Cards */
+.content-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.6rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.content-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Clinical Triage Badges */
+.badge-emergency {
+    background: var(--rose-light);
+    color: var(--rose-dark);
+    border: 1px solid rgba(231, 111, 124, 0.4);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: inline-block;
+}
+
+.badge-prompt {
+    background: var(--amber-light);
+    color: #9A6014;
+    border: 1px solid rgba(233, 161, 59, 0.4);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge-routine {
+    background: var(--teal-light);
+    color: var(--teal-dark);
+    border: 1px solid rgba(42, 157, 143, 0.4);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge-selfcare {
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(123, 97, 255, 0.3);
+    padding: 0.35rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+}
+
+/* Disclaimer Banner */
+.disclaimer-box {
+    background: #F8F7FC;
+    border-left: 4px solid var(--primary);
+    padding: 0.9rem 1.2rem;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 1.2rem 0;
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.disclaimer-urgent {
+    background: #FFF5F6;
+    border-left: 4px solid var(--rose);
+    padding: 1.1rem 1.3rem;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin: 1.2rem 0;
+    font-size: 0.92rem;
+    color: #7D232F;
+    line-height: 1.5;
+}
+
+/* Resource Card in Library */
+.resource-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1.4rem;
+    margin-bottom: 1.2rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.resource-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.resource-source {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--teal);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+}
+
+.resource-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.resource-desc {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.8rem;
+}
+
+/* Severity Pill Indicator */
+.severity-pill-mild {
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+}
+
+.severity-pill-moderate {
+    background: #FFF8E1;
+    color: #F57F17;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+}
+
+.severity-pill-severe {
+    background: #FFEBEE;
+    color: #C62828;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+}
+
+/* Privacy Notice Pill */
+.privacy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #EFFCF9;
+    color: #1A7F73;
+    border: 1px solid #B8EBE3;
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
