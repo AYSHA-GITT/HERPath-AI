@@ -1,13 +1,13 @@
 # HERPath AI — Verification & Testing Documentation
 ## recHERsion 2026 | PS1: Women's Healthcare
 
-Automated testing is a foundational pillar of HERPath AI, ensuring medical safety rules, statistical algorithms, input validators, and database transactions operate reliably without regressions.
+Automated testing is a foundational pillar of HERPath AI, ensuring medical safety rules, statistical algorithms, input validators, UI state flows, and database transactions operate reliably without regressions.
 
 ---
 
 ## 1. Test Suite Summary
 
-All 28 automated test cases execute using `pytest` and run directly against isolated temporary databases and mock structures.
+All **40 automated test cases** execute using `pytest` and test both backend services and frontend Streamlit rendering flows.
 
 ```bash
 python -m pytest -v tests/
@@ -16,93 +16,76 @@ python -m pytest -v tests/
 ### Execution Results:
 ```text
 ============================= test session starts =============================
-platform win32 -- Python 3.13.14, pytest-9.1.1
-collected 28 items
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+collected 40 items
 
-tests/test_database.py::test_profile_creation_and_retrieval PASSED       [  3%]
-tests/test_database.py::test_symptom_add_and_persistence PASSED          [  7%]
-tests/test_database.py::test_profile_scoped_isolation PASSED             [ 10%]
-tests/test_database.py::test_update_symptom PASSED                       [ 14%]
-tests/test_database.py::test_delete_symptom PASSED                       [ 17%]
-tests/test_database.py::test_cascade_delete_profile PASSED               [ 21%]
-tests/test_database.py::test_foreign_key_enforcement PASSED              [ 25%]
-tests/test_insights.py::test_empty_entries_metrics PASSED                [ 28%]
-tests/test_insights.py::test_single_entry_metrics PASSED                 [ 32%]
-tests/test_insights.py::test_multiple_entries_and_missing_duration PASSED [ 35%]
-tests/test_insights.py::test_explainable_insights_non_diagnostic PASSED  [ 39%]
-tests/test_reports.py::test_empty_report_generation PASSED               [ 42%]
-tests/test_reports.py::test_single_entry_report_generation PASSED        [ 46%]
-tests/test_reports.py::test_multiple_entries_report_generation PASSED    [ 50%]
-tests/test_safety.py::test_routine_mild_scenario PASSED                  [ 53%]
-tests/test_safety.py::test_routine_moderate_consultation_scenario PASSED [ 57%]
-tests/test_safety.py::test_prompt_evaluation_scenario PASSED             [ 60%]
-tests/test_safety.py::test_emergency_evaluation_scenario PASSED          [ 64%]
-tests/test_safety.py::test_emergency_flag_selected PASSED                [ 67%]
-tests/test_safety.py::test_no_diagnostic_claims PASSED                   [ 71%]
-tests/test_validators.py::test_severity_valid_range PASSED               [ 75%]
-tests/test_validators.py::test_severity_out_of_bounds PASSED             [ 78%]
-tests/test_validators.py::test_missing_symptom_name PASSED               [ 82%]
-tests/test_validators.py::test_valid_symptom_name PASSED                 [ 85%]
-tests/test_validators.py::test_onset_date_validation PASSED              [ 89%]
-tests/test_validators.py::test_duration_validation PASSED                [ 92%]
-tests/test_validators.py::test_full_payload_validation PASSED            [ 96%]
+tests/test_backend_e2e.py::test_backend_complete_profile_lifecycle PASSED [  2%]
+tests/test_backend_e2e.py::test_backend_multi_profile_data_isolation PASSED [  5%]
+tests/test_backend_e2e.py::test_backend_analytics_engine_math_and_charts PASSED [  7%]
+tests/test_backend_e2e.py::test_backend_safety_navigator_rule_hierarchy PASSED [ 10%]
+tests/test_backend_e2e.py::test_backend_report_generator_pdf_validation PASSED [ 12%]
+tests/test_database.py::test_profile_creation_and_retrieval PASSED       [ 15%]
+tests/test_database.py::test_symptom_add_and_persistence PASSED          [ 17%]
+tests/test_database.py::test_profile_scoped_isolation PASSED             [ 20%]
+tests/test_database.py::test_update_symptom PASSED                       [ 22%]
+tests/test_database.py::test_delete_symptom PASSED                       [ 25%]
+tests/test_database.py::test_cascade_delete_profile PASSED               [ 27%]
+tests/test_database.py::test_foreign_key_enforcement PASSED              [ 30%]
+tests/test_frontend_e2e.py::test_frontend_home_dashboard PASSED          [ 32%]
+tests/test_frontend_e2e.py::test_frontend_symptom_journal_navigation PASSED [ 35%]
+tests/test_frontend_e2e.py::test_frontend_health_insights_view PASSED    [ 37%]
+tests/test_frontend_e2e.py::test_frontend_care_navigator_triage PASSED   [ 40%]
+tests/test_frontend_e2e.py::test_frontend_health_library_search PASSED   [ 42%]
+tests/test_frontend_e2e.py::test_frontend_report_preview_and_download PASSED [ 45%]
+tests/test_frontend_e2e.py::test_frontend_privacy_settings_and_profile_switch PASSED [ 47%]
+tests/test_insights.py::test_empty_entries_metrics PASSED                [ 50%]
+tests/test_insights.py::test_single_entry_metrics PASSED                 [ 52%]
+tests/test_insights.py::test_multiple_entries_and_missing_duration PASSED [ 55%]
+tests/test_insights.py::test_explainable_insights_non_diagnostic PASSED  [ 57%]
+tests/test_reports.py::test_empty_report_generation PASSED               [ 60%]
+tests/test_reports.py::test_single_entry_report_generation PASSED        [ 62%]
+tests/test_reports.py::test_multiple_entries_report_generation PASSED    [ 65%]
+tests/test_safety.py::test_routine_mild_scenario PASSED                  [ 67%]
+tests/test_safety.py::test_routine_moderate_consultation_scenario PASSED [ 70%]
+tests/test_safety.py::test_prompt_evaluation_scenario PASSED             [ 72%]
+tests/test_safety.py::test_emergency_evaluation_scenario PASSED          [ 75%]
+tests/test_safety.py::test_emergency_flag_selected PASSED                [ 77%]
+tests/test_safety.py::test_no_diagnostic_claims PASSED                   [ 80%]
+tests/test_validators.py::test_severity_valid_range PASSED               [ 82%]
+tests/test_validators.py::test_severity_out_of_bounds PASSED             [ 85%]
+tests/test_validators.py::test_missing_symptom_name PASSED               [ 87%]
+tests/test_validators.py::test_valid_symptom_name PASSED                 [ 90%]
+tests/test_validators.py::test_onset_date_validation PASSED              [ 92%]
+tests/test_duration_validation PASSED                                     [ 95%]
+tests/test_validators.py::test_full_payload_validation PASSED            [ 97%]
 tests/test_validators.py::test_display_name_validation PASSED            [100%]
 
-============================= 28 passed in 1.22s ==============================
+============================= 40 passed in 5.36s ==============================
 ```
 
 ---
 
 ## 2. Test Coverage by Module
 
-### A. Database Persistence & Isolation (`tests/test_database.py`)
-- **Profile Creation & Retrieval:** Verifies profile creation, default preferences, and lookup.
-- **Symptom CRUD & Persistence:** Tests entry insertion, retrieving row by ID, and verify saved fields.
-- **Profile-Scoped Data Isolation:** Confirms that records for User A are never exposed to User B.
-- **Record Updates:** Tests updating severity, notes, and status while keeping profile scoping.
-- **Record Deletion:** Tests safe removal of individual entries.
-- **Cascade Deletion:** Validates that deleting a profile cascades and erases all corresponding symptom logs.
-- **Foreign Key Constraints:** Validates SQLite rejects orphaned records if an invalid profile ID is provided.
+### A. Frontend End-to-End (`tests/test_frontend_e2e.py`)
+- **Home Dashboard:** Header banner, quick action buttons, KPI cards, timeline figure.
+- **Symptom Journal:** Form input fields, slider boundaries, category options, submit buttons.
+- **Health Insights:** Metric cards calculation, explainable observation statements.
+- **Care Navigator Triage:** Form submission, emergency warning evaluation, red banner rendering.
+- **Women's Health Library:** Live search query filtering and verified card display.
+- **My Health Report:** Period selector, report preview metrics, PDF download button.
+- **Privacy & Settings:** Local privacy documentation, profile customization controls.
 
-### B. Input Validation (`tests/test_validators.py`)
-- **Severity Boundaries:** Validates integer values 1 to 10 pass, while <=0 or >10 raise `ValidationError`.
-- **Symptom Sanitization:** Verifies empty strings, whitespaces, and <2 char names are rejected.
-- **Date Format & Future Checks:** Rejects invalid date formats and dates set far in the future.
-- **Duration Checks:** Ensures positive numbers within 0-720 hours pass, while negative values or text fail.
-- **Payload Sanitization:** Confirms default values are assigned to optional parameters.
+### B. Backend End-to-End (`tests/test_backend_e2e.py`)
+- **Profile Lifecycle:** Creation, listing, preference updates, cascade deletion.
+- **Multi-Profile Isolation:** Zero cross-profile data leakage between independent users.
+- **Analytics Engine:** Mathematical precision, duration null handling, Plotly figures.
+- **Safety Navigator Triage:** Full 4-tier triage priority hierarchy evaluation.
+- **PDF Report Validation:** ReportLab document compilation and `%PDF` byte validation.
 
-### C. Insights & Analytics Engine (`tests/test_insights.py`)
-- **Empty State Behavior:** Validates zero division is prevented when 0 entries exist.
-- **Single-Entry Baseline:** Verifies metrics calculate accurately for single entries and flags insufficient data.
-- **Null Value Handling:** Confirms missing durations are excluded from averages rather than coerced to 0.
-- **Non-Diagnostic Constraints:** Validates that generated insight statements strictly avoid claiming disease diagnoses (e.g. no automated claims of PCOS or endometriosis).
-
-### D. Safety Navigator & Triage Rules (`tests/test_safety.py`)
-- **Supportive Self-Care (Mild):** Verifies severity 1-3 with no flags triggers self-care guidance.
-- **Routine Clinical Consultation (Moderate):** Verifies severity 4-7 triggers routine provider consultation.
-- **Prompt Medical Evaluation (24-48 Hours):** Confirms breast lumps or severe dysuria trigger prompt evaluation.
-- **Emergency Priority Overrides:** Verifies "worst headache of life" or severe pelvic pain with syncope immediately escalate to emergency evaluation.
-- **Explicit Red-Flag Checklist:** Validates user selection of emergency checklist triggers emergency priority.
-- **Clinical Non-Diagnostic Boundaries:** Confirms outputs do not fabricate clinical diagnoses or prescribe drugs.
-
-### E. Report Generation (`tests/test_reports.py`)
-- **Empty Period Report:** Verifies ReportLab compiles a valid `%PDF` document even if no records exist in the timeframe.
-- **Single-Entry Report:** Verifies clean PDF formatting and styling for single records.
-- **Multi-Entry History:** Validates tables, word-wrapping for long notes, summary statistics, and physician discussion questions.
-
----
-
-## 3. How to Run Tests
-
-Ensure dependencies are installed and run from the project root:
-
-```bash
-# Run full suite with verbose reporting
-python -m pytest -v tests/
-
-# Run a specific test module
-python -m pytest -v tests/test_safety.py
-
-# Run with short test output
-python -m pytest -q
-```
+### C. Unit Test Modules
+- **`tests/test_database.py`:** Profile CRUD, symptom CRUD, cascade deletion, foreign key enforcement.
+- **`tests/test_validators.py`:** Input sanitization, severity 1-10 range, duration 0-720h, date validation.
+- **`tests/test_insights.py`:** Metric calculations, null handling, non-diagnostic constraints.
+- **`tests/test_safety.py`:** Rule priorities, emergency overrides, non-diagnostic boundaries.
+- **`tests/test_reports.py`:** Empty, single, and multi-entry ReportLab PDF generation.

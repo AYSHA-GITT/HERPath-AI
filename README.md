@@ -159,7 +159,9 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (28/28 Passed):
+### Verified Test Coverage (40/40 Passed):
+- **Frontend End-to-End (`test_frontend_e2e.py`):** Verified rendering, navigation, form inputs, triage emergency cards, library search, and report download buttons across all 7 views using Streamlit AppTest.
+- **Backend End-to-End (`test_backend_e2e.py`):** Verified full profile lifecycle, zero cross-profile data leakage, analytics mathematical precision, triage rule hierarchy, and ReportLab PDF compilation.
 - **Database (`test_database.py`):** Profile isolation, symptom CRUD, update persistence, cascade profile deletion, foreign-key integrity.
 - **Validators (`test_validators.py`):** Severity bounds (1–10), duration limits (<=720h), future date handling, sanitization.
 - **Insights (`test_insights.py`):** Zero division protection, null duration handling (not treating missing as 0), non-diagnostic constraint verification.
