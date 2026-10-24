@@ -1,596 +1,544 @@
 /* ==========================================================================
-   HERPath AI - Mobile-First Women's Health Companion Stylesheet
-   Warm, calming, elegant, responsive wellness companion identity.
-   Palette: #FFF8FA (bg), #F4B8C8 (blush), #B85C78 (deep rose), #EEE8F7 (lavender),
-            #FFFFFF (card), #342A31 (main text), #746771 (secondary text).
+   HERPath AI - Simple, Premium, Mobile-First Wellness Companion Stylesheet
+   Palette:
+     Main background: #FFFAF9
+     Surface: #FFFFFF
+     Primary dusty rose: #B95F7B
+     Soft blush: #F9E4EA
+     Muted lavender: #EEE9F5
+     Primary text: #33262D
+     Secondary text: #7A6B73
+     Borders: #F0E2E7
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap');
 
-/* CSS Variables */
 :root {
-    --bg-canvas: #FFF8FA;
-    --primary-blush: #F4B8C8;
-    --deep-rose: #B85C78;
-    --deep-rose-hover: #9E4660;
-    --soft-lavender: #EEE8F7;
-    --card-bg: #FFFFFF;
-    --text-main: #342A31;
-    --text-secondary: #746771;
-    --text-muted: #958792;
-    --border-subtle: rgba(244, 184, 200, 0.45);
-    --border-card: rgba(238, 232, 247, 0.9);
-    --success-green: #1B6B4A;
-    --success-bg: #E8F5E9;
-    --urgent-red: #C62828;
-    --urgent-bg: #FFEBEE;
+    --bg-canvas: #FFFAF9;
+    --surface: #FFFFFF;
+    --primary-rose: #B95F7B;
+    --primary-rose-hover: #A04A65;
+    --soft-blush: #F9E4EA;
+    --muted-lavender: #EEE9F5;
+    --text-primary: #33262D;
+    --text-secondary: #7A6B73;
+    --text-muted: #9C8F96;
+    --border-subtle: #F0E2E7;
+    --border-card: #F0E2E7;
+    --success-green: #248255;
+    --success-bg: #E8F5EE;
+    --urgent-red: #C52233;
+    --urgent-bg: #FDE8EA;
     --warning-amber: #B45309;
     --warning-bg: #FEF3C7;
-    --shadow-sm: 0 2px 8px rgba(184, 92, 120, 0.05);
-    --shadow-md: 0 4px 16px rgba(184, 92, 120, 0.08);
-    --shadow-lg: 0 10px 28px rgba(184, 92, 120, 0.12);
-    --radius-sm: 12px;
-    --radius-md: 18px;
-    --radius-lg: 24px;
+    --shadow-soft: 0 1px 6px rgba(185, 95, 123, 0.05);
+    --shadow-elevated: 0 4px 14px rgba(185, 95, 123, 0.08);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
 }
 
 /* ==========================================================================
-   Base & Layout (Mobile-First Canvas)
+   Global Mobile-First Canvas
    ========================================================================== */
 html, body, .stApp, [data-testid="stAppViewContainer"] {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     background-color: var(--bg-canvas) !important;
-    color: var(--text-main) !important;
+    color: var(--text-primary) !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Centered Mobile-Friendly Container */
+/* Centered Mobile Wellness Container */
 .block-container {
-    max-width: 760px !important;
+    max-width: 580px !important;
     margin: 0 auto !important;
-    padding: 1rem 1rem 110px 1rem !important; /* Generous bottom padding for bottom nav */
+    padding: 0.75rem 1rem 110px 1rem !important; /* Bottom padding keeps content clear of bottom nav */
 }
 
 [data-testid="stHeader"] {
     background: transparent !important;
+    height: 2.5rem !important;
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-family: 'Outfit', sans-serif !important;
-    color: var(--text-main) !important;
-    font-weight: 700;
+    color: var(--text-primary) !important;
+    font-weight: 600;
     letter-spacing: -0.015em;
     margin-top: 0.2rem;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
-h1 { font-size: 1.85rem !important; }
-h2 { font-size: 1.5rem !important; }
-h3 { font-size: 1.25rem !important; }
-h4 { font-size: 1.1rem !important; }
-h5 { font-size: 0.98rem !important; }
+h1 { font-size: 1.65rem !important; }
+h2 { font-size: 1.4rem !important; }
+h3 { font-size: 1.2rem !important; }
+h4 { font-size: 1.05rem !important; }
+h5 { font-size: 0.95rem !important; }
 
 p, span, label, div {
-    color: var(--text-main);
-    line-height: 1.55;
-}
-
-.text-secondary {
-    color: var(--text-secondary) !important;
-    font-size: 0.92rem;
-}
-
-/* Custom Rose Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-::-webkit-scrollbar-track {
-    background: #FFF0F4;
-}
-::-webkit-scrollbar-thumb {
-    background: #F4B8C8;
-    border-radius: 8px;
-}
-
-/* ==========================================================================
-   Header: Gentle, Friendly Companion Top Banner
-   ========================================================================== */
-.companion-header {
-    background: linear-gradient(135deg, #FFF0F4 0%, #FFFFFF 50%, #F9F2FD 100%);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-md);
-    padding: 1.3rem 1.4rem;
-    margin-bottom: 1.3rem;
-    box-shadow: var(--shadow-sm);
-    position: relative;
-}
-
-.companion-header-title {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
-
-.companion-brand {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.55rem;
-    font-weight: 800;
-    color: var(--deep-rose);
-    letter-spacing: -0.02em;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-}
-
-.companion-greeting {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-top: 0.4rem;
-}
-
-.companion-subtext {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
-    margin-top: 0.2rem;
-}
-
-/* Compact Profile Pill Badge */
-.profile-pill {
-    background: #FFFFFF;
-    border: 1px solid var(--border-subtle);
-    padding: 0.35rem 0.85rem;
-    border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--deep-rose);
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    box-shadow: 0 1px 4px rgba(184, 92, 120, 0.06);
-}
-
-.pulsing-dot {
-    width: 8px;
-    height: 8px;
-    background-color: var(--success-green);
-    border-radius: 50%;
-    display: inline-block;
-}
-
-/* ==========================================================================
-   Cards: Clean, Rounded, Soft Shadows, Whitespace
-   ========================================================================== */
-.companion-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-card);
-    border-radius: var(--radius-md);
-    padding: 1.3rem 1.4rem;
-    margin-bottom: 1.1rem;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.companion-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary-blush);
-}
-
-.companion-card-hero {
-    background: linear-gradient(135deg, #FFFFFF 0%, #FFF5F8 100%);
-    border: 1.5px solid var(--primary-blush);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem;
-    margin-bottom: 1.2rem;
-    box-shadow: var(--shadow-md);
-}
-
-/* Action Prompt Card */
-.prompt-card {
-    background: linear-gradient(135deg, #FFF8FA 0%, #FFFFFF 100%);
-    border: 1.5px solid var(--border-subtle);
-    border-radius: var(--radius-lg);
-    padding: 1.5rem 1.4rem;
-    margin-bottom: 1.3rem;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-}
-
-.prompt-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.45rem;
-    font-weight: 800;
-    color: var(--text-main);
-    margin-bottom: 0.4rem;
-}
-
-.prompt-subtitle {
-    font-size: 0.94rem;
-    color: var(--text-secondary);
-    margin-bottom: 1.2rem;
-}
-
-/* Metric Pill Grid (Compact & Clean on Mobile) */
-.metric-pill-card {
-    background: #FFFFFF;
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.9rem 1rem;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.metric-pill-val {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: var(--deep-rose);
-    line-height: 1.1;
-}
-
-.metric-pill-label {
-    font-size: 0.76rem;
-    font-weight: 700;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-top: 0.2rem;
-}
-
-/* Tip Highlight Card */
-.tip-card {
-    background: #FFF9FA;
-    border-left: 4px solid var(--deep-rose);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 1rem 1.2rem;
-    margin-bottom: 1.2rem;
-    box-shadow: var(--shadow-sm);
-}
-
-.tip-source {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--deep-rose);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.2rem;
-}
-
-.tip-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin-bottom: 0.3rem;
-}
-
-.tip-text {
-    font-size: 0.88rem;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     line-height: 1.5;
 }
 
 /* ==========================================================================
-   Buttons & Touch Targets (Large Accessible Mobile Controls >= 48px)
+   Header: Minimal, Clean, Elegant Top Bar
+   ========================================================================== */
+.minimal-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0 0.75rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand-wordmark {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-rose);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.user-pill-btn {
+    background: var(--surface);
+    border: 1px solid var(--border-subtle);
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Greeting Section */
+.greeting-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 0.2rem;
+    margin-bottom: 0.15rem;
+}
+
+.greeting-date {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.85rem;
+}
+
+/* ==========================================================================
+   Cards: Clean White Surfaces, Subtle Borders, Soft Radii
+   ========================================================================== */
+.clean-card {
+    background: var(--surface);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    padding: 1.1rem 1.15rem;
+    margin-bottom: 0.9rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.clean-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.clean-card-subtext {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+/* Primary Hero Action Card */
+.action-hero-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.15rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+}
+
+.action-hero-question {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+.action-hero-hint {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* Recent Item Row */
+.recent-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.recent-item-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0.2rem;
+}
+
+.recent-item-title {
+    font-weight: 600;
+    font-size: 0.94rem;
+    color: var(--text-primary);
+}
+
+.recent-item-date {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Buttons (Accessible, Minimal Touch Targets >= 48px)
    ========================================================================== */
 div.stButton > button {
     min-height: 48px !important;
-    border-radius: var(--radius-btn) !important;
+    border-radius: var(--radius-md) !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    padding: 0.7rem 1.4rem !important;
-    transition: all 0.2s ease !important;
+    font-weight: 600 !important;
+    font-size: 0.94rem !important;
+    padding: 0.65rem 1.2rem !important;
+    transition: all 0.15s ease !important;
     border: 1px solid var(--border-subtle) !important;
-    background: #FFFFFF !important;
-    color: var(--text-main) !important;
-    box-shadow: var(--shadow-sm) !important;
+    background: var(--surface) !important;
+    color: var(--text-primary) !important;
+    box-shadow: var(--shadow-soft) !important;
     cursor: pointer !important;
+    width: 100% !important;
 }
 
 div.stButton > button:hover {
-    border-color: var(--deep-rose) !important;
-    background: #FFF5F8 !important;
-    color: var(--deep-rose) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: var(--shadow-md) !important;
+    border-color: var(--primary-rose) !important;
+    background: #FFF8FA !important;
+    color: var(--primary-rose) !important;
 }
 
 div.stButton > button:active {
-    transform: scale(0.98) !important;
+    transform: scale(0.99) !important;
 }
 
-/* Primary Button (Large & Deep Rose Accent) */
+/* Primary Button (Prominent Dusty Rose) */
 div.stButton > button[kind="primary"] {
-    background: var(--deep-rose) !important;
+    background: var(--primary-rose) !important;
     color: #FFFFFF !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(184, 92, 120, 0.3) !important;
+    font-weight: 700 !important;
+    font-size: 0.98rem !important;
+    box-shadow: 0 3px 12px rgba(185, 95, 123, 0.25) !important;
 }
 
 div.stButton > button[kind="primary"]:hover {
-    background: var(--deep-rose-hover) !important;
-    box-shadow: 0 6px 18px rgba(184, 92, 120, 0.42) !important;
+    background: var(--primary-rose-hover) !important;
+    box-shadow: 0 4px 16px rgba(185, 95, 123, 0.35) !important;
+    color: #FFFFFF !important;
 }
 
 /* Download Button */
 div.stDownloadButton > button {
     min-height: 48px !important;
-    border-radius: var(--radius-btn) !important;
+    border-radius: var(--radius-md) !important;
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-weight: 700 !important;
     font-size: 0.95rem !important;
-    padding: 0.7rem 1.4rem !important;
-    background: var(--deep-rose) !important;
+    padding: 0.65rem 1.2rem !important;
+    background: var(--primary-rose) !important;
     color: #FFFFFF !important;
     border: none !important;
-    box-shadow: 0 4px 14px rgba(184, 92, 120, 0.28) !important;
+    box-shadow: 0 3px 12px rgba(185, 95, 123, 0.22) !important;
+    width: 100% !important;
 }
 
 /* ==========================================================================
-   Mobile Fixed Bottom Navigation Bar (Streamlit st.bottom)
-   ========================================================================== */
-div[data-testid="stBottom"] {
-    background: #FFFFFF !important;
-    border-top: 1px solid rgba(244, 184, 200, 0.6) !important;
-    box-shadow: 0 -4px 22px rgba(184, 92, 120, 0.1) !important;
-    padding: 6px 12px calc(6px + env(safe-area-inset-bottom, 0px)) 12px !important;
-}
-
-div[data-testid="stBottom"] .block-container {
-    max-width: 760px !important;
-    margin: 0 auto !important;
-    padding: 0 !important;
-}
-
-div[data-testid="stBottom"] div.stButton > button {
-    min-height: 44px !important;
-    border-radius: 12px !important;
-    font-size: 0.84rem !important;
-    font-weight: 700 !important;
-    padding: 0.35rem 0.5rem !important;
-    border: none !important;
-    background: transparent !important;
-    color: var(--text-secondary) !important;
-    box-shadow: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-
-div[data-testid="stBottom"] div.stButton > button:hover {
-    background: #FFF2F6 !important;
-    color: var(--deep-rose) !important;
-}
-
-div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
-    background: #FFF0F4 !important;
-    color: var(--deep-rose) !important;
-    border-bottom: 2.5px solid var(--deep-rose) !important;
-}
-
-/* ==========================================================================
-   Form Controls (Accessible, Large Touch Targets, No Auto-Zoom)
+   Form Controls (Single-Column Mobile Optimized)
    ========================================================================== */
 div[data-baseweb="input"], div[data-baseweb="select"] {
-    background-color: #FFFFFF !important;
-    border: 1px solid rgba(244, 184, 200, 0.6) !important;
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border-subtle) !important;
     border-radius: var(--radius-sm) !important;
-    font-size: 16px !important; /* Prevents auto-zoom on iOS mobile */
+    font-size: 16px !important; /* Prevents auto-zoom on iOS */
 }
 
 input, textarea, select {
     font-size: 16px !important;
-    color: var(--text-main) !important;
+    color: var(--text-primary) !important;
 }
 
 div[data-baseweb="input"]:focus-within {
-    border-color: var(--deep-rose) !important;
-    box-shadow: 0 0 0 2px rgba(184, 92, 120, 0.2) !important;
+    border-color: var(--primary-rose) !important;
+    box-shadow: 0 0 0 2px rgba(185, 95, 123, 0.15) !important;
 }
 
-/* Sliders */
-div[data-testid="stSlider"] {
-    padding-top: 0.4rem !important;
-    padding-bottom: 0.8rem !important;
-}
-
-/* Severity Pill Indicators */
+/* Severity Indicator Badges */
 .severity-pill-mild {
     background: var(--success-bg);
     color: var(--success-green);
-    font-weight: 700;
-    padding: 5px 12px;
+    font-weight: 600;
+    padding: 4px 10px;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    border: 1px solid rgba(27, 107, 74, 0.2);
+    font-size: 0.78rem;
     display: inline-block;
 }
 
 .severity-pill-moderate {
     background: var(--warning-bg);
     color: var(--warning-amber);
-    font-weight: 700;
-    padding: 5px 12px;
+    font-weight: 600;
+    padding: 4px 10px;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    border: 1px solid rgba(180, 83, 9, 0.2);
+    font-size: 0.78rem;
     display: inline-block;
 }
 
 .severity-pill-severe {
     background: var(--urgent-bg);
     color: var(--urgent-red);
-    font-weight: 800;
-    padding: 5px 12px;
+    font-weight: 700;
+    padding: 4px 10px;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    border: 1px solid rgba(198, 40, 40, 0.25);
+    font-size: 0.78rem;
     display: inline-block;
 }
 
-/* ==========================================================================
-   Clinical Triage & Safety Guidance Badges (High Contrast, Accessible)
-   ========================================================================== */
+/* Clinical Triage Indicators */
 .badge-emergency {
     background: var(--urgent-bg);
     color: var(--urgent-red);
-    border: 1.5px solid rgba(198, 40, 40, 0.4);
-    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(197, 34, 51, 0.3);
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .badge-prompt {
     background: var(--warning-bg);
     color: var(--warning-amber);
-    border: 1.5px solid rgba(180, 83, 9, 0.4);
-    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(180, 83, 9, 0.3);
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .badge-routine {
     background: #EBF3FD;
     color: #155799;
-    border: 1.5px solid rgba(21, 87, 153, 0.3);
-    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(21, 87, 153, 0.25);
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
 .badge-selfcare {
-    background: var(--soft-lavender);
+    background: var(--muted-lavender);
     color: #5B487A;
-    border: 1.5px solid rgba(91, 72, 122, 0.3);
-    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(91, 72, 122, 0.25);
+    padding: 0.3rem 0.75rem;
     border-radius: 9999px;
-    font-size: 0.82rem;
-    font-weight: 800;
+    font-size: 0.78rem;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.3rem;
 }
 
+/* Disclaimers & Alert Boxes */
 .disclaimer-box {
-    background: #FDF9FA;
-    border-left: 4px solid var(--deep-rose);
-    padding: 0.9rem 1.1rem;
+    background: #FFF7F9;
+    border-left: 3.5px solid var(--primary-rose);
+    padding: 0.75rem 1rem;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    margin: 1rem 0;
-    font-size: 0.88rem;
+    margin: 0.8rem 0;
+    font-size: 0.84rem;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 .disclaimer-urgent {
-    background: #FFF5F5;
-    border-left: 5px solid var(--urgent-red);
-    padding: 1.1rem 1.3rem;
+    background: var(--urgent-bg);
+    border-left: 4.5px solid var(--urgent-red);
+    padding: 1rem 1.1rem;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    margin: 1.2rem 0;
-    font-size: 0.92rem;
+    margin: 1rem 0;
+    font-size: 0.9rem;
     color: #7B1113;
-    line-height: 1.55;
-    box-shadow: 0 2px 12px rgba(198, 40, 40, 0.08);
+    line-height: 1.5;
 }
 
-/* ==========================================================================
-   Tabs & Expanders
-   ========================================================================== */
+/* Tabs & Expanders */
 div[data-baseweb="tab-list"] {
-    gap: 6px !important;
-    border-bottom: 2px solid var(--border-card) !important;
+    gap: 4px !important;
+    border-bottom: 1.5px solid var(--border-subtle) !important;
     padding-bottom: 2px !important;
     overflow-x: auto !important;
     flex-wrap: nowrap !important;
 }
 
 div[data-baseweb="tab"] {
-    border-radius: 10px 10px 0 0 !important;
-    font-weight: 700 !important;
-    font-size: 0.88rem !important;
+    border-radius: 8px 8px 0 0 !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
     color: var(--text-secondary) !important;
-    padding: 8px 14px !important;
+    padding: 7px 12px !important;
     white-space: nowrap !important;
 }
 
 div[data-baseweb="tab"][aria-selected="true"] {
-    color: var(--deep-rose) !important;
-    border-bottom: 3px solid var(--deep-rose) !important;
-    background: #FFF0F4 !important;
+    color: var(--primary-rose) !important;
+    border-bottom: 2.5px solid var(--primary-rose) !important;
+    background: var(--soft-blush) !important;
 }
 
 div[data-testid="stExpander"] {
     border: 1px solid var(--border-card) !important;
     border-radius: var(--radius-sm) !important;
-    background: #FFFFFF !important;
-    box-shadow: var(--shadow-sm) !important;
-    margin-bottom: 0.9rem !important;
+    background: var(--surface) !important;
+    box-shadow: var(--shadow-soft) !important;
+    margin-bottom: 0.75rem !important;
 }
 
 /* Native Metrics Reskin */
 div[data-testid="stMetric"] {
-    background: #FFFFFF !important;
+    background: var(--surface) !important;
     border: 1px solid var(--border-card) !important;
     border-radius: var(--radius-sm) !important;
-    padding: 0.9rem 1rem !important;
-    box-shadow: var(--shadow-sm) !important;
+    padding: 0.75rem 0.9rem !important;
+    box-shadow: var(--shadow-soft) !important;
 }
 
 div[data-testid="stMetricLabel"] {
-    font-size: 0.75rem !important;
-    font-weight: 700 !important;
+    font-size: 0.74rem !important;
+    font-weight: 600 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
     color: var(--text-secondary) !important;
 }
 
 div[data-testid="stMetricValue"] {
     font-family: 'Outfit', sans-serif !important;
-    font-size: 1.65rem !important;
-    font-weight: 800 !important;
-    color: var(--deep-rose) !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: var(--primary-rose) !important;
 }
 
-/* ==========================================================================
-   Mobile Responsive Rules
-   ========================================================================== */
+/* ==========================================
+   Mobile Bottom Navigation (st.bottom)
+   ========================================== */
+div[data-testid="stBottom"] {
+    background: var(--surface) !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    box-shadow: 0 -3px 14px rgba(185, 95, 123, 0.05) !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) 8px !important;
+}
+
+div[data-testid="stBottom"] .block-container {
+    max-width: 580px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+div[data-testid="stBottom"] div.stButton > button {
+    min-height: 42px !important;
+    border-radius: 10px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    padding: 0.3rem 0.4rem !important;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    box-shadow: none !important;
+}
+
+div[data-testid="stBottom"] div.stButton > button:hover {
+    background: var(--soft-blush) !important;
+    color: var(--primary-rose) !important;
+}
+
+div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
+    background: var(--soft-blush) !important;
+    color: var(--primary-rose) !important;
+    font-weight: 700 !important;
+    border-bottom: 2.5px solid var(--primary-rose) !important;
+}
+
+/* ==========================================
+   Responsive Rules: Hide Sidebar on Mobile,
+   Hide Bottom Nav on Desktop (No Duplication!)
+   ========================================== */
+
+/* Narrow Mobile Screens (< 768px) */
 @media (max-width: 768px) {
-    .block-container {
-        padding: 0.8rem 0.8rem 110px 0.8rem !important;
-    }
-    
-    .companion-header {
-        padding: 1.1rem;
+    /* Hide desktop sidebar entirely on mobile */
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    section[data-testid="stSidebar"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
     }
 
-    h1 { font-size: 1.6rem !important; }
-    h2 { font-size: 1.35rem !important; }
-    
-    div.stButton > button {
-        width: 100% !important;
+    /* Fixed bottom navigation on mobile */
+    div[data-testid="stBottom"] {
+        display: block !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 99999 !important;
+    }
+
+    .block-container {
+        padding: 0.6rem 0.85rem 105px 0.85rem !important;
+    }
+}
+
+/* Desktop Screens (>= 769px) */
+@media (min-width: 769px) {
+    /* Hide bottom nav on desktop so navigation is NOT duplicated! */
+    div[data-testid="stBottom"] {
+        display: none !important;
+    }
+
+    /* Clean, quiet, minimal sidebar on desktop */
+    [data-testid="stSidebar"] {
+        background-color: #FFFFFF !important;
+        border-right: 1px solid var(--border-subtle) !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stSidebar"] .block-container {
+        padding-top: 1.5rem !important;
     }
 }
