@@ -60,15 +60,11 @@ class HealthLibrary:
         # Keyword Filter
         if query and query.strip():
             q = query.strip().lower()
+            tokens = [t for t in q.split() if len(t) >= 3]
             filtered = []
             for r in results:
-                title = r.get("title", "").lower()
-                summary = r.get("summary", "").lower()
-                cat = r.get("category", "").lower()
-                org = r.get("source_org", "").lower()
-                points = " ".join(r.get("key_points", [])).lower()
-                
-                if (q in title or q in summary or q in cat or q in org or q in points):
+                haystack = f"{r.get('title', '')} {r.get('summary', '')} {r.get('category', '')} {r.get('source_org', '')} {' '.join(r.get('key_points', []))}".lower()
+                if q in haystack or (tokens and any(t in haystack for t in tokens)):
                     filtered.append(r)
             results = filtered
 

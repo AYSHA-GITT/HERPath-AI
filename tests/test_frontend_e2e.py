@@ -198,3 +198,56 @@ def test_frontend_medication_tracker():
     assert not at.exception
     assert len(at.success) > 0
 
+
+def test_frontend_ask_herpath_assistant():
+    """Tests navigation to Ask HERPath assistant and educational retrieval."""
+    at = AppTest.from_file(APP_FILE, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("Ask HERPath").run()
+    assert not at.exception
+
+    # Verify Assistant title and disclaimer
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Ask HERPath — Health Literacy Assistant" in combined_md
+    assert "Strictly non-diagnostic" in combined_md
+
+    # Test querying a health literacy topic
+    assert len(at.text_input) > 0
+    at.text_input[0].set_value("iron deficiency fatigue").run()
+    assert not at.exception
+
+    # Verify grounded findings rendered
+    results_md = " ".join([m.value for m in at.markdown])
+    assert "Grounded Findings" in results_md or "Relevant Guides Found" in results_md
+
+
+def test_frontend_home_vitality_and_explorer():
+    """Tests Home Dashboard vitality check-in and anatomical explorer interactions."""
+    at = AppTest.from_file(APP_FILE, default_timeout=30)
+    at.run()
+
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Daily Vitality" in combined_md
+    assert "Anatomical Health Focus Explorer" in combined_md
+
+    # Check that explorer buttons exist
+    button_labels = [b.label for b in at.button]
+    assert any("Explore Head & Neuro" in b for b in button_labels)
+    assert any("Explore Pelvic Care" in b for b in button_labels)
+    assert any("Explore Hormonal" in b for b in button_labels)
+
+
+def test_frontend_insights_calendar_grid():
+    """Tests navigation to Health Insights and presence of Monthly Calendar Grid tab."""
+    at = AppTest.from_file(APP_FILE, default_timeout=30)
+    at.run()
+
+    at.sidebar.radio[0].set_value("Health Insights").run()
+    assert not at.exception
+
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Interactive Charts & Distributions" in combined_md
+    assert "Doctor Consultation Prep Kit" in combined_md
+
+
