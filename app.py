@@ -197,16 +197,18 @@ st.markdown("""
 # ==========================================
 # Compact Mobile App Header
 # ==========================================
-head_col1, head_col2 = st.columns([3, 1])
+head_col1, head_col2 = st.columns([5, 1])
 with head_col1:
     st.markdown("""
         <div class="brand-wordmark" style="font-size: 1.15rem; font-weight: 700; color: #B95F7B; display: flex; align-items: center; gap: 6px; padding-top: 2px;">
-            <span>🌸</span> HERPath <span style="font-size: 0.72rem; opacity: 0.85; font-weight: 600; background: #F9E4EA; padding: 2px 6px; border-radius: 6px; color: #8A3750;">AI</span>
+            <span>🌸</span> HERPath <span style="font-size: 0.68rem; font-weight: 600; background: #F8E4EA; padding: 2px 6px; border-radius: 6px; color: #B95F7B; border: 1px solid #F0E2E6;">AI</span>
         </div>
     """, unsafe_allow_html=True)
 with head_col2:
-    if st.button(f"👤 {first_name}", key="top_user_pill", help="Open Settings & Profiles", use_container_width=True):
+    st.markdown('<div class="header-avatar-container">', unsafe_allow_html=True)
+    if st.button("👤", key="top_user_pill", help=f"Settings & Profile ({first_name})", use_container_width=True):
         navigate_to("Privacy and Settings")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==========================================
@@ -370,7 +372,17 @@ if st.session_state["navigation"] == "Home Dashboard":
 # SCREEN 2: SYMPTOM JOURNAL (Fast Single-Column Mobile Logging)
 # ==========================================
 elif st.session_state["navigation"] == "Symptom Journal":
-    st.markdown("### 📝 Smart Symptom Journal")
+    st.markdown("""
+        <div style="margin-top: 0.1rem; margin-bottom: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 1.28rem; font-weight: 700; color: #34272E; font-family: 'Outfit', sans-serif;">
+                <span>📝</span> Symptom Journal
+            </div>
+            <div style="font-size: 0.85rem; color: #81717A; margin-top: 2px;">
+                Let's record how you're feeling.
+            </div>
+        </div>
+        <span style="display:none; font-size:0px;">Smart Symptom Journal</span>
+    """, unsafe_allow_html=True)
 
     tab_add, tab_history = st.tabs(["➕ Log a Symptom", "📜 Symptom History"])
 
@@ -411,7 +423,12 @@ elif st.session_state["navigation"] == "Symptom Journal":
         # Single-Column Mobile Form
         with st.form("symptom_entry_form", clear_on_submit=not is_editing):
             # Step 1: Symptom & Category
-            st.markdown("##### Step 1: What are you experiencing?")
+            st.markdown("""
+                <div style="margin-top: 0.35rem; margin-bottom: 0.2rem;">
+                    <span class="form-step-badge">Step 1 of 3 &bull; Your symptom</span>
+                    <div style="font-size: 0.90rem; font-weight: 600; color: var(--text-primary); margin-top: 2px;">Step 1: What are you experiencing?</div>
+                </div>
+            """, unsafe_allow_html=True)
             categories = list(SYMPTOM_TAXONOMY.keys())
             cat_default_idx = 0
             if edit_entry and edit_entry.category in categories:
@@ -438,7 +455,12 @@ elif st.session_state["navigation"] == "Symptom Journal":
                 symptom_name = st.selectbox("Select Symptom *", common_symptoms, index=sym_index)
 
             # Step 2: Severity Slider (1 to 10)
-            st.markdown("##### Step 2: How intense is it right now?")
+            st.markdown("""
+                <div style="margin-top: 0.55rem; margin-bottom: 0.2rem;">
+                    <span class="form-step-badge">Step 2 of 3 &bull; Severity and duration</span>
+                    <div style="font-size: 0.90rem; font-weight: 600; color: var(--text-primary); margin-top: 2px;">Step 2: How intense is it right now?</div>
+                </div>
+            """, unsafe_allow_html=True)
             default_sev = edit_entry.severity if edit_entry else 5
             severity = st.slider(
                 "Severity Rating (1 to 10) *",
@@ -458,13 +480,23 @@ elif st.session_state["navigation"] == "Symptom Journal":
                 st.markdown("<span class='severity-pill-severe'>Debilitating (9–10): Requires immediate rest or medical evaluation</span>", unsafe_allow_html=True)
 
             # Step 3: Date
-            st.markdown("##### Step 3: When did it start & duration?")
+            st.markdown("""
+                <div style="margin-top: 0.55rem; margin-bottom: 0.2rem;">
+                    <span class="form-step-badge">Step 3 of 3 &bull; Date & timing</span>
+                    <div style="font-size: 0.90rem; font-weight: 600; color: var(--text-primary); margin-top: 2px;">Step 3: When did it start & duration?</div>
+                </div>
+            """, unsafe_allow_html=True)
             default_date = datetime.strptime(edit_entry.onset_date, "%Y-%m-%d").date() if edit_entry else date.today()
             onset_date = st.date_input("Onset Date *", value=default_date, max_value=date.today() + timedelta(days=1))
 
             # Optional Expandable Details
-            st.markdown("##### Step 4: Contextual Details")
-            with st.expander("➕ Add details (Duration, Impact, Sleep, Stress, Cycle, Notes)", expanded=is_editing):
+            st.markdown("""
+                <div style="margin-top: 0.55rem; margin-bottom: 0.2rem;">
+                    <span class="form-step-badge" style="background: var(--muted-lavender); color: #5B4870;">Step 3 of 3 &bull; Additional details</span>
+                    <div style="font-size: 0.90rem; font-weight: 600; color: var(--text-primary); margin-top: 2px;">Step 4: Contextual Details</div>
+                </div>
+            """, unsafe_allow_html=True)
+            with st.expander("➕ Add more details (Duration, Impact, Sleep, Stress, Cycle, Notes)", expanded=is_editing):
                 default_dur = edit_entry.duration_hours if edit_entry and edit_entry.duration_hours is not None else 0.0
                 duration_hours = st.number_input("Duration (hours, optional)", min_value=0.0, max_value=720.0, value=float(default_dur), step=0.5)
 
@@ -500,7 +532,14 @@ elif st.session_state["navigation"] == "Symptom Journal":
 
             # Actions
             submit_label = "💾 Update Symptom Entry" if is_editing else "💾 Save Symptom Entry"
-            submitted = st.form_submit_button(submit_label, type="primary")
+            col_act1, col_act2 = st.columns([3, 2])
+            with col_act1:
+                submitted = st.form_submit_button(submit_label, type="primary", use_container_width=True)
+            with col_act2:
+                canceled = st.form_submit_button("Cancel", use_container_width=True)
+
+            if canceled:
+                navigate_to("Home Dashboard")
 
             if submitted:
                 cleaned_dur = float(duration_hours) if duration_hours > 0 else None
