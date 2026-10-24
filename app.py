@@ -2,6 +2,8 @@
 HERPath AI — Women's Health Intelligence & Care Navigation Platform
 recHERsion 2026 | PS1: Women's Healthcare
 ACM-W, NITK Surathkal
+
+Mobile-First Redesign: Simple, intuitive, accessible women's health companion.
 """
 
 import streamlit as st
@@ -56,10 +58,10 @@ from data.seed_data import seed_demo_data
 # Page Configuration & Styling
 # ==========================================
 st.set_page_config(
-    page_title=f"{APP_TITLE} | Women's Health Platform",
+    page_title=f"{APP_TITLE} | Women's Health Companion",
     page_icon="🌸",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Load Custom CSS
@@ -89,6 +91,9 @@ if "editing_entry_id" not in st.session_state:
 if "selected_body_focus" not in st.session_state:
     st.session_state["selected_body_focus"] = None
 
+if "last_saved_symptom" not in st.session_state:
+    st.session_state["last_saved_symptom"] = None
+
 
 # Helper to switch pages
 def navigate_to(page_name: str):
@@ -97,7 +102,7 @@ def navigate_to(page_name: str):
 
 
 # ==========================================
-# Sidebar: Profile & Navigation
+# Sidebar: Profile & Navigation Drawer
 # ==========================================
 with st.sidebar:
     st.markdown("### 🌸 **HERPath AI**")
@@ -135,7 +140,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Navigation Menu
+    # Full Platform Navigation (Synchronized with mobile bottom bar & testing suite)
     nav_options = [
         "Home Dashboard",
         "Symptom Journal",
@@ -147,7 +152,6 @@ with st.sidebar:
         "Ask HERPath",
         "Privacy and Settings"
     ]
-
 
     selected_nav = st.radio(
         "📍 Platform Navigation",
@@ -164,97 +168,53 @@ with st.sidebar:
         "<div class='privacy-badge'>🔒 100% Local SQLite Storage</div>",
         unsafe_allow_html=True
     )
-    st.caption("No cloud transmission of sensitive records. Single-device prototype.")
+    st.caption("Zero cloud transmission. All records stored strictly on this device.")
 
 
 # ==========================================
-# Main Header
+# Top Companion Header
 # ==========================================
 st.markdown(f"""
-    <div class="herpath-header">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-            <div>
-                <h1>🌸 HERPath AI</h1>
-                <p>{APP_TAGLINE} &bull; <i>{HACKATHON_EVENT}</i></p>
-            </div>
-            <div style="text-align: right;">
-                <div class="header-badge" style="background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);">
-                    <span class="pulsing-dot"></span> Active Profile: <b>{active_profile.display_name.split(' ')[0]}</b>
-                </div>
+    <div class="companion-header">
+        <div class="companion-header-title">
+            <div class="companion-brand">🌸 HERPath AI</div>
+            <div class="profile-pill">
+                <span class="pulsing-dot"></span> Active: <b>{active_profile.display_name.split(' ')[0]}</b>
             </div>
         </div>
-        <div class="header-badges-row">
+        <div class="companion-subtext">{APP_TAGLINE} &bull; <i>{HACKATHON_EVENT}</i></div>
+        <div class="header-badges-row" style="margin-top: 0.5rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
             <span class="header-badge">🔒 100% On-Device SQLite</span>
-            <span class="header-badge">📋 Frameworks: WHO &bull; ACOG &bull; NHS</span>
-            <span class="header-badge">⚡ Zero Cloud Transmission</span>
-            <span class="header-badge">🛡️ Clinical Non-Diagnostic Safety Core</span>
+            <span class="header-badge">📋 WHO &bull; ACOG &bull; NHS</span>
+            <span class="header-badge">🛡️ Clinical Safety Core</span>
         </div>
     </div>
 """, unsafe_allow_html=True)
 
 
 # ==========================================
-# Page 1: Home Dashboard
+# PAGE 1: HOME DASHBOARD (Gentle Mobile Hub)
 # ==========================================
 if st.session_state["navigation"] == "Home Dashboard":
     st.markdown(f"### Welcome back, **{active_profile.display_name}**")
-    st.write(
-        "HERPath AI helps you record personal health observations, analyze explainable trajectories, "
-        "and prepare clinician-ready summaries without diagnostic assumptions."
-    )
+    today_date_str = date.today().strftime("%A, %B %d, %Y")
+    st.caption(f"📅 Today is {today_date_str} &bull; A calm, private space for your health journey.")
 
     # Fetch user records
     user_entries = SymptomTrackerService.get_history(active_profile.id)
     engine = InsightsEngine(user_entries)
     metrics = engine.calculate_summary_metrics()
 
-    # KPI Metrics
-    col1, col2, col3, col4, col5 = st.columns(5)
-    with col1:
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="stat-label">Logged Entries</div>
-                <div class="stat-value">{metrics['total_entries']}</div>
-                <div class="stat-subtext">Total records</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="stat-label">Tracking Days</div>
-                <div class="stat-value">{metrics['distinct_days']}</div>
-                <div class="stat-subtext">Distinct dates</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="stat-label">Average Severity</div>
-                <div class="stat-value">{metrics['avg_severity']} <span style="font-size:1.1rem; color:#8E8A9E;">/10</span></div>
-                <div class="stat-subtext">Across all entries</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="stat-label">Peak Severity</div>
-                <div class="stat-value" style="color: #E76F7C;">{metrics['max_severity']} <span style="font-size:1.1rem; color:#8E8A9E;">/10</span></div>
-                <div class="stat-subtext">{metrics['max_severity_symptom'][:14]}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col5:
-        st.markdown(f"""
-            <div class="stat-card">
-                <div class="stat-label">Ongoing Status</div>
-                <div class="stat-value" style="color: #2A9D8F;">{metrics['ongoing_count']}</div>
-                <div class="stat-subtext">Active symptoms</div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Prominent Friendly "How are you feeling today?" Card
+    st.markdown("""
+        <div class="prompt-card">
+            <div class="prompt-title">How are you feeling today?</div>
+            <div class="prompt-subtitle">Take a quiet moment to record any observations or track your daily baseline.</div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("<br/>", unsafe_allow_html=True)
-
-    # Quick Actions Row
-    q1, q2, q3 = st.columns([1.2, 1.2, 1.6])
+    # Large Primary Action + Secondary Quick Actions
+    q1, q2, q3 = st.columns([1.4, 1.3, 1.3])
     with q1:
         if st.button("➕ Log a New Symptom", use_container_width=True, type="primary"):
             navigate_to("Symptom Journal")
@@ -265,12 +225,15 @@ if st.session_state["navigation"] == "Home Dashboard":
         if st.button("📄 Export Clinician Health Report", use_container_width=True):
             navigate_to("My Health Report")
 
-    # ==========================================
-    # Interactive Feature 1: Daily Vitality & Holistic Wellness Pulse
-    # ==========================================
+    # Secondary Action: Quick Daily Wellbeing Check-in (Optional & Fast)
     st.markdown("<br/>", unsafe_allow_html=True)
-    with st.expander("✨ **Daily Vitality & Holistic Wellbeing Pulse (Interactive 10-Sec Check-In)**", expanded=True):
-        st.write("Track daily baseline energy, sleep restfulness, and emotional resilience to uncover subtle systemic patterns alongside your symptoms.")
+    with st.expander("✨ Check in with myself (Daily Vitality & Holistic Wellness Pulse)", expanded=False):
+        st.markdown(
+            "<p style='font-size:0.86rem; color:var(--text-secondary); margin-bottom:0.7rem;'>"
+            "<i>Note: This check-in score is a personal tracking indicator for lifestyle pacing and rest planning, not a medical measurement.</i>"
+            "</p>",
+            unsafe_allow_html=True
+        )
         v_col1, v_col2 = st.columns([2.4, 1.2])
         with v_col1:
             vit_c1, vit_c2, vit_c3 = st.columns(3)
@@ -284,25 +247,25 @@ if st.session_state["navigation"] == "Home Dashboard":
         # Dynamic Holistic Score calculation
         total_score = int(round(((v_energy + v_sleep + v_stress) / 30.0) * 100))
         if total_score >= 75:
-            score_color = "#14B8A6"
+            score_color = "#1B6B4A"
             score_status = "Optimal Vitality Balance"
             score_msg = "Baseline energy, restorative sleep, and emotional equilibrium are strong."
         elif total_score >= 50:
-            score_color = "#F59E0B"
+            score_color = "#B45309"
             score_status = "Moderate Functional Strain"
             score_msg = "Consider gentle hydration, micro-rests, and mindful pacing today."
         else:
-            score_color = "#F43F5E"
+            score_color = "#C62828"
             score_status = "Elevated Physiological Depletion"
             score_msg = "Prioritize restorative rest, reduced cognitive load, and supportive care."
 
         with v_col2:
             st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #FFF0F5 0%, #FCE7F3 100%); border: 1.5px solid rgba(244,114,182,0.45); border-radius: 16px; padding: 1.1rem; text-align: center; box-shadow: 0 4px 16px rgba(236,72,153,0.12);">
-                    <div style="font-size: 0.74rem; font-weight: 800; color: #831843; text-transform: uppercase; letter-spacing: 0.06em;">Daily Vitality Index</div>
-                    <div style="font-family: 'Outfit', sans-serif; font-size: 2.3rem; font-weight: 800; color: {score_color}; line-height: 1.1; margin: 0.2rem 0;">{total_score}%</div>
-                    <div style="font-size: 0.84rem; font-weight: 800; color: {score_color};">{score_status}</div>
-                    <div style="font-size: 0.76rem; color: #9D174D; margin-top: 0.3rem;">{score_msg}</div>
+                <div style="background: linear-gradient(135deg, #FFF0F5 0%, #FCE7F3 100%); border: 1.5px solid rgba(244,184,200,0.6); border-radius: 16px; padding: 1rem; text-align: center; box-shadow: 0 2px 10px rgba(184,92,120,0.08);">
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #831843; text-transform: uppercase; letter-spacing: 0.06em;">Daily Vitality Index</div>
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 2.1rem; font-weight: 800; color: {score_color}; line-height: 1.1; margin: 0.2rem 0;">{total_score}%</div>
+                    <div style="font-size: 0.82rem; font-weight: 800; color: {score_color};">{score_status}</div>
+                    <div style="font-size: 0.74rem; color: #9D174D; margin-top: 0.25rem;">{score_msg}</div>
                 </div>
             """, unsafe_allow_html=True)
             if st.button("💾 Log Today's Vitality Pulse", key="btn_save_vitality", use_container_width=True):
@@ -326,9 +289,69 @@ if st.session_state["navigation"] == "Home Dashboard":
                 st.success(f"✅ Recorded today's Vitality Pulse ({total_score}%) to database!")
                 st.rerun()
 
-    # ==========================================
-    # Interactive Feature 2: Anatomical Health Focus Explorer
-    # ==========================================
+    # Small Summary of Recent Recorded Activity (KPI Pills)
+    st.markdown("<br/>", unsafe_allow_html=True)
+    st.markdown("#### 📊 Activity Summary")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f"""
+            <div class="metric-pill-card">
+                <div class="metric-pill-val">{metrics['total_entries']}</div>
+                <div class="metric-pill-label">Logged Entries</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""
+            <div class="metric-pill-card">
+                <div class="metric-pill-val">{metrics['distinct_days']}</div>
+                <div class="metric-pill-label">Tracking Days</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"""
+            <div class="metric-pill-card">
+                <div class="metric-pill-val">{metrics['avg_severity']}<span style="font-size:0.9rem; color:#8E8A9E;">/10</span></div>
+                <div class="metric-pill-label">Avg Severity</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"""
+            <div class="metric-pill-card">
+                <div class="metric-pill-val" style="color: #1B6B4A;">{metrics['ongoing_count']}</div>
+                <div class="metric-pill-label">Active Symptoms</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Empty State or Recent Activity Cards
+    st.markdown("<br/>", unsafe_allow_html=True)
+    if metrics["total_entries"] == 0:
+        st.info("🌸 **Welcome to HERPath AI!** No symptoms have been logged yet for this profile. Tap **Log a New Symptom** above whenever you wish to record an observation.")
+    else:
+        st.markdown("#### 🕒 Recent Observations")
+        recent = user_entries[:4]
+        for r in recent:
+            sev_pill = (
+                "<span class='severity-pill-mild'>Mild (1–3)</span>" if r.severity <= 3
+                else "<span class='severity-pill-moderate'>Moderate (4–6)</span>" if r.severity <= 6
+                else "<span class='severity-pill-severe'>Severe (7–10)</span>"
+            )
+            st.markdown(f"""
+                <div class="companion-card" style="padding: 0.9rem 1.1rem; margin-bottom: 0.7rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">{r.category}</span>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">{r.onset_date}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <span style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700; color: var(--text-main);">{r.symptom}</span>
+                        <span>{sev_pill}</span>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        if st.button("View Full Health History & Patterns &rarr;", key="home_view_all_history"):
+            navigate_to("Symptom Journal")
+
+    # Anatomical Health Focus Explorer
     st.markdown("<br/>", unsafe_allow_html=True)
     st.markdown("#### 🌸 Anatomical Health Focus Explorer")
     st.caption("Select a physiological area to filter insights or initiate targeted symptom logging:")
@@ -339,7 +362,7 @@ if st.session_state["navigation"] == "Home Dashboard":
             <div class="focus-card">
                 <div class="focus-icon">🧠</div>
                 <div class="focus-title">Head & Neuro</div>
-                <div class="focus-desc">Migraine &bull; Fog &bull; Vertigo</div>
+                <div class="focus-desc">Migraine &bull; Fog</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Explore Head & Neuro", key="focus_neuro", use_container_width=True):
@@ -350,7 +373,7 @@ if st.session_state["navigation"] == "Home Dashboard":
             <div class="focus-card">
                 <div class="focus-icon">🌸</div>
                 <div class="focus-title">Pelvic & Cycle</div>
-                <div class="focus-desc">Cramps &bull; Flow &bull; Pelvic Pain</div>
+                <div class="focus-desc">Cramps &bull; Flow</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Explore Pelvic Care", key="focus_pelvic", use_container_width=True):
@@ -361,7 +384,7 @@ if st.session_state["navigation"] == "Home Dashboard":
             <div class="focus-card">
                 <div class="focus-icon">🫀</div>
                 <div class="focus-title">Hormonal</div>
-                <div class="focus-desc">Hot Flashes &bull; Sweats &bull; Mood</div>
+                <div class="focus-desc">Flashes &bull; Mood</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Explore Hormonal", key="focus_hormonal", use_container_width=True):
@@ -372,7 +395,7 @@ if st.session_state["navigation"] == "Home Dashboard":
             <div class="focus-card">
                 <div class="focus-icon">⚡</div>
                 <div class="focus-title">Energy & Iron</div>
-                <div class="focus-desc">Fatigue &bull; Chills &bull; Aches</div>
+                <div class="focus-desc">Fatigue &bull; Chills</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Explore Systemic", key="focus_systemic", use_container_width=True):
@@ -383,57 +406,26 @@ if st.session_state["navigation"] == "Home Dashboard":
             <div class="focus-card">
                 <div class="focus-icon">💧</div>
                 <div class="focus-title">Pelvic Floor</div>
-                <div class="focus-desc">Urgency &bull; Pain &bull; Pressure</div>
+                <div class="focus-desc">Urgency &bull; Pain</div>
             </div>
         """, unsafe_allow_html=True)
         if st.button("Explore Pelvic Floor", key="focus_urinary", use_container_width=True):
             st.session_state["selected_body_focus"] = "Urinary & Pelvic Floor"
             navigate_to("Symptom Journal")
 
-    st.markdown("---")
-
-    # Interactive Severity Timeline or Informative Empty State
-    if metrics["total_entries"] == 0:
-        st.info("ℹ️ **No symptom entries logged yet for this profile.**")
-        st.write("Start building your personal health timeline by recording your first symptom or loading demonstration records.")
-        if st.button("Record First Symptom Now", type="primary"):
-            navigate_to("Symptom Journal")
-    else:
-        st.markdown("#### 📈 Symptom Severity & Trajectory Timeline")
-        timeline_fig = engine.plot_severity_timeline()
-        if timeline_fig:
-            st.plotly_chart(timeline_fig, use_container_width=True)
-
-        # Recent Entries Section
-        st.markdown("#### 🕒 Recent Symptom Entries")
-        recent = user_entries[:5]
-        recent_data = []
-        for r in recent:
-            recent_data.append({
-                "Date": r.onset_date,
-                "Symptom": r.symptom,
-                "Category": r.category,
-                "Severity": f"{r.severity}/10",
-                "Duration": f"{r.duration_hours}h" if r.duration_hours else "—",
-                "Status": r.status,
-                "Daily Impact": r.impact or "None",
-                "Notes": r.notes or "—"
-            })
-        st.dataframe(pd.DataFrame(recent_data), use_container_width=True, hide_index=True)
-
-    # Educational Highlight Card
-    st.markdown("---")
-    st.markdown("#### 💡 Clinician Tip & Health Education Highlight")
+    # Educational Highlight Card (One Relevant Tip with Source)
+    st.markdown("<br/>", unsafe_allow_html=True)
+    st.markdown("#### 💡 Verified Health Education Tip")
     rec_resources = health_library.get_recommended_resources_for_symptom("Pelvic & Menstrual")
     if rec_resources:
         highlight = rec_resources[0]
         st.markdown(f"""
-            <div class="content-card" style="border-left: 4px solid var(--primary);">
-                <div class="resource-source">{highlight['source_org']} &bull; {highlight['category']}</div>
-                <div class="content-card-title">{highlight['title']}</div>
-                <p style="color: var(--text-secondary); margin-bottom: 0.8rem;">{highlight['summary']}</p>
-                <div style="font-size: 0.88rem; color: var(--primary); font-weight: 600;">
-                    <a href="{highlight['source_url']}" target="_blank" style="text-decoration: none; color: inherit;">
+            <div class="tip-card">
+                <div class="tip-source">{highlight['source_org']} &bull; {highlight['category']}</div>
+                <div class="tip-title">{highlight['title']}</div>
+                <div class="tip-text">{highlight['summary']}</div>
+                <div style="margin-top: 0.6rem;">
+                    <a href="{highlight['source_url']}" target="_blank" style="text-decoration: none; color: var(--deep-rose); font-weight: 700; font-size: 0.85rem;">
                         Read verified resource &rarr;
                     </a>
                 </div>
@@ -442,17 +434,18 @@ if st.session_state["navigation"] == "Home Dashboard":
 
 
 # ==========================================
-# Page 2: Symptom Journal (Full CRUD)
+# PAGE 2: SYMPTOM JOURNAL (5-Step Mobile Flow & History)
 # ==========================================
 elif st.session_state["navigation"] == "Symptom Journal":
     st.markdown("### 📝 Smart Symptom Journal")
     st.write("Record, review, search, and manage your health observations with complete local privacy.")
 
+    # Sub-tabs for Add/Edit vs View History
     tab_add, tab_history = st.tabs(["➕ Record / Edit Symptom", "📜 View & Filter Symptom History"])
 
     track_menstrual = active_profile.preferences.get("track_menstrual", True)
 
-    # TAB 1: ADD OR EDIT SYMPTOM
+    # TAB 1: 5-STEP SYMPTOM LOGGING
     with tab_add:
         is_editing = st.session_state["editing_entry_id"] is not None
         edit_entry = None
@@ -466,8 +459,30 @@ elif st.session_state["navigation"] == "Symptom Journal":
             else:
                 st.session_state["editing_entry_id"] = None
 
+        # Post-Save Friendly Success Card with Quick Actions
+        if st.session_state.get("last_saved_symptom") and not is_editing:
+            saved = st.session_state["last_saved_symptom"]
+            st.markdown(f"""
+                <div style="background: #E8F5E9; border: 1.5px solid #81C784; border-radius: 16px; padding: 1.1rem; margin-bottom: 1.1rem; box-shadow: 0 2px 8px rgba(27, 107, 74, 0.08);">
+                    <div style="font-weight: 800; color: #1B5E20; font-size: 1.05rem;">✅ Symptom Saved Successfully!</div>
+                    <div style="color: #2E7D32; font-size: 0.92rem; margin-top: 0.2rem;">
+                        Recorded <b>{saved['symptom']}</b> ({saved['category']}) with severity <b>{saved['severity']}/10</b> on {saved['onset_date']}.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            post_c1, post_c2 = st.columns(2)
+            with post_c1:
+                if st.button("➕ Log Another Symptom", key="btn_log_another", use_container_width=True, type="primary"):
+                    st.session_state["last_saved_symptom"] = None
+                    st.rerun()
+            with post_c2:
+                if st.button("📊 Explore My Health Patterns", key="btn_go_insights_postsave", use_container_width=True):
+                    st.session_state["last_saved_symptom"] = None
+                    navigate_to("Health Insights")
+
         with st.form("symptom_entry_form", clear_on_submit=not is_editing):
-            st.markdown("##### 1. Core Symptom Details")
+            # STEP 1: SELECT SYMPTOM OR CATEGORY
+            st.markdown("##### 🌸 Step 1: What are you experiencing?")
             col_cat, col_sym = st.columns(2)
 
             categories = list(SYMPTOM_TAXONOMY.keys())
@@ -497,6 +512,29 @@ elif st.session_state["navigation"] == "Symptom Journal":
                     sym_index = common_symptoms.index(sym_default_val) if sym_default_val in common_symptoms else 0
                     symptom_name = st.selectbox("Select Symptom *", common_symptoms, index=sym_index)
 
+            # STEP 2: CHOOSE SEVERITY (1 TO 10)
+            st.markdown("##### ⚡ Step 2: How intense is it right now?")
+            default_sev = edit_entry.severity if edit_entry else 5
+            severity = st.slider(
+                "Severity Rating (1 to 10) *",
+                min_value=1,
+                max_value=10,
+                value=int(default_sev),
+                help="1-3: Mild (Noticeable, no disruption); 4-6: Moderate (Interferes with tasks); 7-8: Severe (Significantly limits functioning); 9-10: Debilitating."
+            )
+
+            # Non-color-only severity pill indicator with clear text
+            if severity <= 3:
+                st.markdown("<span class='severity-pill-mild'>Mild (1–3): Noticeable but routines manageable</span>", unsafe_allow_html=True)
+            elif severity <= 6:
+                st.markdown("<span class='severity-pill-moderate'>Moderate (4–6): Notable discomfort, interferes with some activities</span>", unsafe_allow_html=True)
+            elif severity <= 8:
+                st.markdown("<span class='severity-pill-severe'>Severe (7–8): Significantly limits daily functioning</span>", unsafe_allow_html=True)
+            else:
+                st.markdown("<span class='severity-pill-severe'>Debilitating (9–10): Requires immediate rest or medical evaluation</span>", unsafe_allow_html=True)
+
+            # STEP 3: START DATE & DURATION
+            st.markdown("##### 📅 Step 3: When did it start & duration?")
             col_date, col_time, col_dur, col_stat = st.columns(4)
             with col_date:
                 default_date = datetime.strptime(edit_entry.onset_date, "%Y-%m-%d").date() if edit_entry else date.today()
@@ -511,54 +549,38 @@ elif st.session_state["navigation"] == "Symptom Journal":
                 stat_idx = statuses.index(edit_entry.status) if edit_entry and edit_entry.status in statuses else 0
                 status = st.selectbox("Status *", statuses, index=stat_idx)
 
-            st.markdown("##### 2. Severity & Functional Impact")
-            default_sev = edit_entry.severity if edit_entry else 5
-            severity = st.slider(
-                "Severity Rating (1 to 10) *",
-                min_value=1,
-                max_value=10,
-                value=int(default_sev),
-                help="1-3: Mild (Noticeable, no disruption); 4-6: Moderate (Interferes with tasks); 7-8: Severe (Significantly limits functioning); 9-10: Debilitating."
-            )
+            # STEP 4: EXPANDABLE "ADD MORE DETAILS" SECTION
+            st.markdown("##### ➕ Step 4: Contextual Details")
+            with st.expander("Add more details (Impact, Sleep, Stress, Cycle, Notes)", expanded=is_editing):
+                impact_idx = DAILY_IMPACT_LEVELS.index(edit_entry.impact) if edit_entry and edit_entry.impact in DAILY_IMPACT_LEVELS else 0
+                daily_impact = st.selectbox("Impact on Daily Activities", DAILY_IMPACT_LEVELS, index=impact_idx)
 
-            # Severity Pill Feedback
-            if severity <= 3:
-                st.markdown("<span class='severity-pill-mild'>Mild (1–3): Noticeable but routines manageable</span>", unsafe_allow_html=True)
-            elif severity <= 6:
-                st.markdown("<span class='severity-pill-moderate'>Moderate (4–6): Notable discomfort, interferes with some activities</span>", unsafe_allow_html=True)
-            else:
-                st.markdown("<span class='severity-pill-severe'>Severe / Debilitating (7–10): Severely limits daily functioning</span>", unsafe_allow_html=True)
+                col_slp, col_strss, col_enrg = st.columns(3)
+                ctx = edit_entry.context if edit_entry else {}
+                slp_idx = SLEEP_QUALITIES.index(ctx["sleep"]) if ctx.get("sleep") in SLEEP_QUALITIES else 0
+                strss_idx = STRESS_LEVELS.index(ctx["stress"]) if ctx.get("stress") in STRESS_LEVELS else 1
+                enrg_idx = ENERGY_LEVELS.index(ctx["energy"]) if ctx.get("energy") in ENERGY_LEVELS else 1
 
-            impact_idx = DAILY_IMPACT_LEVELS.index(edit_entry.impact) if edit_entry and edit_entry.impact in DAILY_IMPACT_LEVELS else 0
-            daily_impact = st.selectbox("Impact on Daily Activities", DAILY_IMPACT_LEVELS, index=impact_idx)
+                with col_slp:
+                    sleep_quality = st.selectbox("Recent Sleep Quality", SLEEP_QUALITIES, index=slp_idx)
+                with col_strss:
+                    stress_level = st.selectbox("Recent Stress Level", STRESS_LEVELS, index=strss_idx)
+                with col_enrg:
+                    energy_level = st.selectbox("Energy Level", ENERGY_LEVELS, index=enrg_idx)
 
-            st.markdown("##### 3. Contextual Observations (Optional)")
-            col_slp, col_strss, col_enrg = st.columns(3)
+                cycle_phase = "Not tracking / NA"
+                if track_menstrual:
+                    cyc_idx = CYCLE_PHASES.index(ctx["cycle_phase"]) if ctx.get("cycle_phase") in CYCLE_PHASES else 0
+                    cycle_phase = st.selectbox("Menstrual Cycle Phase (Optional)", CYCLE_PHASES, index=cyc_idx)
 
-            ctx = edit_entry.context if edit_entry else {}
-            slp_idx = SLEEP_QUALITIES.index(ctx["sleep"]) if ctx.get("sleep") in SLEEP_QUALITIES else 0
-            strss_idx = STRESS_LEVELS.index(ctx["stress"]) if ctx.get("stress") in STRESS_LEVELS else 1
-            enrg_idx = ENERGY_LEVELS.index(ctx["energy"]) if ctx.get("energy") in ENERGY_LEVELS else 1
+                notes = st.text_area(
+                    "Personal Notes / Observations (Optional)",
+                    value=edit_entry.notes if edit_entry else "",
+                    placeholder="Describe specific triggers, medications taken, relief factors, or symptoms for your doctor.",
+                    max_chars=1000
+                )
 
-            with col_slp:
-                sleep_quality = st.selectbox("Recent Sleep Quality", SLEEP_QUALITIES, index=slp_idx)
-            with col_strss:
-                stress_level = st.selectbox("Recent Stress Level", STRESS_LEVELS, index=strss_idx)
-            with col_enrg:
-                energy_level = st.selectbox("Energy Level", ENERGY_LEVELS, index=enrg_idx)
-
-            cycle_phase = "Not tracking / NA"
-            if track_menstrual:
-                cyc_idx = CYCLE_PHASES.index(ctx["cycle_phase"]) if ctx.get("cycle_phase") in CYCLE_PHASES else 0
-                cycle_phase = st.selectbox("Menstrual Cycle Phase (Optional)", CYCLE_PHASES, index=cyc_idx)
-
-            notes = st.text_area(
-                "Personal Notes / Observations (Optional)",
-                value=edit_entry.notes if edit_entry else "",
-                placeholder="Describe specific triggers, medications taken, relief factors, or symptoms for your doctor.",
-                max_chars=1000
-            )
-
+            # STEP 5: SAVE ENTRY BUTTON
             submit_label = "💾 Update Symptom Entry" if is_editing else "💾 Save Symptom Entry"
             submitted = st.form_submit_button(submit_label, type="primary")
 
@@ -589,6 +611,12 @@ elif st.session_state["navigation"] == "Symptom Journal":
                     if success:
                         st.success(f"✅ Successfully updated entry #{edit_entry.id} ({symptom_name})!")
                         st.session_state["editing_entry_id"] = None
+                        st.session_state["last_saved_symptom"] = {
+                            "symptom": symptom_name,
+                            "category": selected_category,
+                            "severity": severity,
+                            "onset_date": str(onset_date)
+                        }
                         st.rerun()
                     else:
                         st.error(f"❌ Error updating entry: {err}")
@@ -607,6 +635,12 @@ elif st.session_state["navigation"] == "Symptom Journal":
                         context=entry_context
                     )
                     if success:
+                        st.session_state["last_saved_symptom"] = {
+                            "symptom": symptom_name,
+                            "category": selected_category,
+                            "severity": severity,
+                            "onset_date": str(onset_date)
+                        }
                         st.success(f"✅ Successfully recorded '{symptom_name}' (ID #{new_id}) to database!")
                         st.rerun()
                     else:
@@ -666,7 +700,7 @@ elif st.session_state["navigation"] == "Symptom Journal":
 
 
 # ==========================================
-# Page: Medication & Treatments Tracker
+# PAGE 3: MEDICATION & TREATMENTS
 # ==========================================
 elif st.session_state["navigation"] == "Medication & Treatments":
     st.markdown("### 💊 Medication & Health Intervention Tracker")
@@ -723,7 +757,6 @@ elif st.session_state["navigation"] == "Medication & Treatments":
                     st.success(f"✅ Successfully added '{med_name.strip()}' to your regimen!")
 
     with tab_med_list:
-
         profile_meds = get_medications(active_profile.id)
         st.caption(f"Showing **{len(profile_meds)}** active treatments for **{active_profile.display_name}**.")
 
@@ -752,10 +785,9 @@ elif st.session_state["navigation"] == "Medication & Treatments":
 
 
 # ==========================================
-# Page: Personal Health Insights
+# PAGE 4: HEALTH INSIGHTS (My Patterns)
 # ==========================================
 elif st.session_state["navigation"] == "Health Insights":
-
     st.markdown("### 📊 Personal Health Insights & Pattern Discovery")
     st.write(
         "Explainable analytics derived deterministically from your actual logged entries. "
@@ -766,7 +798,7 @@ elif st.session_state["navigation"] == "Health Insights":
     engine = InsightsEngine(all_entries)
     metrics = engine.calculate_summary_metrics()
 
-    # Metrics Summary Row
+    # Metrics Summary Row (Standard metric labels for testing & accessibility)
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.metric("Total Recorded Entries", metrics["total_entries"])
@@ -784,24 +816,26 @@ elif st.session_state["navigation"] == "Health Insights":
     insights_list = engine.generate_explainable_insights()
 
     for item in insights_list:
-        border_color = "var(--primary)"
+        border_color = "var(--deep-rose)"
         if item.get("type") == "insufficient_data":
-            border_color = "var(--amber)"
+            border_color = "var(--warning-amber)"
         elif "correlation" in item.get("type", ""):
-            border_color = "var(--teal)"
+            border_color = "var(--success-green)"
 
         st.markdown(f"""
-            <div class="content-card" style="border-left: 4px solid {border_color};">
+            <div class="companion-card" style="border-left: 4px solid {border_color}; margin-bottom: 0.9rem;">
                 <div class="content-card-title">{item['title']}</div>
-                <p style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.5rem;">{item['observation']}</p>
-                <div style="font-size: 0.86rem; color: var(--text-secondary);">{item.get('context_note', '')}</div>
+                <p style="font-size: 0.96rem; color: var(--text-main); margin-bottom: 0.4rem;">{item['observation']}</p>
+                <div style="font-size: 0.84rem; color: var(--text-secondary);">{item.get('context_note', '')}</div>
             </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # Visualizations
+    # Interactive Visualizations (One main chart at a time with readable labels and clear explanations)
     st.markdown("#### 📈 Interactive Charts & Distributions")
+    st.caption("Explore one focused pattern view at a time:")
+
     tab_chart1, tab_chart2, tab_chart3, tab_chart4, tab_chart5 = st.tabs([
         "Symptom Timeline",
         "Frequency Breakdown",
@@ -811,6 +845,8 @@ elif st.session_state["navigation"] == "Health Insights":
     ])
 
     with tab_chart1:
+        st.markdown("**Severity Trajectory Over Time**")
+        st.caption("Displays daily reported severity scores over time to highlight episodic peaks and recovery trends.")
         timeline_fig = engine.plot_severity_timeline()
         if timeline_fig:
             st.plotly_chart(timeline_fig, use_container_width=True)
@@ -818,6 +854,8 @@ elif st.session_state["navigation"] == "Health Insights":
             st.info("Log at least one symptom to display the timeline.")
 
     with tab_chart2:
+        st.markdown("**Symptom Frequency Distribution**")
+        st.caption("Shows total frequency counts for all reported symptoms across your entire recorded history.")
         freq_fig = engine.plot_symptom_frequency()
         if freq_fig:
             st.plotly_chart(freq_fig, use_container_width=True)
@@ -825,6 +863,8 @@ elif st.session_state["navigation"] == "Health Insights":
             st.info("Log symptoms to view the frequency distribution.")
 
     with tab_chart3:
+        st.markdown("**Contextual Sleep & Stress Comparison**")
+        st.caption("Compares average symptom severity across sleep quality states to highlight potential correlations.")
         context_fig = engine.plot_context_comparison()
         if context_fig:
             st.plotly_chart(context_fig, use_container_width=True)
@@ -832,6 +872,8 @@ elif st.session_state["navigation"] == "Health Insights":
             st.info("Log symptoms with Sleep Quality observations to generate contextual comparison charts.")
 
     with tab_chart4:
+        st.markdown("**Symptom Co-Occurrence Heatmap**")
+        st.caption("Examines which symptoms tend to occur on the same calendar days.")
         heatmap_fig = engine.plot_cooccurrence_heatmap()
         if heatmap_fig:
             st.plotly_chart(heatmap_fig, use_container_width=True)
@@ -839,6 +881,8 @@ elif st.session_state["navigation"] == "Health Insights":
             st.info("Log multiple symptoms across shared dates to generate the co-occurrence matrix.")
 
     with tab_chart5:
+        st.markdown("**Monthly Calendar Density Grid**")
+        st.caption("Visualizes daily symptom intensity across the calendar month.")
         cal_fig = engine.plot_calendar_symptom_heatmap()
         if cal_fig:
             st.plotly_chart(cal_fig, use_container_width=True)
@@ -867,17 +911,17 @@ elif st.session_state["navigation"] == "Health Insights":
     agenda = engine.generate_doctor_talking_points(goal_selection)
 
     st.markdown(f"""
-        <div class="content-card" style="border-left: 4.5px solid var(--primary); background: rgba(253, 242, 248, 0.88);">
+        <div class="companion-card" style="border-left: 4.5px solid var(--deep-rose); background: rgba(255, 248, 250, 0.95);">
             <div class="content-card-title">🎯 Appointment Agenda: {agenda['goal']}</div>
-            <div style="font-size: 0.88rem; color: #9D174D; margin-bottom: 0.6rem;">
+            <div style="font-size: 0.86rem; color: var(--deep-rose); margin-bottom: 0.6rem;">
                 <b>Evidence Baseline:</b> {agenda['data_summary']}
             </div>
-            <div style="background: rgba(255, 255, 255, 0.9); padding: 1.1rem; border-radius: 14px; border: 1.5px solid rgba(244, 114, 182, 0.35); margin-bottom: 0.8rem; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.08);">
-                <b style="color: #EC4899;">Opening Statement (Your 30-Second Patient Summary):</b>
-                <p style="font-style: italic; color: #4A044E; margin-top: 0.4rem; font-size: 0.95rem; line-height: 1.5;">"{agenda['opening_statement']}"</p>
+            <div style="background: #FFFFFF; padding: 1rem; border-radius: 14px; border: 1.5px solid var(--border-subtle); margin-bottom: 0.8rem; box-shadow: var(--shadow-sm);">
+                <b style="color: var(--deep-rose);">Opening Statement (Your 30-Second Patient Summary):</b>
+                <p style="font-style: italic; color: var(--text-main); margin-top: 0.35rem; font-size: 0.94rem; line-height: 1.5;">"{agenda['opening_statement']}"</p>
             </div>
             <b>Key Questions to Discuss:</b>
-            <ul style="margin-top: 0.4rem; padding-left: 1.2rem; line-height: 1.6;">
+            <ul style="margin-top: 0.35rem; padding-left: 1.2rem; line-height: 1.6; font-size: 0.92rem;">
                 {''.join([f"<li><b>{q}</b></li>" for q in agenda['suggested_questions']])}
             </ul>
         </div>
@@ -895,9 +939,8 @@ elif st.session_state["navigation"] == "Health Insights":
         st.code(summary_text, language="markdown")
 
 
-
 # ==========================================
-# Page 4: Care Navigator
+# PAGE 5: CARE NAVIGATOR (Safety & Triage)
 # ==========================================
 elif st.session_state["navigation"] == "Care Navigator":
     st.markdown("### 🛡️ Care Guidance & Safety Navigator")
@@ -910,8 +953,8 @@ elif st.session_state["navigation"] == "Care Navigator":
         <div class="disclaimer-box">
             <b>Safety Notice:</b> {CLINICAL_DISCLAIMER}
         </div>
-        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center;">
-            <span style="font-size: 0.8rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Clinical Triage Tiers:</span>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.2rem; align-items: center;">
+            <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Clinical Triage Tiers:</span>
             <span class="badge-emergency">🚨 Emergency (Immediate 911 / 112)</span>
             <span class="badge-prompt">⚠️ Prompt Medical (24–48h)</span>
             <span class="badge-routine">🩺 Routine Consultation</span>
@@ -974,7 +1017,7 @@ elif st.session_state["navigation"] == "Care Navigator":
 
         elif assessment.priority == PRIORITY_PROMPT:
             st.markdown(f"""
-                <div class="content-card" style="border-left: 5px solid var(--amber);">
+                <div class="companion-card" style="border-left: 5px solid var(--warning-amber);">
                     <span class="badge-prompt">PROMPT MEDICAL EVALUATION (24–48 Hours)</span>
                     <h3 style="color: #9A6014; margin: 0.6rem 0;">{assessment.headline}</h3>
                     <p><b>Recommended Steps:</b></p>
@@ -986,9 +1029,9 @@ elif st.session_state["navigation"] == "Care Navigator":
 
         elif assessment.priority == PRIORITY_ROUTINE:
             st.markdown(f"""
-                <div class="content-card" style="border-left: 5px solid var(--teal);">
+                <div class="companion-card" style="border-left: 5px solid #155799;">
                     <span class="badge-routine">ROUTINE CLINICAL CONSULTATION</span>
-                    <h3 style="color: var(--teal-dark); margin: 0.6rem 0;">{assessment.headline}</h3>
+                    <h3 style="color: #155799; margin: 0.6rem 0;">{assessment.headline}</h3>
                     <p><b>Recommended Steps:</b></p>
                     <ul>
                         {''.join([f"<li>{act}</li>" for act in assessment.recommended_actions])}
@@ -998,9 +1041,9 @@ elif st.session_state["navigation"] == "Care Navigator":
 
         else:
             st.markdown(f"""
-                <div class="content-card" style="border-left: 5px solid var(--primary);">
+                <div class="companion-card" style="border-left: 5px solid var(--deep-rose);">
                     <span class="badge-selfcare">HEALTH EDUCATION & SELF-CARE MONITORING</span>
-                    <h3 style="color: var(--primary); margin: 0.6rem 0;">{assessment.headline}</h3>
+                    <h3 style="color: var(--deep-rose); margin: 0.6rem 0;">{assessment.headline}</h3>
                     <p><b>Supportive Self-Care Guidelines:</b></p>
                     <ul>
                         {''.join([f"<li>{act}</li>" for act in assessment.recommended_actions])}
@@ -1028,10 +1071,10 @@ elif st.session_state["navigation"] == "Care Navigator":
     sos1, sos2, sos3 = st.columns(3)
     with sos1:
         st.markdown("""
-            <div class="content-card" style="border-top: 4px solid var(--rose);">
-                <b style="color: var(--rose-dark); font-size: 1.1rem;">🚑 National Emergency</b>
-                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">112 / 911 / 999</p>
-                <div style="font-size: 0.82rem; color: var(--text-muted);">
+            <div class="companion-card" style="border-top: 4px solid var(--urgent-red);">
+                <b style="color: var(--urgent-red); font-size: 1.05rem;">🚑 National Emergency</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0.35rem 0;">112 / 911 / 999</p>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">
                     India & EU: <b>112</b> &bull; US: <b>911</b> &bull; UK: <b>999</b><br/>Immediate police, fire, and ambulance dispatch.
                 </div>
             </div>
@@ -1039,21 +1082,21 @@ elif st.session_state["navigation"] == "Care Navigator":
 
     with sos2:
         st.markdown("""
-            <div class="content-card" style="border-top: 4px solid var(--teal);">
-                <b style="color: var(--teal-dark); font-size: 1.1rem;">🌸 Women's Helplines</b>
-                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">1091 / 181</p>
-                <div style="font-size: 0.82rem; color: var(--text-muted);">
-                    India National Women's Helpline: <b>181</b> &bull; Women Police Helpline: <b>1091</b><br/>24/7 confidential safety & medical support.
+            <div class="companion-card" style="border-top: 4px solid var(--success-green);">
+                <b style="color: var(--success-green); font-size: 1.05rem;">🌸 Women's Helplines</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0.35rem 0;">1091 / 181</p>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                    India National Women's Helpline: <b>181</b> &bull; Women Police: <b>1091</b><br/>24/7 confidential safety & medical support.
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
     with sos3:
         st.markdown("""
-            <div class="content-card" style="border-top: 4px solid var(--primary);">
-                <b style="color: var(--primary); font-size: 1.1rem;">🧠 Mental Health & Advice</b>
-                <p style="font-size: 1.4rem; font-weight: 800; color: #1C192B; margin: 0.4rem 0;">988 / 111 / 14416</p>
-                <div style="font-size: 0.82rem; color: var(--text-muted);">
+            <div class="companion-card" style="border-top: 4px solid var(--deep-rose);">
+                <b style="color: var(--deep-rose); font-size: 1.05rem;">🧠 Mental Health & Advice</b>
+                <p style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0.35rem 0;">988 / 111 / 14416</p>
+                <div style="font-size: 0.82rem; color: var(--text-secondary);">
                     US Crisis: <b>988</b> &bull; NHS UK: <b>111</b> &bull; India Tele-MANAS: <b>14416</b><br/>Free mental health and clinical advice.
                 </div>
             </div>
@@ -1069,9 +1112,8 @@ elif st.session_state["navigation"] == "Care Navigator":
         """)
 
 
-
 # ==========================================
-# Page 5: Women's Health Library
+# PAGE 6: WOMEN'S HEALTH LIBRARY (Learn)
 # ==========================================
 elif st.session_state["navigation"] == "Women's Health Library":
     st.markdown("### 📚 Trusted Women's Health Library")
@@ -1105,7 +1147,7 @@ elif st.session_state["navigation"] == "Women's Health Library":
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
                     <span style="color: var(--text-muted);">Source: <i>{art['source_title']}</i> (Reviewed: {art.get('last_reviewed', '2024')})</span>
-                    <a href="{art['source_url']}" target="_blank" style="color: var(--primary); font-weight: 700; text-decoration: none;">
+                    <a href="{art['source_url']}" target="_blank" style="color: var(--deep-rose); font-weight: 700; text-decoration: none;">
                         Visit Official Source &rarr;
                     </a>
                 </div>
@@ -1114,7 +1156,7 @@ elif st.session_state["navigation"] == "Women's Health Library":
 
 
 # ==========================================
-# Page 6: My Health Report (PDF Export)
+# PAGE 7: MY HEALTH REPORT (PDF Export)
 # ==========================================
 elif st.session_state["navigation"] == "My Health Report":
     st.markdown("### 📄 Clinician-Ready Health Report")
@@ -1165,7 +1207,6 @@ elif st.session_state["navigation"] == "My Health Report":
         medications=get_medications(active_profile.id)
     )
 
-
     try:
         pdf_bytes = generator.generate_pdf_bytes()
         file_name = f"HERPath_Report_{active_profile.id}_{rep_start}_{rep_end}.pdf"
@@ -1192,7 +1233,7 @@ elif st.session_state["navigation"] == "My Health Report":
 
 
 # ==========================================
-# Page 7: Ask HERPath (Grounded Educational Assistant)
+# PAGE 8: ASK HERPATH (Health Literacy Assistant)
 # ==========================================
 elif st.session_state["navigation"] == "Ask HERPath":
     st.markdown("### 🤖 Ask HERPath — Health Literacy Assistant")
@@ -1237,16 +1278,16 @@ elif st.session_state["navigation"] == "Ask HERPath":
             st.markdown(f"#### 📖 Grounded Findings ({len(matches)} Relevant Guides Found)")
             for match in matches[:3]:
                 st.markdown(f"""
-                    <div class="content-card" style="border-left: 4px solid var(--teal);">
+                    <div class="companion-card" style="border-left: 4px solid var(--deep-rose); margin-bottom: 0.9rem;">
                         <div class="resource-source">{match['source_org']} &bull; {match['category']}</div>
                         <div class="content-card-title">{match['title']}</div>
-                        <p>{match['summary']}</p>
+                        <p style="color: var(--text-main); font-size: 0.94rem;">{match['summary']}</p>
                         <b>Verified Educational Takeaways:</b>
-                        <ul style="font-size: 0.92rem; margin-top: 0.4rem;">
+                        <ul style="font-size: 0.9rem; margin-top: 0.35rem; color: var(--text-secondary);">
                             {''.join([f"<li>{pt}</li>" for pt in match['key_points']])}
                         </ul>
                         <div style="font-size: 0.85rem; margin-top: 0.6rem;">
-                            <a href="{match['source_url']}" target="_blank" style="color: var(--primary); font-weight: 600;">
+                            <a href="{match['source_url']}" target="_blank" style="color: var(--deep-rose); font-weight: 700; text-decoration: none;">
                                 Read full guide on {match['source_org']} &rarr;
                             </a>
                         </div>
@@ -1263,7 +1304,7 @@ elif st.session_state["navigation"] == "Ask HERPath":
 
 
 # ==========================================
-# Page 8: Privacy and Settings
+# PAGE 9: PRIVACY AND SETTINGS
 # ==========================================
 elif st.session_state["navigation"] == "Privacy and Settings":
     st.markdown("### ⚙️ Privacy & Profile Settings")
@@ -1271,7 +1312,7 @@ elif st.session_state["navigation"] == "Privacy and Settings":
 
     # Privacy Notice
     st.markdown(f"""
-        <div class="content-card">
+        <div class="companion-card">
             <div class="content-card-title">🔒 Privacy & Data Protection Architecture</div>
             <p style="color: var(--text-secondary); line-height: 1.6;">
                 HERPath AI is built with privacy-first principles appropriate for sensitive health information:
@@ -1391,3 +1432,31 @@ elif st.session_state["navigation"] == "Privacy and Settings":
                 st.session_state["current_profile_id"] = list_profiles()[0].id
                 st.warning("Profile deleted.")
                 st.rerun()
+
+
+# ==========================================
+# Fixed Mobile Bottom Navigation Bar (4 Main Tabs)
+# ==========================================
+with st.bottom:
+    nav_col1, nav_col2, nav_col3, nav_col4 = st.columns(4)
+    curr_nav = st.session_state["navigation"]
+
+    with nav_col1:
+        is_active = curr_nav == "Home Dashboard"
+        if st.button("🌸 Home", key="bnav_home", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Home Dashboard")
+
+    with nav_col2:
+        is_active = curr_nav in ["Symptom Journal", "Medication & Treatments", "Health Insights", "My Health Report"]
+        if st.button("💗 My Health", key="bnav_health", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Symptom Journal")
+
+    with nav_col3:
+        is_active = curr_nav == "Care Navigator"
+        if st.button("🛡️ Care", key="bnav_care", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Care Navigator")
+
+    with nav_col4:
+        is_active = curr_nav in ["Women's Health Library", "Ask HERPath"]
+        if st.button("📚 Learn", key="bnav_learn", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Women's Health Library")
