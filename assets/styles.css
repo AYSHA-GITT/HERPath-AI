@@ -39,15 +39,16 @@
 }
 
 /* ==========================================================================
-   Global Mobile-First Canvas & Realistic iPhone Device Shell
+   Global Mobile-First Canvas & Centered Realistic iPhone Device Shell
    ========================================================================== */
 html, body {
-    margin: 0;
-    padding: 0;
-    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     height: 100dvh !important;
-    max-height: 100vh !important;
-    max-height: 100dvh !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
     overflow: hidden !important;
     background-color: #ECE3E8 !important; /* Soft desk surface backdrop */
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", sans-serif !important;
@@ -56,99 +57,272 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-.stApp {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Plus Jakarta Sans", sans-serif !important;
-    background-color: #ECE3E8 !important;
-    color: var(--text-primary) !important;
-    height: 100vh !important;
-    height: 100dvh !important;
+/* Ensure all outer Streamlit layout containers center the phone preview horizontally & vertically */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > div,
+main[data-testid="stMain"] {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
     max-height: 100vh !important;
     max-height: 100dvh !important;
     overflow: hidden !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-
-[data-testid="stAppViewContainer"] {
     background-color: transparent !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    width: 100% !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    max-height: 100vh !important;
-    max-height: 100dvh !important;
-    overflow: hidden !important;
-}
-
-[data-testid="stAppViewContainer"] > .main {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    width: 100% !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    max-height: 100vh !important;
-    max-height: 100dvh !important;
-    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
 }
 
 /* ==========================================================================
-   Centered Realistic iPhone Device Shell (Desktop Preview)
+   Centered Realistic iPhone Device Shell (Desktop Preview >= 768px)
    ========================================================================== */
-@media (min-width: 501px) {
-    .block-container,
-    div[data-testid="stMainBlockContainer"] {
+@media (min-width: 768px) {
+    div[data-testid="stMainBlockContainer"],
+    .main .block-container {
         width: 390px !important;
         max-width: 390px !important;
         min-width: 320px !important;
-        height: calc(100vh - 20px) !important;
-        height: calc(100dvh - 20px) !important;
-        max-height: 844px !important;
+        height: min(844px, calc(100dvh - 32px)) !important;
+        max-height: min(844px, calc(100dvh - 32px)) !important;
         background-color: #FFF9F8 !important; /* Sophisticated warm iOS screen */
         margin: auto !important;
-        border: 5px solid #362F33 !important; /* Sleek, less dominant matte bezel */
+        border: 5px solid #362F33 !important; /* Sleek matte titanium bezel */
         border-radius: 44px !important; /* iPhone screen corner curvature */
         box-shadow: 0 16px 48px rgba(52, 39, 46, 0.20), 0 0 0 1px rgba(240, 226, 230, 0.5) !important;
-        overflow-y: auto !important; /* Internal screen scrolling only! */
-        overflow-x: hidden !important;
-        padding: 4px 16px 60px 16px !important; /* Calibrated clearance for compact 52px bottom tab bar */
+        overflow: hidden !important; /* Screen frame itself does not scroll */
+        padding: 0 !important;
         box-sizing: border-box !important;
         position: relative !important;
-        -webkit-overflow-scrolling: touch !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
 
-    .block-container::-webkit-scrollbar,
-    div[data-testid="stMainBlockContainer"]::-webkit-scrollbar {
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Non-shrinking simulated iOS status bar & dynamic island */
+    .iphone-status-bar {
+        flex-shrink: 0 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 8px 16px 2px 16px !important;
+        background: #FFF9F8 !important;
+        user-select: none !important;
+        z-index: 10 !important;
+    }
+
+    /* Non-shrinking app header */
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"]:first-of-type,
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] > div.element-container:has(.header-avatar-container) {
+        flex-shrink: 0 !important;
+        padding: 0 16px 6px 16px !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--border-subtle) !important;
+        background: #FFF9F8 !important;
+        z-index: 10 !important;
+    }
+
+    /* Wrapper containers for flexible scrolling & docked bottom navigation */
+    div[data-testid="stLayoutWrapper"]:has(> .st-key-mobile_scroll_content),
+    div:has(> .st-key-mobile_scroll_content) {
+        flex: 1 1 0px !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Flexible, scrollable page content region */
+    .st-key-mobile_scroll_content {
+        flex: 1 1 0px !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 8px 16px 16px 16px !important;
+        box-sizing: border-box !important;
+        display: block !important;
+        gap: 0 !important;
+    }
+
+    .st-key-mobile_scroll_content::-webkit-scrollbar {
         width: 4px;
     }
-    .block-container::-webkit-scrollbar-thumb,
-    div[data-testid="stMainBlockContainer"]::-webkit-scrollbar-thumb {
+    .st-key-mobile_scroll_content::-webkit-scrollbar-thumb {
         background: #E8D8DE;
         border-radius: 4px;
     }
+
+    /* Wrapper for bottom navigation docked to the bottom */
+    div[data-testid="stLayoutWrapper"]:has(> .st-key-mobile_bottom_bar),
+    div:has(> .st-key-mobile_bottom_bar) {
+        flex-shrink: 0 !important;
+        margin-top: auto !important;
+        width: 100% !important;
+        z-index: 20 !important;
+    }
+
+    /* Docked Bottom Navigation Bar inside the Phone Screen */
+    .st-key-mobile_bottom_bar {
+        flex-shrink: 0 !important;
+        width: 100% !important;
+        background: rgba(255, 255, 255, 0.96) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid var(--border-subtle) !important;
+        padding: 4px 6px 6px 6px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        z-index: 20 !important;
+        border-radius: 0 0 39px 39px !important;
+    }
+
+    .iphone-home-indicator {
+        width: 100px;
+        height: 3.5px;
+        background-color: #1E1B1D;
+        border-radius: 2px;
+        margin: 4px auto 1px auto;
+        opacity: 0.28;
+        pointer-events: none;
+    }
 }
 
-/* On real mobile viewports, occupy 100% of available viewport naturally */
-@media (max-width: 500px) {
+/* ==========================================================================
+   Real Mobile Viewports (< 768px): 100% Native Viewport & Safe Areas
+   ========================================================================== */
+@media (max-width: 767px) {
     html, body, .stApp {
         background-color: #FFF9F8 !important;
         height: 100% !important;
-        overflow-x: hidden !important;
+        height: 100dvh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
     }
-    .block-container,
-    div[data-testid="stMainBlockContainer"] {
+
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] > div,
+    main[data-testid="stMain"] {
+        width: 100% !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+
+    div[data-testid="stMainBlockContainer"],
+    .main .block-container {
         width: 100% !important;
         max-width: 100% !important;
-        height: 100vh !important;
+        min-width: 100% !important;
+        height: 100% !important;
         height: 100dvh !important;
         border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-        padding: 6px 14px calc(60px + env(safe-area-inset-bottom, 0px)) 14px !important;
+        background-color: #FFF9F8 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+    }
+
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    /* Suppress fake status bar and fake home indicator on real mobile */
+    .iphone-status-bar,
+    .dynamic-island-pill,
+    .iphone-home-indicator {
+        display: none !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* App header uses real device safe area */
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] > div[data-testid="stHorizontalBlock"]:first-of-type,
+    div[data-testid="stMainBlockContainer"] > div[data-testid="stVerticalBlock"] > div.element-container:has(.header-avatar-container) {
+        flex-shrink: 0 !important;
+        padding: calc(6px + env(safe-area-inset-top, 0px)) 14px 6px 14px !important;
+        margin: 0 !important;
+        border-bottom: 1px solid var(--border-subtle) !important;
+        background: #FFF9F8 !important;
+    }
+
+    /* Wrapper containers for flexible scrolling & docked bottom navigation */
+    div[data-testid="stLayoutWrapper"]:has(> .st-key-mobile_scroll_content),
+    div:has(> .st-key-mobile_scroll_content) {
+        flex: 1 1 0px !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* Scrollable content */
+    .st-key-mobile_scroll_content {
+        flex: 1 1 0px !important;
+        min-height: 0 !important;
+        height: auto !important;
         overflow-y: auto !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding: 8px 14px 16px 14px !important;
+        box-sizing: border-box !important;
+    }
+
+    div[data-testid="stLayoutWrapper"]:has(> .st-key-mobile_bottom_bar),
+    div:has(> .st-key-mobile_bottom_bar) {
+        flex-shrink: 0 !important;
+        margin-top: auto !important;
+        width: 100% !important;
+        z-index: 20 !important;
+    }
+
+    /* Docked bottom bar with mobile safe-area padding */
+    .st-key-mobile_bottom_bar {
+        flex-shrink: 0 !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        border-top: 1px solid var(--border-subtle) !important;
+        background: rgba(255, 255, 255, 0.98) !important;
+        padding: 4px 6px calc(6px + env(safe-area-inset-bottom, 0px)) 6px !important;
+        box-sizing: border-box !important;
     }
 }
 
@@ -635,107 +809,35 @@ div[data-testid="stMetricValue"] {
 }
 
 /* ==========================================================================
-   Mobile Bottom Navigation (st.bottom) - Compact, Anchored, Zero White Space Bloat
+   Docked Bottom Navigation Bar (.st-key-mobile_bottom_bar) - ALWAYS 1 ROW OF 4
    ========================================================================== */
-
-/* Zero out all default Streamlit padding, margins, and backgrounds on stBottom children */
-div[data-testid="stBottom"] > div,
-div[data-testid="stBottom"] div[data-testid="stBottomBlockContainer"],
-div[data-testid="stBottom"] .block-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    min-height: unset !important;
-    height: auto !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    max-width: 100% !important;
-    min-width: unset !important;
-    overflow: visible !important;
-}
-
-/* Eliminate Streamlit's internal flexGrow spacer above bottom bar */
-#Bottom > div:first-child:not([data-testid="stBottom"]) {
-    display: none !important;
-    height: 0 !important;
-    flex-grow: 0 !important;
-}
-
-/* Remove default markdown line/element padding inside bottom bar */
-div[data-testid="stBottom"] div[data-testid="element-container"],
-div[data-testid="stBottom"] div[data-testid="stMarkdownContainer"],
-div[data-testid="stBottom"] div[data-testid="stMarkdownContainer"] p {
-    margin: 0 !important;
-    padding: 0 !important;
-    line-height: 1 !important;
-}
-
-@media (min-width: 501px) {
-    div[data-testid="stBottom"] {
-        display: block !important;
-        position: fixed !important;
-        /* Anchored directly at the bottom inner edge of the phone frame */
-        bottom: calc((100vh - min(844px, calc(100vh - 20px))) / 2 + 5px) !important;
-        bottom: calc((100dvh - min(844px, calc(100dvh - 20px))) / 2 + 5px) !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 380px !important;
-        max-width: 380px !important;
-        margin: 0 auto !important;
-        background: rgba(255, 255, 255, 0.96) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-top: 1px solid var(--border-subtle) !important;
-        border-left: 1px solid var(--border-subtle) !important;
-        border-right: 1px solid var(--border-subtle) !important;
-        border-bottom: none !important;
-        border-radius: 0 0 39px 39px !important;
-        box-shadow: 0 -3px 12px rgba(52, 39, 46, 0.05) !important;
-        z-index: 999999 !important;
-        padding: 4px 6px 5px 6px !important;
-        box-sizing: border-box !important;
-        height: auto !important;
-        overflow: hidden !important;
-    }
-}
-
-@media (max-width: 500px) {
-    div[data-testid="stBottom"] {
-        display: block !important;
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        background: rgba(255, 255, 255, 0.96) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-top: 1px solid var(--border-subtle) !important;
-        border-left: none !important;
-        border-right: none !important;
-        border-bottom: none !important;
-        border-radius: 16px 16px 0 0 !important;
-        box-shadow: 0 -3px 12px rgba(52, 39, 46, 0.05) !important;
-        z-index: 999999 !important;
-        padding: 4px 8px calc(4px + env(safe-area-inset-bottom, 0px)) 8px !important;
-        box-sizing: border-box !important;
-        height: auto !important;
-    }
-}
-
-div[data-testid="stBottom"] div[data-testid="column"] {
-    padding: 0 1px !important;
-    min-width: 0 !important;
-    flex: 1 1 0px !important;
-}
-
-div[data-testid="stBottom"] div[data-testid="stHorizontalBlock"] {
+.st-key-mobile_bottom_bar div[data-testid="stHorizontalBlock"] {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     gap: 2px !important;
     width: 100% !important;
 }
 
-div[data-testid="stBottom"] div.stButton > button {
+.st-key-mobile_bottom_bar div[data-testid="stColumn"],
+.st-key-mobile_bottom_bar div[data-testid="column"] {
+    display: block !important;
+    width: 25% !important;
+    min-width: 0 !important;
+    max-width: 25% !important;
+    flex: 1 1 0px !important;
+    padding: 0 1px !important;
+    margin: 0 !important;
+}
+
+.st-key-mobile_bottom_bar div.stButton {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.st-key-mobile_bottom_bar div.stButton > button {
     min-height: 38px !important;
     max-height: 40px !important;
     border-radius: 8px !important;
@@ -753,12 +855,12 @@ div[data-testid="stBottom"] div.stButton > button {
     width: 100% !important;
 }
 
-div[data-testid="stBottom"] div.stButton > button:hover {
+.st-key-mobile_bottom_bar div.stButton > button:hover {
     background: var(--soft-blush) !important;
     color: var(--primary-rose) !important;
 }
 
-div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
+.st-key-mobile_bottom_bar div.stButton > button[kind="primary"] {
     background: var(--soft-blush) !important;
     color: var(--primary-rose) !important;
     font-weight: 700 !important;
@@ -766,54 +868,38 @@ div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
     border-radius: 8px !important;
 }
 
-/* ==========================================================================
-   Simulated iOS Status Bar, Dynamic Island & Home Indicator (Desktop Preview)
-   ========================================================================== */
-.iphone-status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 12px 3px 12px;
-    margin-bottom: 4px;
-    user-select: none;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+/* App Header Row - NEVER stack logo and user avatar */
+div[data-testid="stHorizontalBlock"]:has(.header-avatar-container) {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
 }
 
-.status-time {
-    font-size: 12px;
-    font-weight: 700;
-    color: #1E1B1D;
-    letter-spacing: -0.02em;
-    width: 44px;
+div[data-testid="stHorizontalBlock"]:has(.header-avatar-container) > div[data-testid="stColumn"]:first-child,
+div[data-testid="stHorizontalBlock"]:has(.header-avatar-container) > div[data-testid="column"]:first-child {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
 }
 
-.dynamic-island-pill {
-    width: 76px;
-    height: 18px;
-    background-color: #1A1719;
-    border-radius: 9px;
-    margin: 0 auto;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+div[data-testid="stHorizontalBlock"]:has(.header-avatar-container) > div[data-testid="stColumn"]:last-child,
+div[data-testid="stHorizontalBlock"]:has(.header-avatar-container) > div[data-testid="column"]:last-child {
+    flex: 0 0 40px !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
 }
 
-.status-icons {
-    font-size: 11px;
-    font-weight: 600;
-    color: #1E1B1D;
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    width: 50px;
-}
-
-.iphone-home-indicator {
-    width: 100px;
-    height: 3.5px;
-    background-color: #1E1B1D;
-    border-radius: 2px;
-    margin: 3px auto 1px auto;
-    opacity: 0.28;
-    pointer-events: none;
+/* Completely suppress any separate stBottom containers */
+div[data-testid="stBottom"],
+#Bottom {
+    display: none !important;
+    height: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 .compact-list-container {
@@ -825,13 +911,6 @@ div[data-testid="stBottom"] div.stButton > button[kind="primary"] {
     box-shadow: var(--shadow-soft);
 }
 
-@media (max-width: 500px) {
-    .iphone-status-bar,
-    .dynamic-island-pill,
-    .iphone-home-indicator {
-        display: none !important;
-    }
-}
 
 /* ==========================================================================
    Completely Hide Desktop Sidebar, Drawer, and Controls (ALL VIEWPORTS)
