@@ -110,7 +110,7 @@ HERPath-AI/
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/ayesha-sharief/HERPath-AI.git
+git clone https://github.com/AYSHA-GITT/HERPath-AI.git
 cd HERPath-AI
 
 # 2. (Optional) Create and activate a virtual environment
