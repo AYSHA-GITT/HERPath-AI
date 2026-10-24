@@ -298,11 +298,11 @@ if st.session_state["navigation"] == "Home Dashboard":
 
         with v_col2:
             st.markdown(f"""
-                <div style="background: linear-gradient(135deg, #FAF8FE 0%, #FFFFFF 100%); border: 1px solid rgba(123,97,255,0.25); border-radius: 14px; padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(123,97,255,0.08);">
-                    <div style="font-size: 0.74rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em;">Daily Vitality Index</div>
-                    <div style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; color: {score_color}; line-height: 1.1; margin: 0.2rem 0;">{total_score}%</div>
-                    <div style="font-size: 0.82rem; font-weight: 700; color: {score_color};">{score_status}</div>
-                    <div style="font-size: 0.74rem; color: #64748B; margin-top: 0.3rem;">{score_msg}</div>
+                <div style="background: linear-gradient(135deg, #FFF0F5 0%, #FCE7F3 100%); border: 1.5px solid rgba(244,114,182,0.45); border-radius: 16px; padding: 1.1rem; text-align: center; box-shadow: 0 4px 16px rgba(236,72,153,0.12);">
+                    <div style="font-size: 0.74rem; font-weight: 800; color: #831843; text-transform: uppercase; letter-spacing: 0.06em;">Daily Vitality Index</div>
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 2.3rem; font-weight: 800; color: {score_color}; line-height: 1.1; margin: 0.2rem 0;">{total_score}%</div>
+                    <div style="font-size: 0.84rem; font-weight: 800; color: {score_color};">{score_status}</div>
+                    <div style="font-size: 0.76rem; color: #9D174D; margin-top: 0.3rem;">{score_msg}</div>
                 </div>
             """, unsafe_allow_html=True)
             if st.button("💾 Log Today's Vitality Pulse", key="btn_save_vitality", use_container_width=True):
@@ -867,14 +867,14 @@ elif st.session_state["navigation"] == "Health Insights":
     agenda = engine.generate_doctor_talking_points(goal_selection)
 
     st.markdown(f"""
-        <div class="content-card" style="border-left: 4px solid var(--primary); background: #FAF9FC;">
+        <div class="content-card" style="border-left: 4.5px solid var(--primary); background: rgba(253, 242, 248, 0.88);">
             <div class="content-card-title">🎯 Appointment Agenda: {agenda['goal']}</div>
-            <div style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+            <div style="font-size: 0.88rem; color: #9D174D; margin-bottom: 0.6rem;">
                 <b>Evidence Baseline:</b> {agenda['data_summary']}
             </div>
-            <div style="background: #FFFFFF; padding: 1.1rem; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-                <b style="color: var(--primary);">Opening Statement (Your 30-Second Patient Summary):</b>
-                <p style="font-style: italic; color: var(--text-primary); margin-top: 0.4rem; font-size: 0.95rem; line-height: 1.5;">"{agenda['opening_statement']}"</p>
+            <div style="background: rgba(255, 255, 255, 0.9); padding: 1.1rem; border-radius: 14px; border: 1.5px solid rgba(244, 114, 182, 0.35); margin-bottom: 0.8rem; box-shadow: 0 4px 12px rgba(236, 72, 153, 0.08);">
+                <b style="color: #EC4899;">Opening Statement (Your 30-Second Patient Summary):</b>
+                <p style="font-style: italic; color: #4A044E; margin-top: 0.4rem; font-size: 0.95rem; line-height: 1.5;">"{agenda['opening_statement']}"</p>
             </div>
             <b>Key Questions to Discuss:</b>
             <ul style="margin-top: 0.4rem; padding-left: 1.2rem; line-height: 1.6;">

@@ -134,7 +134,7 @@ class InsightsEngine:
                 "impact": True,
                 "duration_hours": True
             },
-            color_discrete_sequence=["#7B61FF", "#2A9D8F", "#E76F7C", "#E9A13B", "#6C5CE7", "#00B894", "#E17055"],
+            color_discrete_sequence=["#EC4899", "#C084FC", "#FB7185", "#F43F5E", "#8B5CF6", "#14B8A6"],
             labels={"onset_date": "Date of Onset", "severity": "Severity Rating (1-10)", "category": "Category"},
             title="Symptom Progression & Severity Timeline"
         )
@@ -145,18 +145,18 @@ class InsightsEngine:
                 x=plot_df["onset_date"],
                 y=plot_df["severity"],
                 mode="lines",
-                line=dict(color="rgba(123, 97, 255, 0.35)", width=2, dash="dot"),
+                line=dict(color="rgba(236, 72, 153, 0.4)", width=2, dash="dot"),
                 name="Severity Trajectory",
                 showlegend=False
             )
             fig.add_trace(line_trace)
 
         fig.update_layout(
-            paper_bgcolor="#FFFFFF",
-            plot_bgcolor="#FAF9FC",
-            font=dict(family="sans-serif", color="#1C192B"),
-            yaxis=dict(range=[0.5, 10.5], dtick=1, gridcolor="#EBE7F5"),
-            xaxis=dict(gridcolor="#EBE7F5"),
+            paper_bgcolor="rgba(255, 240, 245, 0.4)",
+            plot_bgcolor="rgba(255, 255, 255, 0.75)",
+            font=dict(family="'Plus Jakarta Sans', sans-serif", color="#4A044E"),
+            yaxis=dict(range=[0.5, 10.5], dtick=1, gridcolor="rgba(244, 114, 182, 0.25)"),
+            xaxis=dict(gridcolor="rgba(244, 114, 182, 0.25)"),
             margin=dict(l=40, r=40, t=50, b=40),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
@@ -177,17 +177,17 @@ class InsightsEngine:
             y="symptom",
             orientation="h",
             color="count",
-            color_continuous_scale=["#EFEBFC", "#7B61FF"],
+            color_continuous_scale=["#FCE7F3", "#EC4899"],
             labels={"count": "Number of Recorded Days", "symptom": "Symptom Name"},
             title="Symptom Frequency Distribution"
         )
 
         fig.update_layout(
-            paper_bgcolor="#FFFFFF",
-            plot_bgcolor="#FAF9FC",
-            font=dict(family="sans-serif", color="#1C192B"),
-            xaxis=dict(dtick=1, gridcolor="#EBE7F5"),
-            yaxis=dict(gridcolor="#EBE7F5"),
+            paper_bgcolor="rgba(255, 240, 245, 0.4)",
+            plot_bgcolor="rgba(255, 255, 255, 0.75)",
+            font=dict(family="'Plus Jakarta Sans', sans-serif", color="#4A044E"),
+            xaxis=dict(dtick=1, gridcolor="rgba(244, 114, 182, 0.25)"),
+            yaxis=dict(gridcolor="rgba(244, 114, 182, 0.25)"),
             coloraxis_showscale=False,
             margin=dict(l=40, r=40, t=50, b=40)
         )
@@ -214,17 +214,17 @@ class InsightsEngine:
             x="sleep_quality",
             y="mean_severity",
             color="mean_severity",
-            color_continuous_scale=["#2A9D8F", "#E9A13B", "#E76F7C"],
+            color_continuous_scale=["#14B8A6", "#F59E0B", "#EC4899"],
             labels={"sleep_quality": "Reported Sleep Quality", "mean_severity": "Average Severity"},
             title="Average Symptom Severity by Reported Sleep Quality"
         )
 
         fig.update_layout(
-            paper_bgcolor="#FFFFFF",
-            plot_bgcolor="#FAF9FC",
-            font=dict(family="sans-serif", color="#1C192B"),
-            yaxis=dict(range=[0, 10.5], dtick=2, gridcolor="#EBE7F5"),
-            xaxis=dict(gridcolor="#EBE7F5"),
+            paper_bgcolor="rgba(255, 240, 245, 0.4)",
+            plot_bgcolor="rgba(255, 255, 255, 0.75)",
+            font=dict(family="'Plus Jakarta Sans', sans-serif", color="#4A044E"),
+            yaxis=dict(range=[0, 10.5], dtick=2, gridcolor="rgba(244, 114, 182, 0.25)"),
+            xaxis=dict(gridcolor="rgba(244, 114, 182, 0.25)"),
             coloraxis_showscale=False,
             margin=dict(l=40, r=40, t=50, b=40)
         )
@@ -348,14 +348,14 @@ class InsightsEngine:
             labels=dict(x="Co-Occurring Symptom", y="Reference Symptom", color="Shared Days"),
             x=sub_matrix.columns,
             y=sub_matrix.index,
-            color_continuous_scale=["#FAF9FC", "#D3CBEC", "#7B61FF"],
+            color_continuous_scale=["#FFF0F5", "#FCE7F3", "#F472B6", "#DB2777"],
             text_auto=True,
             title="Symptom Co-Occurrence Matrix (Days Logged Together)"
         )
         fig.update_layout(
-            paper_bgcolor="#FFFFFF",
-            plot_bgcolor="#FAF9FC",
-            font=dict(family="sans-serif", color="#1C192B"),
+            paper_bgcolor="rgba(255, 240, 245, 0.4)",
+            plot_bgcolor="rgba(255, 255, 255, 0.75)",
+            font=dict(family="'Plus Jakarta Sans', sans-serif", color="#4A044E"),
             margin=dict(l=40, r=40, t=50, b=40)
         )
         return fig
@@ -385,7 +385,7 @@ class InsightsEngine:
             y="peak_severity",
             size="peak_severity",
             color="peak_severity",
-            color_continuous_scale=["#14B8A6", "#7B61FF", "#F43F5E"],
+            color_continuous_scale=["#FCE7F3", "#F472B6", "#E11D48"],
             hover_name="date_str",
             hover_data={
                 "peak_severity": True,
@@ -398,11 +398,11 @@ class InsightsEngine:
         )
 
         fig.update_layout(
-            paper_bgcolor="#FFFFFF",
-            plot_bgcolor="#FAF9FD",
-            font=dict(family="sans-serif", color="#1C192B"),
-            yaxis=dict(range=[0.5, 10.5], dtick=1, gridcolor="#EBE7F5", title="Peak Severity (/10)"),
-            xaxis=dict(gridcolor="#EBE7F5", title="Logged Date"),
+            paper_bgcolor="rgba(255, 240, 245, 0.4)",
+            plot_bgcolor="rgba(255, 255, 255, 0.75)",
+            font=dict(family="'Plus Jakarta Sans', sans-serif", color="#4A044E"),
+            yaxis=dict(range=[0.5, 10.5], dtick=1, gridcolor="rgba(244, 114, 182, 0.25)", title="Peak Severity (/10)"),
+            xaxis=dict(gridcolor="rgba(244, 114, 182, 0.25)", title="Logged Date"),
             margin=dict(l=40, r=40, t=50, b=40)
         )
         return fig
