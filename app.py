@@ -104,6 +104,41 @@ def navigate_to(page_name: str):
     st.rerun()
 
 
+# Sleek Segmented Sub-Navigation Helpers for Multi-Feature Access
+def render_my_health_subnav(current_screen: str):
+    """Renders a sleek 4-segment sub-navigation pill bar for all My Health screens."""
+    s1, s2, s3, s4 = st.columns(4)
+    with s1:
+        is_active = current_screen == "Symptom Journal"
+        if st.button("📝 Journal", key="sub_btn_journal", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Symptom Journal")
+    with s2:
+        is_active = current_screen == "Medication & Treatments"
+        if st.button("💊 Meds", key="sub_btn_meds", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Medication & Treatments")
+    with s3:
+        is_active = current_screen == "Health Insights"
+        if st.button("📈 Insights", key="sub_btn_insights", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Health Insights")
+    with s4:
+        is_active = current_screen == "My Health Report"
+        if st.button("📄 Report", key="sub_btn_report", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("My Health Report")
+
+
+def render_learn_subnav(current_screen: str):
+    """Renders a 2-segment sub-navigation pill bar for the Learn screens."""
+    l1, l2 = st.columns(2)
+    with l1:
+        is_active = current_screen == "Women's Health Library"
+        if st.button("📚 Evidence Library", key="sub_btn_library", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Women's Health Library")
+    with l2:
+        is_active = current_screen == "Ask HERPath"
+        if st.button("💬 Ask HERPath", key="sub_btn_ask", use_container_width=True, type="primary" if is_active else "secondary"):
+            navigate_to("Ask HERPath")
+
+
 # ==========================================
 # Desktop Sidebar (Hidden on Mobile via CSS)
 # ==========================================
@@ -373,7 +408,7 @@ if st.session_state["navigation"] == "Home Dashboard":
 # ==========================================
 elif st.session_state["navigation"] == "Symptom Journal":
     st.markdown("""
-        <div style="margin-top: 0.1rem; margin-bottom: 0.5rem;">
+        <div style="margin-top: 0.1rem; margin-bottom: 0.35rem;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 1.28rem; font-weight: 700; color: #34272E; font-family: 'Outfit', sans-serif;">
                 <span>📝</span> Symptom Journal
             </div>
@@ -383,6 +418,8 @@ elif st.session_state["navigation"] == "Symptom Journal":
         </div>
         <span style="display:none; font-size:0px;">Smart Symptom Journal</span>
     """, unsafe_allow_html=True)
+
+    render_my_health_subnav("Symptom Journal")
 
     tab_add, tab_history = st.tabs(["➕ Log a Symptom", "📜 Symptom History"])
 
@@ -646,6 +683,8 @@ elif st.session_state["navigation"] == "Health Insights":
     st.markdown("### 📊 Personal Health Insights & Pattern Discovery")
     st.caption("Explainable analytics derived deterministically from your actual logged entries.")
 
+    render_my_health_subnav("Health Insights")
+
     all_entries = SymptomTrackerService.get_history(active_profile.id)
     engine = InsightsEngine(all_entries)
     metrics = engine.calculate_summary_metrics()
@@ -761,6 +800,8 @@ elif st.session_state["navigation"] == "Health Insights":
 elif st.session_state["navigation"] == "Medication & Treatments":
     st.markdown("### 💊 Medication & Health Intervention Tracker")
     st.caption("Track prescribed medications, supplements, and supportive therapies.")
+
+    render_my_health_subnav("Medication & Treatments")
 
     tab_med_add, tab_med_list = st.tabs(["➕ Add Medication", "📋 Current Regimen"])
 
@@ -911,6 +952,65 @@ elif st.session_state["navigation"] == "Care Navigator":
         </div>
     """, unsafe_allow_html=True)
 
+    # Emergency Room Preparation Checklist
+    st.markdown("#### 🏥 Emergency Room (ER) Preparation Checklist")
+    st.markdown("""
+        <div class="clean-card" style="margin-bottom: 0.8rem;">
+            <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
+                Keep these essentials prepared if seeking urgent or emergency clinical evaluation:
+            </div>
+            <ul style="font-size: 0.86rem; padding-left: 1.2rem; margin-top: 0.35rem; line-height: 1.6;">
+                <li><b>Identification & Insurance:</b> Government photo ID, health card, or medical insurance policy.</li>
+                <li><b>Current Medication Regimen:</b> Doses of prescription drugs and over-the-counter supplements.</li>
+                <li><b>Clinical Record Summary:</b> Downloaded HERPath PDF report or recent symptom records.</li>
+                <li><b>Timeline & Triggers:</b> Approximate date and time of symptom onset, intensity progression, and any relief factors.</li>
+            </ul>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Doctor Appointment Preparation & Questions
+    st.markdown("#### 🩺 Doctor Consultation Questions")
+    st.caption("Evidence-grounded discussion prompts for your next doctor appointment:")
+    care_questions = [
+        "What potential underlying conditions could account for this pattern of symptoms?",
+        "Are there specific diagnostic blood tests, hormonal panels, or pelvic ultrasound imaging indicated?",
+        "How might my menstrual cycle phases or hormonal fluctuations be interacting with these symptoms?",
+        "What red-flag signs should prompt me to seek immediate acute emergency evaluation?",
+        "Are there evidence-based lifestyle, nutrition, or physical therapy interventions to support recovery?"
+    ]
+    for q in care_questions:
+        st.markdown(f"""
+            <div style="background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.5rem 0.8rem; margin-bottom: 0.4rem; font-size: 0.84rem;">
+                💬 <i>"{q}"</i>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Copyable Clinician Summary
+    st.markdown("#### 📋 Copyable Clinician Summary")
+    st.caption("One-tap copyable text block for telemedicine portals or doctor messages:")
+    recent_entries = SymptomTrackerService.get_history(active_profile.id)[:5]
+    summary_lines = [
+        f"HERPath Patient Summary — {active_profile.display_name}",
+        f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "--- Recent Observations ---"
+    ]
+    if recent_entries:
+        for re in recent_entries:
+            summary_lines.append(f"• {re.onset_date}: {re.symptom} ({re.category}) | Severity: {re.severity}/10 | Status: {re.status} | Notes: {re.notes or 'None'}")
+    else:
+        summary_lines.append("• No recent symptom entries logged.")
+
+    user_meds = get_medications(active_profile.id)
+    summary_lines.append("--- Current Medications ---")
+    if user_meds:
+        for um in user_meds:
+            summary_lines.append(f"• {um.name} ({um.category}): {um.dosage} | Frequency: {um.frequency}")
+    else:
+        summary_lines.append("• No active medications recorded.")
+
+    clinician_text_block = "\n".join(summary_lines)
+    st.text_area("Patient Health Summary", value=clinician_text_block, height=130, help="Select all and copy for your healthcare provider.")
+
 
 # ==========================================
 # SCREEN 6: WOMEN'S HEALTH LIBRARY (Learn)
@@ -918,6 +1018,8 @@ elif st.session_state["navigation"] == "Care Navigator":
 elif st.session_state["navigation"] == "Women's Health Library":
     st.markdown("### 📚 Women's Health Library")
     st.caption("Evidence-based educational resources from WHO, NHS, CDC, and ACOG.")
+
+    render_learn_subnav("Women's Health Library")
 
     search_query = st.text_input("🔍 Search library topics or symptoms", placeholder="e.g. PCOS, migraine, iron...")
     categories = health_library.get_categories()
@@ -949,6 +1051,8 @@ elif st.session_state["navigation"] == "Women's Health Library":
 elif st.session_state["navigation"] == "My Health Report":
     st.markdown("### 📄 Clinician-Ready Health Report")
     st.caption("Export a structured PDF summary of your observations for your doctor's appointment.")
+
+    render_my_health_subnav("My Health Report")
 
     rep_start = st.date_input("Start Date", value=date.today() - timedelta(days=30))
     rep_end = st.date_input("End Date", value=date.today() + timedelta(days=1))
@@ -1003,6 +1107,8 @@ elif st.session_state["navigation"] == "Ask HERPath":
     st.markdown("### 🤖 Ask HERPath — Health Literacy Assistant")
     st.markdown("<div class='disclaimer-box'><b>Boundaries:</b> Strictly non-diagnostic health literacy assistant grounded in curated medical resources.</div>", unsafe_allow_html=True)
 
+    render_learn_subnav("Ask HERPath")
+
     user_query = st.text_input("Enter your health question:", placeholder="e.g. iron deficiency fatigue, PCOS symptoms")
 
     if user_query:
@@ -1043,11 +1149,19 @@ elif st.session_state["navigation"] == "Ask HERPath":
 # SCREEN 9: PRIVACY AND SETTINGS
 # ==========================================
 elif st.session_state["navigation"] == "Privacy and Settings":
-    st.markdown("### ⚙️ Privacy & Settings")
-    st.caption("Local SQLite storage. Zero cloud tracking.")
+    st.markdown("""
+        <div style="margin-top: 0.1rem; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; font-weight: 700; color: #34272E; font-family: 'Outfit', sans-serif;">
+                ⚙️ Settings & Profile Management
+            </div>
+            <div style="font-size: 0.84rem; color: #81717A; margin-top: 2px;">
+                100% on-device SQLite storage &bull; Zero telemetry
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-    # Profile Management Moved from Sidebar
-    st.markdown("#### 👤 Health Profile Management")
+    # 1. Active Profile Section
+    st.markdown("##### 👤 Active Profile")
     all_profiles = list_profiles()
     p_map = {p.id: p for p in all_profiles}
     current_pid = st.session_state.get("current_profile_id", all_profiles[0].id)
@@ -1081,27 +1195,35 @@ elif st.session_state["navigation"] == "Privacy and Settings":
                 else:
                     st.error("Please provide both an ID and Display Name.")
 
-    st.markdown("""
-        <div class="clean-card" style="margin-top: 0.8rem;">
-            <div class="clean-card-title">Privacy & Data Protection Architecture</div>
-            <div class="clean-card-subtext">
-                100% Local SQLite Storage. All symptom records, notes, and profiles remain strictly on this device.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
+    # 2. Profile Preferences Section
+    st.markdown("##### ⚙️ Profile Preferences")
     with st.form("profile_customization_form"):
         display_name_val = st.text_input("Display Name / Pseudonym", value=active_profile.display_name)
         track_menstrual_toggle = st.checkbox("Track Menstrual Context", value=active_profile.preferences.get("track_menstrual", True))
-        if st.form_submit_button("Save Profile Settings"):
+        if st.form_submit_button("Save Profile Settings", type="primary"):
             new_prefs = active_profile.preferences.copy()
             new_prefs["track_menstrual"] = track_menstrual_toggle
             update_profile_preferences(active_profile.id, new_prefs)
             st.success("Updated profile settings!")
             st.rerun()
 
-    st.markdown("---")
-    st.markdown("##### Data Portability")
+    # 3. Privacy & Storage Architecture
+    st.markdown("##### 🔒 Privacy & Data Protection Architecture")
+    st.markdown("""
+        <div class="clean-card" style="margin-bottom: 0.8rem;">
+            <div style="font-weight: 600; font-size: 0.90rem; color: #34272E;">Where your records are stored</div>
+            <div style="font-size: 0.82rem; color: #81717A; margin-top: 4px; line-height: 1.45;">
+                100% Local SQLite Storage. All symptom records, notes, and profiles remain strictly on this device in an on-device database file. Zero data is transmitted to cloud servers.
+            </div>
+            <div style="font-weight: 600; font-size: 0.90rem; color: #34272E; margin-top: 8px;">Data ownership & rights</div>
+            <div style="font-size: 0.82rem; color: #81717A; margin-top: 4px; line-height: 1.45;">
+                You retain complete control of your healthcare records. Download complete JSON backups, export CSV logs, or permanently delete records at any time.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 4. Data Portability Section
+    st.markdown("##### 📦 Data Portability")
     col_p1, col_p2 = st.columns(2)
     with col_p1:
         json_backup_str = export_profile_data_json(active_profile.id)
@@ -1121,6 +1243,34 @@ elif st.session_state["navigation"] == "Privacy and Settings":
             mime="text/csv",
             use_container_width=True
         )
+
+    # Restore from JSON backup
+    with st.expander("📥 Restore from JSON Backup", expanded=False):
+        uploaded_backup = st.file_uploader("Upload HERPath Backup (.json)", type=["json"], key="backup_restore_uploader")
+        if uploaded_backup is not None:
+            if st.button("Restore Records into Active Profile", type="primary", key="btn_execute_restore"):
+                try:
+                    content = uploaded_backup.read().decode("utf-8")
+                    imported_s, imported_m = import_profile_data_json(active_profile.id, content)
+                    st.success(f"Successfully restored {imported_s} symptoms and {imported_m} medications into '{active_profile.display_name}'!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error restoring backup: {str(e)}")
+
+    # 5. Danger Zone / Data Deletion
+    st.markdown("##### ⚠️ Danger Zone & Record Deletion")
+    with st.expander("🗑️ Delete Active Profile & Data", expanded=False):
+        st.warning(f"Permanently delete profile **'{active_profile.display_name}'** ({active_profile.id}) and all associated symptom and medication entries?")
+        confirm_del = st.checkbox(f"Yes, permanently delete '{active_profile.display_name}' and all associated records", key="confirm_delete_profile_chk")
+        if st.button("Permanently Delete Profile", key="btn_confirm_delete_profile", disabled=not confirm_del):
+            if len(all_profiles) <= 1:
+                st.error("Cannot delete the only existing profile. Create another profile first.")
+            else:
+                delete_profile(active_profile.id)
+                rem_profiles = list_profiles()
+                st.session_state["current_profile_id"] = rem_profiles[0].id
+                st.success(f"Profile '{active_profile.display_name}' permanently deleted.")
+                st.rerun()
 
 
 # ==========================================
