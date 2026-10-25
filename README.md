@@ -35,16 +35,17 @@ Women's health challenges are frequently compounded by systemic barriers:
 
 | Module | Core Functionality | Status |
 |---|---|:---:|
-| **1. Multi-Profile & Privacy** | Local profile creation, pseudonyms, isolated records, optional menstrual tracking preference, user-controlled data erasure. | ✅ Complete |
-| **2. Smart Symptom Journal** | Full CRUD: Record, edit, delete, view, and filter symptoms. Captures category, severity (1–10), duration, onset date/time, functional impact, and sleep/stress context. | ✅ Complete |
-| **3. Medication & Treatments** | Track prescriptions, OTC supplements, and lifestyle therapies (dosage, frequency, started date) linked with active profiles. | ✅ Complete |
-| **4. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
-| **5. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
-| **6. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
-| **7. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
-| **8. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
-| **9. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
-| **10. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **1. Authentication & Onboarding** | Dedicated Login & Registration portal for new & existing users, salted SHA-256 PIN security, custom health focus tags, cycle tracking toggle, and 1-click demo persona access. | ✅ Complete |
+| **2. Multi-Profile & Privacy** | Local profile creation, pseudonyms, isolated records, optional menstrual tracking preference, user-controlled data erasure. | ✅ Complete |
+| **3. Smart Symptom Journal** | Full CRUD: Record, edit, delete, view, and filter symptoms. Captures category, severity (1–10), duration, onset date/time, functional impact, and sleep/stress context. | ✅ Complete |
+| **4. Medication & Treatments** | Track prescriptions, OTC supplements, and lifestyle therapies (dosage, frequency, started date) linked with active profiles. | ✅ Complete |
+| **5. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
+| **6. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
+| **7. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
+| **8. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
+| **9. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
+| **10. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
+| **11. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
 
 
 ---
@@ -56,9 +57,10 @@ HERPath AI adopts a clean, layered modular architecture separating presentation,
 ```
 HERPath-AI/
 ├── app.py                     # Streamlit frontend & interactive navigation
+├── auth.py                    # Privacy-first salted SHA-256 auth & user registration
 ├── config.py                  # Taxonomy, clinical constants, and color tokens
 ├── database.py                # SQLite WAL connection management & scoped CRUD
-├── models.py                  # UserProfile & SymptomEntry dataclasses
+├── models.py                  # UserProfile, SymptomEntry & Medication dataclasses
 ├── validators.py              # Input validation and bounds checking
 ├── symptom_tracker.py         # Business logic service layer
 ├── insights_engine.py         # Statistical analysis & Plotly visualization engine
@@ -69,16 +71,20 @@ HERPath-AI/
 ├── .env.example               # Environment template
 ├── .gitignore                 # Excludes local databases, caches, and secrets
 ├── assets/
-│   └── styles.css             # Custom design system (lavender, warm white, teal, rose)
+│   └── styles.css             # Custom design system & iOS-inspired device shell
 ├── data/
 │   ├── health_resources.json  # Curated literature from WHO, NHS, CDC, ACOG
 │   └── seed_data.py           # Realistic, fictional demonstration data seeder
 ├── tests/
+│   ├── test_auth.py           # Salted PIN hashing & user registration unit tests
 │   ├── test_database.py       # Persistence, CRUD, isolation & cascade tests
 │   ├── test_validators.py     # Input boundary & sanitization tests
 │   ├── test_insights.py       # Math accuracy & non-diagnostic constraint tests
 │   ├── test_safety.py         # Clinical triage & emergency override tests
-│   └── test_reports.py        # PDF compilation & rendering tests
+│   ├── test_reports.py        # PDF compilation & rendering tests
+│   ├── test_backend_e2e.py    # Service layer & data pipeline integration tests
+│   ├── test_frontend_e2e.py   # Streamlit AppTest UI interaction & auth tests
+│   └── test_mobile_redesign.py# Mobile bottom bar & form flow tests
 └── docs/
     ├── architecture.md        # Detailed system design & schema documentation
     ├── testing.md             # Verification test suite breakdown
@@ -92,11 +98,12 @@ HERPath-AI/
 
 - **Frontend & Navigation:** [Streamlit](https://streamlit.io/) (v1.35+) with custom CSS design tokens.
 - **Backend & Logic:** Python 3.13 (Modular service architecture).
+- **Authentication & Security:** Salted SHA-256 PIN/password hashing with on-device SQLite storage.
 - **Database:** SQLite 3 with Write-Ahead Logging (WAL) and foreign-key cascade enforcement.
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (28 comprehensive unit tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (67 comprehensive unit & E2E tests).
 
 ---
 

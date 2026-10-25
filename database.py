@@ -122,17 +122,20 @@ def init_db(db_path: Optional[str] = None) -> None:
                 ("demo_priya", "Priya (PCOS & Migraine Tracking)", json.dumps({
                     "track_menstrual": True,
                     "consent_acknowledged": True,
-                    "focus_areas": ["PCOS", "Migraine", "Energy"]
+                    "focus_areas": ["PCOS", "Migraine", "Energy"],
+                    "pin_hash": "7fc639d3ac1849ece7f70c3dcb3b1d7f81e525d742dedd1cdcda9eaee0998dbe"
                 })),
                 ("demo_ananya", "Ananya (Perimenopause & Sleep)", json.dumps({
                     "track_menstrual": True,
                     "consent_acknowledged": True,
-                    "focus_areas": ["Perimenopause", "Sleep", "Mood"]
+                    "focus_areas": ["Perimenopause", "Sleep", "Mood"],
+                    "pin_hash": "7fc639d3ac1849ece7f70c3dcb3b1d7f81e525d742dedd1cdcda9eaee0998dbe"
                 })),
                 ("demo_elena", "Elena (Endometriosis & Pelvic Health)", json.dumps({
                     "track_menstrual": True,
                     "consent_acknowledged": True,
-                    "focus_areas": ["Pelvic Pain", "Fatigue"]
+                    "focus_areas": ["Pelvic Pain", "Fatigue"],
+                    "pin_hash": "7fc639d3ac1849ece7f70c3dcb3b1d7f81e525d742dedd1cdcda9eaee0998dbe"
                 }))
             ]
             now_iso = datetime.now().isoformat()
@@ -140,6 +143,20 @@ def init_db(db_path: Optional[str] = None) -> None:
                 "INSERT INTO profiles (id, display_name, created_at, preferences_json) VALUES (?, ?, ?, ?);",
                 [(p[0], p[1], now_iso, p[2]) for p in default_profiles]
             )
+
+        # 6. Ensure all existing profiles have PIN protection (default: 1234)
+        cursor.execute("SELECT id, preferences_json FROM profiles;")
+        for pid, pref_str in cursor.fetchall():
+            try:
+                p_data = json.loads(pref_str) if pref_str else {}
+            except Exception:
+                p_data = {}
+            if not p_data.get("pin_hash"):
+                p_data["pin_hash"] = "7fc639d3ac1849ece7f70c3dcb3b1d7f81e525d742dedd1cdcda9eaee0998dbe"
+                cursor.execute(
+                    "UPDATE profiles SET preferences_json = ? WHERE id = ?;",
+                    (json.dumps(p_data), pid)
+                )
 
 
 # ==========================================

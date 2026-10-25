@@ -931,3 +931,625 @@ button[kind="header"] {
     pointer-events: none !important;
 }
 
+/* ==========================================================================
+   Luxury Mobile Authentication & Onboarding Component Styles
+   ========================================================================== */
+
+/* 1. iOS Native Segmented Tab Control */
+div[data-testid="stTabs"] {
+    margin-top: 0.2rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+div[data-testid="stTabs"] div[data-baseweb="tab-list"] {
+    background: #F3E8EE !important;
+    border-radius: 9999px !important;
+    padding: 3.5px !important;
+    gap: 3px !important;
+    border: 1px solid #EBD5DF !important;
+    box-shadow: inset 0 1px 3px rgba(52, 39, 46, 0.05) !important;
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+}
+
+div[data-testid="stTabs"] button[data-baseweb="tab"] {
+    flex: 1 1 0% !important;
+    border-radius: 9999px !important;
+    padding: 7px 12px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: #8A7A83 !important;
+    border: none !important;
+    background: transparent !important;
+    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    white-space: nowrap !important;
+}
+
+div[data-testid="stTabs"] button[data-baseweb="tab"]:hover {
+    color: var(--primary-rose) !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+}
+
+div[data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
+    background: #FFFFFF !important;
+    color: #B95F7B !important;
+    box-shadow: 0 2px 8px rgba(185, 95, 123, 0.16), 0 1px 2px rgba(52, 39, 46, 0.06) !important;
+    font-weight: 700 !important;
+}
+
+div[data-testid="stTabs"] div[data-baseweb="tab-highlight"],
+div[data-testid="stTabs"] div[data-baseweb="tab-border"] {
+    display: none !important;
+}
+
+/* 2. Glowing Brand Hero Card */
+.auth-welcome-container {
+    background: linear-gradient(145deg, #FFF0F4 0%, #F9EDF5 50%, #FCF5F8 100%);
+    border: 1px solid #F0DCE4;
+    border-radius: 22px;
+    padding: 1.35rem 1.1rem 1.15rem 1.1rem;
+    text-align: center;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 4px 16px rgba(185, 95, 123, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-welcome-container::before {
+    content: "";
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 110px;
+    height: 110px;
+    background: radial-gradient(circle, rgba(185, 95, 123, 0.14) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.auth-logo-badge {
+    width: 52px;
+    height: 52px;
+    background: #FFFFFF;
+    border-radius: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.45rem;
+    box-shadow: 0 4px 12px rgba(185, 95, 123, 0.15), 0 0 0 1px #F3E0E8;
+    animation: gentle-float 3s ease-in-out infinite alternate;
+}
+
+@keyframes gentle-float {
+    0% { transform: translateY(0px); }
+    100% { transform: translateY(-3px); }
+}
+
+.auth-flower-glyph {
+    font-size: 1.85rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(185, 95, 123, 0.25));
+}
+
+.auth-brand-title {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #34272E;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 0.15rem;
+}
+
+.auth-brand-pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    background: #F8E4EA;
+    color: #B95F7B;
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid #EED4DD;
+    letter-spacing: 0.02em;
+}
+
+.auth-brand-subtitle {
+    font-size: 0.82rem;
+    color: #81717A;
+    line-height: 1.4;
+    max-width: 290px;
+    margin: 0 auto 0.65rem auto;
+}
+
+.auth-security-badges {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.auth-sec-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    color: #9C4B64;
+    font-size: 0.70rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    border: 1px solid #F0D9E2;
+    box-shadow: 0 1px 3px rgba(185, 95, 123, 0.05);
+}
+
+/* 3. Sleek Card Container for Forms */
+.auth-form-card {
+    background: #FFFFFF;
+    border: 1px solid #F0E2E6;
+    border-radius: 18px;
+    padding: 1rem 1.05rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 2px 10px rgba(185, 95, 123, 0.05);
+}
+
+.auth-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #34272E;
+    letter-spacing: -0.015em;
+    margin-bottom: 0.15rem;
+}
+
+.auth-card-sub {
+    font-size: 0.80rem;
+    color: #8A7A83;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+/* Notice Badges */
+.auth-pin-notice {
+    background: #FEF3C7;
+    border: 1px solid #FCD34D;
+    color: #92400E;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 8px 0;
+}
+
+.auth-open-notice {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #065F46;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 4px 0 8px 0;
+}
+
+/* Divider */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.1rem 0 0.85rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #EEDCE3;
+}
+
+.auth-divider span {
+    padding: 0 10px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #A3939B;
+    text-transform: uppercase;
+}
+
+/* 4. Touch-Friendly Demo Persona Cards */
+.demo-section-header {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #55444D;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.demo-section-sub {
+    font-size: 0.74rem;
+    color: #8C7B84;
+    margin-bottom: 0.55rem;
+}
+
+.demo-card-item {
+    background: #FFFDFE;
+    border: 1px solid #F2DFE6;
+    border-radius: 12px;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.15s ease;
+}
+
+.demo-card-item:hover {
+    background: #FFF4F7;
+    border-color: #B95F7B;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(185, 95, 123, 0.10);
+}
+
+.demo-card-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.demo-card-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #FCEEF3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    border: 1px solid #F3DBE4;
+}
+
+.demo-card-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #34272E;
+    line-height: 1.2;
+}
+
+.demo-card-desc {
+    font-size: 0.72rem;
+    color: #8C7B84;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.demo-card-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: #F8E4EA;
+    color: #B95F7B;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 5. VIP Member Profile Card (When Logged In) */
+.vip-profile-card {
+    background: linear-gradient(145deg, #FFFFFF 0%, #FFF8FA 100%);
+    border: 1px solid #F0DCE4;
+    border-radius: 18px;
+    padding: 1.1rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 3px 12px rgba(185, 95, 123, 0.06);
+}
+
+.vip-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0.85rem;
+}
+
+.vip-large-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F9E4EA 0%, #EEE9F5 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 2px 6px rgba(185, 95, 123, 0.15);
+    border: 2px solid #FFFFFF;
+}
+
+.vip-user-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #34272E;
+    letter-spacing: -0.015em;
+}
+
+.vip-user-handle {
+    font-size: 0.78rem;
+    color: #8A7A83;
+}
+
+/* ==========================================================================
+   Mockup-Inspired Minimalist Login & Create Account Interface
+   ========================================================================== */
+.auth-screen-container,
+.st-key-auth_login_card,
+.st-key-auth_create_card {
+    position: relative !important;
+    background: #FFFFFF !important;
+    border-radius: 28px !important;
+    padding: 1.5rem 1.3rem 1.6rem 1.3rem !important;
+    box-shadow: 0 8px 30px rgba(185, 95, 123, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+    overflow: hidden !important;
+    margin-bottom: 0.9rem !important;
+    border: 1px solid #F3E5EB !important;
+}
+
+/* Organic curved blob in top-right corner (using existing theme colors) */
+.auth-blob-shape {
+    position: absolute;
+    top: -25px;
+    right: -25px;
+    width: 130px;
+    height: 120px;
+    background: linear-gradient(135deg, #FAD0DD 0%, #D8829D 45%, #B95F7B 100%);
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    opacity: 0.92;
+    filter: drop-shadow(0 6px 14px rgba(185, 95, 123, 0.22));
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Back row indicator for Create Account */
+.auth-back-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0.2rem;
+}
+
+.auth-back-arrow {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #4A3A43;
+    line-height: 1;
+}
+
+.auth-back-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #9A8A93;
+    letter-spacing: 0.02em;
+}
+
+/* Brand eyebrow on Login */
+.auth-brand-eyebrow {
+    position: relative;
+    z-index: 1;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #9A8A93;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.2rem;
+    max-width: 230px;
+    line-height: 1.35;
+}
+
+/* Clean, bold, left-aligned typography matching the image */
+.auth-mockup-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.95rem;
+    font-weight: 800;
+    color: #2A1E24;
+    letter-spacing: -0.03em;
+    margin-top: 0.5rem;
+    margin-bottom: 0.15rem;
+    line-height: 1.1;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-mockup-subtitle {
+    font-size: 0.88rem;
+    color: #9A8A93;
+    margin-bottom: 1.25rem;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+}
+
+/* Field status badges */
+.auth-field-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #9C4B64;
+    background: #FCEEF3;
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+}
+
+.auth-field-badge-open {
+    color: #065F46;
+    background: #ECFDF5;
+}
+
+/* Floating Input Card Styling matching the mockup */
+.st-key-auth_login_card div[data-baseweb="input"],
+.st-key-auth_login_card div[data-baseweb="select"] > div,
+.st-key-auth_create_card div[data-baseweb="input"],
+.st-key-auth_create_card div[data-baseweb="select"] > div,
+.auth-screen-container div[data-baseweb="input"],
+.auth-screen-container div[data-baseweb="select"] > div,
+.auth-screen-container div[data-testid="stForm"] div[data-baseweb="input"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #F0DFE6 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(185, 95, 123, 0.06) !important;
+    min-height: 44px !important;
+    transition: all 0.15s ease !important;
+}
+
+.st-key-auth_login_card div[data-baseweb="input"]:focus-within,
+.st-key-auth_login_card div[data-baseweb="select"] > div:focus-within,
+.st-key-auth_create_card div[data-baseweb="input"]:focus-within,
+.st-key-auth_create_card div[data-baseweb="select"] > div:focus-within,
+.auth-screen-container div[data-baseweb="input"]:focus-within,
+.auth-screen-container div[data-baseweb="select"] > div:focus-within,
+.auth-screen-container div[data-testid="stForm"] div[data-baseweb="input"]:focus-within {
+    border-color: #B95F7B !important;
+    box-shadow: 0 4px 14px rgba(185, 95, 123, 0.15) !important;
+}
+
+.st-key-auth_login_card label,
+.st-key-auth_create_card label,
+.auth-screen-container label,
+.auth-screen-container div[data-testid="stForm"] label {
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.05em !important;
+    color: #9A8A93 !important;
+    text-transform: uppercase !important;
+    margin-bottom: 2px !important;
+}
+
+.st-key-auth_create_card div[data-testid="stForm"],
+.auth-screen-container div[data-testid="stForm"] {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+}
+
+/* Right-aligned rounded pill buttons matching mockup */
+.st-key-btn_do_signin button,
+div[data-testid="stForm"] button[kind="primary"] {
+    border-radius: 9999px !important;
+    background: linear-gradient(135deg, #D47A96 0%, #B95F7B 100%) !important;
+    color: #FFFFFF !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.94rem !important;
+    letter-spacing: 0.03em !important;
+    padding: 0.65rem 1.4rem !important;
+    box-shadow: 0 6px 18px rgba(185, 95, 123, 0.32) !important;
+    min-height: 44px !important;
+    border: none !important;
+    transition: all 0.2s ease !important;
+}
+
+.st-key-btn_do_signin button:hover,
+div[data-testid="stForm"] button[kind="primary"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 22px rgba(185, 95, 123, 0.42) !important;
+    background: linear-gradient(135deg, #DE86A0 0%, #C46581 100%) !important;
+    color: #FFFFFF !important;
+}
+
+/* Centered bottom footer text with highlighted link */
+.auth-mockup-footer {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #9A8A93;
+    font-weight: 500;
+    margin-top: 1.1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-mockup-link {
+    color: #B95F7B;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Auth screen interactive switch buttons */
+.st-key-btn_switch_to_signup button,
+.st-key-btn_switch_to_login button {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #8A7A83 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+    min-height: 38px !important;
+    padding: 0.4rem 0.8rem !important;
+    margin: 0.2rem auto 0.4rem auto !important;
+    transition: all 0.2s ease !important;
+    text-align: center !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    display: block !important;
+}
+
+.st-key-btn_switch_to_signup button:hover,
+.st-key-btn_switch_to_login button:hover {
+    background: rgba(185, 95, 123, 0.08) !important;
+    color: #B95F7B !important;
+    transform: translateY(-1px) !important;
+}
+
+.st-key-btn_back_to_login button {
+    background: transparent !important;
+    border: 1px solid rgba(185, 95, 123, 0.25) !important;
+    color: #B95F7B !important;
+    border-radius: 9999px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    min-height: 32px !important;
+    padding: 0.2rem 0.6rem !important;
+    margin-top: 2px !important;
+    margin-bottom: 6px !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+}
+
+.st-key-btn_back_to_login button:hover {
+    background: #B95F7B !important;
+    color: #FFFFFF !important;
+}
+
+
+
+
+
+
+
+

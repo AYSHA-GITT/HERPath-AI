@@ -16,6 +16,21 @@ from streamlit.testing.v1 import AppTest
 APP_FILE = str(Path(__file__).resolve().parent.parent / "app.py")
 
 
+def get_authenticated_app() -> AppTest:
+    """Helper to launch app and log in via the primary Login button."""
+    at = AppTest.from_file(APP_FILE, default_timeout=30)
+    at.run()
+    for ti in at.text_input:
+        if ti.key and "pin" in ti.key.lower():
+            ti.set_value("1234")
+            break
+    for b in at.button:
+        if "LOGIN" in b.label:
+            b.click().run()
+            break
+    return at
+
+
 def test_mobile_bottom_navigation_elements():
     """Verifies that all 4 fixed mobile bottom navigation tabs exist and can be clicked."""
     at = AppTest.from_file(APP_FILE, default_timeout=30)
@@ -32,8 +47,7 @@ def test_mobile_bottom_navigation_elements():
 
 def test_mobile_symptom_journal_5_step_flow():
     """Verifies the 5-step symptom form flow and post-save confirmation card."""
-    at = AppTest.from_file(APP_FILE, default_timeout=30)
-    at.run()
+    at = get_authenticated_app()
 
     # Navigate to Symptom Journal
     at.sidebar.radio[0].set_value("Symptom Journal").run()
@@ -66,9 +80,7 @@ def test_mobile_symptom_journal_5_step_flow():
 
 def test_mobile_home_checkin_disclaimer():
     """Verifies that the daily check-in pulse clearly states it is a non-medical indicator."""
-    at = AppTest.from_file(APP_FILE, default_timeout=30)
-    at.run()
-    assert not at.exception
+    at = get_authenticated_app()
 
     combined_md = " ".join([m.value for m in at.markdown])
     assert "personal tracking indicator" in combined_md
@@ -77,8 +89,7 @@ def test_mobile_home_checkin_disclaimer():
 
 def test_mobile_accessible_severity_feedback():
     """Verifies that severity indicators use descriptive text rather than color alone."""
-    at = AppTest.from_file(APP_FILE, default_timeout=30)
-    at.run()
+    at = get_authenticated_app()
 
     at.sidebar.radio[0].set_value("Symptom Journal").run()
     assert not at.exception

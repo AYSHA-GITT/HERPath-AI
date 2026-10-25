@@ -53,6 +53,17 @@ from safety_navigator import SafetyNavigator
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
 from data.seed_data import seed_demo_data
+from auth import (
+    hash_credential,
+    verify_credential,
+    has_pin_protection,
+    register_user,
+    authenticate_user,
+    set_user_pin,
+    remove_user_pin,
+    get_account_stats
+)
+from validators import ValidationError
 
 # ==========================================
 # Page Configuration & Styling
@@ -84,6 +95,9 @@ health_library = HealthLibrary()
 # ==========================================
 if "current_profile_id" not in st.session_state:
     st.session_state["current_profile_id"] = "demo_priya"
+
+if "is_logged_in" not in st.session_state:
+    st.session_state["is_logged_in"] = False
 
 if "navigation" not in st.session_state:
     st.session_state["navigation"] = "Home Dashboard"
@@ -164,7 +178,8 @@ with st.sidebar:
         "👤 Active Health Profile",
         options=profile_options,
         index=profile_options.index(current_id),
-        format_func=lambda pid: profile_dict[pid].display_name
+        format_func=lambda pid: profile_dict[pid].display_name,
+        key=f"sidebar_profile_{current_id}"
     )
 
     if selected_profile_id != st.session_state["current_profile_id"]:
@@ -185,13 +200,16 @@ with st.sidebar:
         "Women's Health Library",
         "My Health Report",
         "Ask HERPath",
-        "Privacy and Settings"
+        "Privacy and Settings",
+        "Account & Login"
     ]
 
+    curr_nav_state = st.session_state.get("navigation", "Home Dashboard")
     selected_nav = st.radio(
         "📍 Platform Navigation",
         nav_options,
-        index=nav_options.index(st.session_state["navigation"])
+        index=nav_options.index(curr_nav_state) if curr_nav_state in nav_options else 0,
+        key=f"sidebar_nav_{curr_nav_state}"
     )
 
     if selected_nav != st.session_state["navigation"]:
@@ -199,6 +217,18 @@ with st.sidebar:
         st.rerun()
 
     st.markdown("---")
+    if st.session_state.get("is_logged_in", True):
+        st.caption(f"Active Account: **{active_profile.display_name}**")
+        if st.button("🚪 Log Out / Lock", key="sidebar_logout_btn", use_container_width=True):
+            st.session_state["is_logged_in"] = False
+            st.session_state["navigation"] = "Account & Login"
+            st.rerun()
+    else:
+        st.caption("🔒 Account Locked")
+        if st.button("🔐 Sign In / Register", key="sidebar_login_btn", use_container_width=True):
+            st.session_state["navigation"] = "Account & Login"
+            st.rerun()
+
     st.caption("🔒 100% On-Device SQLite. Zero Cloud Transmission.")
 
 # Fallback profile retrieval for main view
@@ -241,16 +271,291 @@ with head_col1:
     """, unsafe_allow_html=True)
 with head_col2:
     st.markdown('<div class="header-avatar-container">', unsafe_allow_html=True)
-    if st.button("👤", key="top_user_pill", help=f"Settings & Profile ({first_name})", use_container_width=True):
-        navigate_to("Privacy and Settings")
+    if st.session_state.get("is_logged_in", False):
+        if st.button("👤", key="top_user_pill", help=f"Account & Profile ({first_name})", use_container_width=True):
+            navigate_to("Account & Login")
+    else:
+        if st.button("🔐", key="top_login_pill", help="Sign In / Sign Up", use_container_width=True):
+            navigate_to("Account & Login")
     st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==========================================
-# SCREEN 1: HOME (iOS-Inspired Personal Wellness Companion)
+# Screen Component: Login, Account & New User Registration
+# ==========================================
+def render_auth_login_screen():
+    all_profiles = list_profiles()
+    p_map = {p.id: p for p in all_profiles}
+    is_authenticated = st.session_state.get("is_logged_in", False)
+    curr_pid = st.session_state.get("current_profile_id", all_profiles[0].id if all_profiles else "demo_priya")
+    active_prof = p_map.get(curr_pid, all_profiles[0] if all_profiles else None)
+
+    active_auth_tab = st.session_state.get("auth_active_tab", "Login")
+
+    if is_authenticated and active_prof:
+        tab_list = [
+            f"👤 Profile ({active_prof.display_name.split(' ')[0]})",
+            "Login",
+            "Create Account"
+        ]
+    else:
+        tab_list = ["Login", "Create Account"]
+
+    if active_auth_tab not in tab_list:
+        active_auth_tab = "Login"
+
+    tabs_result = st.tabs(tab_list, default=active_auth_tab, key=f"auth_tabs_{active_auth_tab}")
+    if len(tabs_result) == 3:
+        tab_account, tab_signin, tab_register = tabs_result
+    else:
+        tab_signin, tab_register = tabs_result
+        tab_account = None
+
+    if tab_account:
+        with tab_account:
+            stats = get_account_stats(active_prof.id)
+            focus_list = stats["focus_areas"] if isinstance(stats["focus_areas"], list) else [str(stats["focus_areas"])]
+            focus_chips = "".join([f'<span class="auth-sec-pill" style="margin-right: 4px; margin-bottom: 4px;">🎯 {f}</span>' for f in focus_list])
+
+            st.markdown(f"""
+                <div class="vip-profile-card">
+                    <div class="vip-avatar-row">
+                        <div class="vip-large-avatar">🌸</div>
+                        <div>
+                            <div class="vip-user-title">{active_prof.display_name}</div>
+                            <div class="vip-user-handle">@{active_prof.id} &bull; Member since {stats["created_at"]}</div>
+                        </div>
+                    </div>
+                    <div class="auth-security-badges" style="justify-content: flex-start; margin-top: 6px;">
+                        <span class="auth-sec-pill">🔒 SQLite Locked</span>
+                        <span class="auth-sec-pill">📍 Local Device</span>
+                        <span class="auth-sec-pill">🔐 PIN Protected</span>
+                        <span class="auth-sec-pill">{'🩸 Cycle Active' if stats["track_menstrual"] else '🌿 General Track'}</span>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #8A7A83; text-transform: uppercase; margin-bottom: 4px;">Health Focus Areas</div>
+                        <div style="display: flex; flex-wrap: wrap;">{focus_chips}</div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Symptoms Logged", stats["symptoms_count"])
+            with c2:
+                st.metric("Medications", stats["medications_count"])
+            with c3:
+                st.metric("Security", "PIN Locked 🔒")
+
+            with st.expander("🔒 Change Security PIN", expanded=False):
+                st.caption("Change your 4-digit security PIN to protect access on this device.")
+                new_pin_input = st.text_input("New 4-Digit Security PIN", type="password", key="change_pin_field", placeholder="••••")
+                if st.button("Update Security PIN", type="primary", key="btn_update_pin"):
+                    if new_pin_input and len(new_pin_input.strip()) >= 4:
+                        set_user_pin(active_prof.id, new_pin_input)
+                        st.success("Security PIN updated successfully!")
+                        st.rerun()
+                    else:
+                        st.error("PIN must be at least 4 digits.")
+
+            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+            lo_c1, lo_c2 = st.columns(2)
+            with lo_c1:
+                if st.button("🚪 Log Out & Lock", key="btn_auth_logout", use_container_width=True, type="secondary"):
+                    st.session_state["is_logged_in"] = False
+                    st.session_state["navigation"] = "Account & Login"
+                    st.rerun()
+            with lo_c2:
+                if st.button("🌸 Go to Dashboard", key="btn_auth_go_home", use_container_width=True, type="primary"):
+                    navigate_to("Home Dashboard")
+
+    with tab_signin:
+        # Screen 1: Minimalist Mockup Login Card
+        with st.container(key="auth_login_card"):
+            st.markdown(
+                '<div class="auth-blob-shape"></div>'
+                '<div class="auth-brand-eyebrow">'
+                '<span>🌸 <b>HERPath AI</b> &bull; Women\'s Health Intelligence &bull; 100% On-Device SQLite</span>'
+                '</div>'
+                '<div class="auth-mockup-title">Login</div>'
+                '<div class="auth-mockup-subtitle">Please sign in with your PIN to continue.</div>',
+                unsafe_allow_html=True
+            )
+
+            if all_profiles:
+                p_choices = [p.id for p in all_profiles]
+                default_idx = p_choices.index(curr_pid) if curr_pid in p_choices else 0
+                selected_signin_id = st.selectbox(
+                    "ACCOUNT / PROFILE ID",
+                    options=p_choices,
+                    index=default_idx,
+                    format_func=lambda pid: f"👤 {p_map[pid].display_name} (@{pid})",
+                    key="signin_profile_selector"
+                )
+            else:
+                selected_signin_id = st.text_input("ACCOUNT / PROFILE ID", placeholder="user123@email.com or username", key="signin_manual_id").strip().lower()
+
+            st.markdown('<div class="auth-field-badge">🔒 PIN REQUIRED &bull; 4 DIGITS</div>', unsafe_allow_html=True)
+            input_pin = st.text_input(
+                "SECURITY PIN",
+                type="password",
+                key="signin_pin_field",
+                placeholder="Enter 4-digit PIN (Demo: 1234)",
+                help="Seeded demo profiles use PIN: 1234"
+            )
+
+            # Right-aligned glowing pill button matching the mockup
+            st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
+            c_space, c_btn = st.columns([0.8, 1.2])
+            with c_btn:
+                if st.button("LOGIN  ➔", type="primary", use_container_width=True, key="btn_do_signin"):
+                    if not selected_signin_id:
+                        st.error("Please select or enter an Account ID.")
+                    elif not input_pin or len(input_pin.strip()) < 4:
+                        st.error("Please enter your 4-digit security PIN to sign in (Demo accounts use: 1234).")
+                    else:
+                        success, msg, profile_obj = authenticate_user(selected_signin_id, input_pin)
+                        if success and profile_obj:
+                            st.session_state["current_profile_id"] = profile_obj.id
+                            st.session_state["is_logged_in"] = True
+                            navigate_to("Home Dashboard")
+                        else:
+                            st.error(msg)
+
+            # Footer interactive link button to switch to Create Account
+            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+            if st.button("Don't have an account? Sign up ➔", key="btn_switch_to_signup", use_container_width=True):
+                st.session_state["auth_active_tab"] = "Create Account"
+                st.rerun()
+
+    with tab_register:
+        # Screen 2: Minimalist Mockup Create Account Card
+        with st.container(key="auth_create_card"):
+            st.markdown(
+                '<div class="auth-blob-shape"></div>',
+                unsafe_allow_html=True
+            )
+            c_back_col, _ = st.columns([0.35, 0.65])
+            with c_back_col:
+                if st.button("← Back to Login", key="btn_back_to_login"):
+                    st.session_state["auth_active_tab"] = "Login"
+                    st.rerun()
+
+            st.markdown(
+                '<div class="auth-brand-eyebrow" style="margin-top: 4px;">'
+                '<span>🌸 <b>HERPath AI</b> &bull; Women\'s Health Intelligence &bull; 100% On-Device SQLite</span>'
+                '</div>'
+                '<div class="auth-mockup-title">Create Account</div>'
+                '<div class="auth-mockup-subtitle">Please enter your details and 4-digit PIN to register.</div>',
+                unsafe_allow_html=True
+            )
+
+            with st.form("new_user_registration_form"):
+                reg_name = st.text_input(
+                    "FULL NAME / PSEUDONYM *",
+                    placeholder="e.g. Jhone Williams or S.K.",
+                    help="Pseudonyms are encouraged for maximum personal privacy."
+                ).strip()
+
+                reg_id = st.text_input(
+                    "ACCOUNT / PROFILE ID *",
+                    placeholder="e.g. user123 or jhone_williams",
+                    help="Unique alphanumeric ID with dashes or underscores."
+                ).strip().lower()
+
+                reg_pin = st.text_input(
+                    "SECURITY PIN (4 DIGITS) *",
+                    type="password",
+                    value="1234",
+                    placeholder="••••",
+                    help="Mandatory 4-digit security PIN to protect your health records on this device."
+                ).strip()
+
+                focus_choices = [
+                    "PCOS & Hormonal Balance",
+                    "Endometriosis & Chronic Pelvic Pain",
+                    "Perimenopause & Menopause Transition",
+                    "Hormonal Migraines & Neurological",
+                    "Fatigue, Thyroid & Iron Levels",
+                    "Fertility & Cycle Tracking",
+                    "Mental Wellbeing & Anxiety/Mood",
+                    "General Health & Preventative Wellness"
+                ]
+                reg_focus = st.multiselect(
+                    "HEALTH FOCUS AREAS",
+                    options=focus_choices,
+                    default=["General Health & Preventative Wellness"],
+                    help="Customizes your pattern analysis, care guides, and symptom suggestions."
+                )
+
+                reg_cycle = st.checkbox(
+                    "Track Menstrual Cycle & Hormonal Phases",
+                    value=True,
+                    help="Enable cycle tracking. Can be disabled anytime."
+                )
+
+                reg_consent = st.checkbox(
+                    "I acknowledge that my records are stored 100% locally on this device in SQLite and HERPath AI is a personal health literacy companion, not diagnostic medical software.",
+                    value=True
+                )
+
+                st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
+                # Right-aligned glowing pill submit button matching mockup
+                c_space, c_btn = st.columns([0.45, 1.55])
+                with c_btn:
+                    reg_submitted = st.form_submit_button(
+                        "SIGN UP (Create My Profile)  ➔",
+                        type="primary",
+                        use_container_width=True
+                    )
+
+                if reg_submitted:
+                    if not reg_name or len(reg_name) < 2:
+                        st.error("Please enter a valid Full Name or Pseudonym (at least 2 characters).")
+                    elif not reg_id:
+                        suggested_slug = reg_name.lower().replace(" ", "_").replace(".", "")
+                        st.error(f"Please provide an Account ID (e.g. '{suggested_slug}').")
+                    elif not reg_pin or len(reg_pin.strip()) < 4:
+                        st.error("Please set a 4-digit security PIN (minimum 4 characters).")
+                    elif not reg_consent:
+                        st.error("Please acknowledge the local storage and educational privacy consent.")
+                    else:
+                        try:
+                            pref_payload = {
+                                "track_menstrual": reg_cycle,
+                                "consent_acknowledged": reg_consent,
+                                "focus_areas": reg_focus if reg_focus else ["General Health & Preventative Wellness"]
+                            }
+                            new_profile_record = register_user(
+                                profile_id=reg_id,
+                                display_name=reg_name,
+                                pin=reg_pin,
+                                preferences=pref_payload
+                            )
+                            st.session_state["current_profile_id"] = new_profile_record.id
+                            st.session_state["is_logged_in"] = True
+                            navigate_to("Home Dashboard")
+                        except ValidationError as ve:
+                            st.error(str(ve))
+                        except Exception as e:
+                            st.error(f"Error creating profile: {str(e)}")
+
+            # Footer interactive link button to switch back to Sign In
+            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+            if st.button("Already have an account? Sign in ➔", key="btn_switch_to_login", use_container_width=True):
+                st.session_state["auth_active_tab"] = "Login"
+                st.rerun()
+
+
+# ==========================================
+# Main Content Area
 # ==========================================
 with st.container(key="mobile_scroll_content"):
-    if st.session_state["navigation"] == "Home Dashboard":
+    if not st.session_state.get("is_logged_in", True):
+        render_auth_login_screen()
+    elif st.session_state["navigation"] == "Account & Login":
+        render_auth_login_screen()
+    elif st.session_state["navigation"] == "Home Dashboard":
         # 1. Warm Personal Greeting
         today_formatted = date.today().strftime("%A, %b %d")
         st.markdown(f"""
@@ -1183,6 +1488,16 @@ with st.container(key="mobile_scroll_content"):
             st.session_state["editing_entry_id"] = None
             st.rerun()
 
+        acc_c1, acc_c2 = st.columns(2)
+        with acc_c1:
+            if st.button("🔐 Account & Login Portal", key="settings_btn_account_portal", use_container_width=True):
+                navigate_to("Account & Login")
+        with acc_c2:
+            if st.button("🚪 Log Out & Lock", key="settings_btn_logout", use_container_width=True):
+                st.session_state["is_logged_in"] = False
+                st.session_state["navigation"] = "Account & Login"
+                st.rerun()
+
         with st.expander("➕ Create New Profile", expanded=False):
             with st.form("settings_create_profile_form"):
                 new_pid = st.text_input("Profile ID (unique, e.g. maya_pcos)").strip().lower()
@@ -1272,6 +1587,13 @@ with st.container(key="mobile_scroll_content"):
                     st.session_state["current_profile_id"] = rem_profiles[0].id
                     st.success(f"Profile '{active_profile.display_name}' permanently deleted.")
                     st.rerun()
+
+    # ==========================================
+    # SCREEN 10: ACCOUNT & LOGIN
+    # ==========================================
+    elif st.session_state["navigation"] == "Account & Login":
+        render_auth_login_screen()
+
 
 
 # ==========================================
