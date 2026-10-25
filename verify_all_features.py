@@ -330,6 +330,18 @@ try:
     at = AppTest.from_file(app_path, default_timeout=30)
     at.run()
     assert not at.exception, f"Exception on app load: {at.exception}"
+
+    # Authenticate via PIN to unlock navigation and bottom tabs
+    if not at.session_state.get("is_logged_in", False):
+        for ti in at.text_input:
+            if ti.key and "pin" in ti.key.lower():
+                ti.set_value("1234")
+                break
+        for b in at.button:
+            if "LOGIN" in b.label:
+                b.click().run()
+                break
+    assert not at.exception, f"Exception on login: {at.exception}"
     
     # Test all 9 views
     navs = [

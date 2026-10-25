@@ -32,12 +32,20 @@ def get_authenticated_app() -> AppTest:
 
 
 def test_mobile_bottom_navigation_elements():
-    """Verifies that all 4 fixed mobile bottom navigation tabs exist and can be clicked."""
-    at = AppTest.from_file(APP_FILE, default_timeout=30)
-    at.run()
-    assert not at.exception
+    """Verifies that the 4 mobile bottom navigation tabs are hidden before sign-in and present after authentication."""
+    # 1. Unauthenticated state: 4-tab bottom navigation must be hidden
+    at_unauth = AppTest.from_file(APP_FILE, default_timeout=30)
+    at_unauth.run()
+    assert not at_unauth.exception
+    unauth_buttons = [b.label for b in at_unauth.button]
+    assert not any("🌸 Home" in b for b in unauth_buttons), "Home bottom tab should be hidden before sign in"
+    assert not any("💗 My Health" in b for b in unauth_buttons), "My Health bottom tab should be hidden before sign in"
+    assert not any("🛡️ Care" in b for b in unauth_buttons), "Care bottom tab should be hidden before sign in"
+    assert not any("📚 Learn" in b for b in unauth_buttons), "Learn bottom tab should be hidden before sign in"
 
-    # Find the bottom navigation buttons
+    # 2. Authenticated state: all 4 bottom tabs must exist and be accessible
+    at = get_authenticated_app()
+    assert not at.exception
     button_labels = [b.label for b in at.button]
     assert any("Home" in b for b in button_labels), "Home bottom tab missing"
     assert any("My Health" in b for b in button_labels), "My Health bottom tab missing"

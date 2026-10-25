@@ -99,22 +99,48 @@ def register_user(
     return create_profile(clean_id, clean_name, pref, db_path=db_path)
 
 
+def find_profile_by_identifier(identifier: str, db_path: Optional[str] = None) -> Optional[UserProfile]:
+    """Finds a profile by ID or by matching display name (case-insensitive)."""
+    if not identifier:
+        return None
+    clean = identifier.strip().lower()
+    # 1. Direct ID match
+    prof = get_profile(clean, db_path=db_path)
+    if prof:
+        return prof
+    # 2. Match on display name (case-insensitive)
+    all_profs = list_profiles(db_path=db_path)
+    for p in all_profs:
+        if p.display_name.lower() == clean:
+            return p
+    # 3. Match on display name before parenthesis (e.g. 'Priya' matches 'Priya (PCOS & Migraine Tracking)')
+    for p in all_profs:
+        name_part = p.display_name.split("(")[0].strip().lower()
+        if name_part == clean:
+            return p
+    # 4. Prefix match
+    for p in all_profs:
+        if p.display_name.lower().startswith(clean):
+            return p
+    return None
+
+
 def authenticate_user(
     profile_id: str,
     pin: Optional[str] = None,
     db_path: Optional[str] = None
 ) -> Tuple[bool, str, Optional[UserProfile]]:
     """
-    Authenticates an existing user profile by ID and optional PIN.
+    Authenticates an existing user profile by ID or username and optional PIN.
 
     Returns:
         (success: bool, message: str, profile: Optional[UserProfile])
     """
     if not profile_id or not profile_id.strip():
-        return False, "Please enter or select a Profile ID.", None
+        return False, "Please enter your username or account name.", None
 
     clean_id = profile_id.strip().lower()
-    profile = get_profile(clean_id, db_path=db_path)
+    profile = find_profile_by_identifier(clean_id, db_path=db_path)
 
     if profile is None:
         return False, f"Profile '{clean_id}' does not exist. Please check the ID or create a new account.", None

@@ -1454,19 +1454,61 @@ div[data-testid="stTabs"] div[data-baseweb="tab-border"] {
     border: 1px solid #F3E5EB !important;
 }
 
-/* Organic curved blob in top-right corner (using existing theme colors) */
+/* Clean organic decorative background accent */
 .auth-blob-shape {
-    position: absolute;
-    top: -25px;
-    right: -25px;
-    width: 130px;
-    height: 120px;
-    background: linear-gradient(135deg, #FAD0DD 0%, #D8829D 45%, #B95F7B 100%);
-    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
-    opacity: 0.92;
-    filter: drop-shadow(0 6px 14px rgba(185, 95, 123, 0.22));
+    display: none !important;
+}
+
+.auth-clean-header {
+    text-align: left;
+    margin-bottom: 0.6rem;
+    position: relative;
+    z-index: 2;
+}
+
+.auth-logo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #FFF1F5;
+    border-radius: 12px;
+    font-size: 24px;
+    margin-bottom: 8px;
+    border: 1px solid #F3D9E2;
+}
+
+.auth-brand-wordmark {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #B95F7B;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.auth-privacy-banner {
+    margin-top: 1rem;
+    padding: 0.75rem 0.9rem;
+    background: #FFF7F9;
+    border: 1px solid #F5DDE6;
+    border-radius: 14px;
+    font-size: 0.74rem;
+    line-height: 1.45;
+    color: #6E5D66;
+    text-align: left;
+}
+
+.iphone-home-indicator-unauth {
+    position: fixed;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
     pointer-events: none;
-    z-index: 0;
+    z-index: 99;
 }
 
 /* Back row indicator for Create Account */
