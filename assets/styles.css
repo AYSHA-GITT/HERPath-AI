@@ -1728,6 +1728,239 @@ div[data-testid="stForm"] button[kind="primary"]:hover {
     color: #FFFFFF !important;
 }
 
+/* ==========================================================================
+   HERPath Timeline Intelligence
+   ========================================================================== */
+.timeline-header-banner {
+    background: linear-gradient(135deg, rgba(185, 95, 123, 0.08) 0%, rgba(248, 228, 234, 0.4) 100%);
+    border: 1px solid rgba(185, 95, 123, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.timeline-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-metric-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.9rem 1rem;
+    box-shadow: var(--shadow-soft);
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.timeline-metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card);
+}
+
+.timeline-metric-val {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--primary-rose);
+    line-height: 1.2;
+}
+
+.timeline-metric-lbl {
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.timeline-event-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 2px 8px rgba(42, 30, 36, 0.04);
+    border-left: 4px solid var(--primary-rose);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-event-card.event-medication {
+    border-left-color: #2E7D32;
+    background: linear-gradient(90deg, rgba(46, 125, 50, 0.03) 0%, #FFFFFF 15%);
+}
+
+.timeline-event-card.event-severe {
+    border-left-color: #C2410C;
+    background: linear-gradient(90deg, rgba(194, 65, 12, 0.03) 0%, #FFFFFF 15%);
+}
+
+.timeline-badge-symptom {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--soft-blush);
+    color: var(--primary-rose);
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.timeline-badge-medication {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #E8F5E9;
+    color: #2E7D32;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.timeline-date-chip {
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--canvas-bg);
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+}
+
+.timeline-severity-pill-mild {
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+
+.timeline-severity-pill-mod {
+    background: #FFF8E1;
+    color: #B45309;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+
+.timeline-severity-pill-sev {
+    background: #FEE2E2;
+    color: #DC2626;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+}
+
+.timeline-impact-pill {
+    background: rgba(185, 95, 123, 0.1);
+    color: var(--deep-wine);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
+
+.period-compare-container {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.period-metric-box {
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    text-align: center;
+}
+
+.delta-pill-positive {
+    display: inline-block;
+    background: #FEE2E2;
+    color: #DC2626;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.delta-pill-negative {
+    display: inline-block;
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.delta-pill-neutral {
+    display: inline-block;
+    background: #F3F4F6;
+    color: #6B7280;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 9999px;
+}
+
+.insight-card-wrapper {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--primary-rose);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.15rem;
+    margin-bottom: 0.85rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.insight-evidence-box {
+    background: var(--canvas-bg);
+    border: 1px dashed rgba(185, 95, 123, 0.3);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+}
+
+.insight-formula-caption {
+    font-family: monospace;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.insight-limitation-note {
+    font-size: 0.72rem;
+    color: #8C7B83;
+    font-style: italic;
+    margin-top: 0.4rem;
+}
+
+.timeline-empty-card {
+    text-align: center;
+    background: #FFFFFF;
+    border: 2px dashed var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 1.5rem;
+    color: var(--text-muted);
+    margin: 1.5rem 0;
+}
+
+
 
 
 

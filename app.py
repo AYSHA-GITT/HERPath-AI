@@ -54,6 +54,7 @@ from safety_navigator import SafetyNavigator
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
 from data.seed_data import seed_demo_data
+from timeline_service import TimelineService, TimelineEvent
 from auth import (
     hash_credential,
     verify_credential,
@@ -121,9 +122,9 @@ def navigate_to(page_name: str):
 
 # Sleek Segmented Sub-Navigation Helpers for Multi-Feature Access
 def render_my_health_subnav(current_screen: str):
-    """Renders a sleek 4-segment sub-navigation pill bar for all My Health screens."""
+    """Renders a sleek 5-segment sub-navigation pill bar for all My Health screens."""
     with st.container(key="subnav_container"):
-        s1, s2, s3, s4 = st.columns(4)
+        s1, s2, s3, s4, s5 = st.columns(5)
         with s1:
             is_active = current_screen == "Symptom Journal"
             if st.button("📝 Journal", key="sub_btn_journal", use_container_width=True, type="primary" if is_active else "secondary"):
@@ -133,10 +134,14 @@ def render_my_health_subnav(current_screen: str):
             if st.button("💊 Meds", key="sub_btn_meds", use_container_width=True, type="primary" if is_active else "secondary"):
                 navigate_to("Medication & Treatments")
         with s3:
+            is_active = current_screen == "Timeline Intelligence"
+            if st.button("⏱️ Timeline", key="sub_btn_timeline", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Timeline Intelligence")
+        with s4:
             is_active = current_screen == "Health Insights"
             if st.button("📈 Insights", key="sub_btn_insights", use_container_width=True, type="primary" if is_active else "secondary"):
                 navigate_to("Health Insights")
-        with s4:
+        with s5:
             is_active = current_screen == "My Health Report"
             if st.button("📄 Report", key="sub_btn_report", use_container_width=True, type="primary" if is_active else "secondary"):
                 navigate_to("My Health Report")
@@ -199,6 +204,7 @@ with st.sidebar:
             "Home Dashboard",
             "Symptom Journal",
             "Medication & Treatments",
+            "Timeline Intelligence",
             "Health Insights",
             "Care Navigator",
             "Women's Health Library",
@@ -1128,6 +1134,445 @@ with st.container(key="mobile_scroll_content"):
 
 
     # ==========================================
+    # SCREEN: TIMELINE INTELLIGENCE (Chronological Health Journey)
+    # ==========================================
+    elif st.session_state["navigation"] == "Timeline Intelligence":
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">⏱️ HERPath Timeline Intelligence</div>
+                <div class="page-subtitle">Interactive, explainable chronological view of your recorded health journey, symptom episodes, medications, and contextual patterns.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        render_my_health_subnav("Timeline Intelligence")
+
+        tl_service = TimelineService(active_profile.id)
+        raw_events = tl_service.fetch_all_events()
+
+        # Taxonomy and available categories/symptoms
+        all_recorded_categories = sorted(list(set([e.category for e in raw_events if e.category] + list(SYMPTOM_TAXONOMY.keys()))))
+        all_recorded_symptoms = sorted(list(set([e.title for e in raw_events if e.event_type == "symptom" and e.title])))
+
+        # 1. Interactive Timeline Filters
+        st.markdown('<div class="section-header">🔍 Interactive Timeline Filters</div>', unsafe_allow_html=True)
+        with st.expander("Filter Date Range, Categories, Severity & Event Types", expanded=True):
+            f_col_preset, f_col_sort = st.columns([2, 1])
+            with f_col_preset:
+                date_preset = st.radio(
+                    "Date Range Preset",
+                    ["Last 30 Days", "Last 7 Days", "Last 90 Days", "All Time", "Custom Range"],
+                    horizontal=True,
+                    key="tl_preset_selector"
+                )
+            with f_col_sort:
+                sort_order = st.radio(
+                    "Timeline Sorting",
+                    ["Newest First", "Oldest First"],
+                    horizontal=True,
+                    key="tl_sort_order_selector"
+                )
+
+            # Compute date boundaries
+            today_dt = date.today()
+            if date_preset == "Last 7 Days":
+                start_boundary = today_dt - timedelta(days=7)
+                end_boundary = today_dt
+            elif date_preset == "Last 30 Days":
+                start_boundary = today_dt - timedelta(days=30)
+                end_boundary = today_dt
+            elif date_preset == "Last 90 Days":
+                start_boundary = today_dt - timedelta(days=90)
+                end_boundary = today_dt
+            elif date_preset == "All Time":
+                start_boundary = None
+                end_boundary = None
+            else: # Custom Range
+                c_d1, c_d2 = st.columns(2)
+                with c_d1:
+                    start_boundary = st.date_input("From Date", value=today_dt - timedelta(days=30), key="tl_custom_start")
+                with c_d2:
+                    end_boundary = st.date_input("To Date", value=today_dt, key="tl_custom_end")
+
+            filter_c1, filter_c2 = st.columns(2)
+            with filter_c1:
+                selected_categories = st.multiselect(
+                    "Filter by Category",
+                    options=all_recorded_categories,
+                    default=[],
+                    help="Leave empty to include all categories",
+                    key="tl_cat_filter_multi"
+                )
+            with filter_c2:
+                selected_symptoms = st.multiselect(
+                    "Filter by Specific Symptom",
+                    options=all_recorded_symptoms,
+                    default=[],
+                    help="Leave empty to include all symptoms",
+                    key="tl_sym_filter_multi"
+                )
+
+            filter_c3, filter_c4 = st.columns([1.2, 1])
+            with filter_c3:
+                sev_range = st.slider(
+                    "Severity Rating (1 to 10)",
+                    min_value=1,
+                    max_value=10,
+                    value=(1, 10),
+                    key="tl_severity_range_slider"
+                )
+            with filter_c4:
+                selected_types = st.multiselect(
+                    "Event Types to Display",
+                    options=["Symptoms", "Medications", "Sleep Context", "Stress Context", "Functional Impact"],
+                    default=["Symptoms", "Medications"],
+                    key="tl_event_types_multi"
+                )
+
+            if st.button("🔄 Reset All Filters", key="tl_btn_reset_filters", use_container_width=True):
+                st.session_state["tl_preset_selector"] = "Last 30 Days"
+                st.session_state["tl_cat_filter_multi"] = []
+                st.session_state["tl_sym_filter_multi"] = []
+                st.session_state["tl_severity_range_slider"] = (1, 10)
+                st.session_state["tl_event_types_multi"] = ["Symptoms", "Medications"]
+                st.rerun()
+
+        # Apply Filters
+        filtered_events = TimelineService.filter_events(
+            events=raw_events,
+            start_date=start_boundary,
+            end_date=end_boundary,
+            categories=selected_categories if selected_categories else None,
+            symptoms=selected_symptoms if selected_symptoms else None,
+            min_severity=sev_range[0],
+            max_severity=sev_range[1],
+            event_types=selected_types if selected_types else ["Symptoms", "Medications"]
+        )
+
+        if not filtered_events:
+            st.markdown("""
+                <div class="timeline-empty-card">
+                    <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">🔍</div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: #2A1E24;">No timeline records match your filter criteria</div>
+                    <div style="font-size: 0.84rem; color: #7E6F77; margin-top: 6px; max-width: 460px; margin-left: auto; margin-right: auto; line-height: 1.45;">
+                        We couldn't find any recorded symptom episodes or medication changes matching this specific date or category filter. Try broadening your dates or resetting filters.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            if st.button("🔄 Reset Filter Criteria", key="btn_empty_reset", use_container_width=True):
+                st.session_state["tl_preset_selector"] = "Last 30 Days"
+                st.session_state["tl_cat_filter_multi"] = []
+                st.session_state["tl_sym_filter_multi"] = []
+                st.session_state["tl_severity_range_slider"] = (1, 10)
+                st.session_state["tl_event_types_multi"] = ["Symptoms", "Medications"]
+                st.rerun()
+
+        else:
+            # 2. Timeline Summary Metrics
+            metrics = TimelineService.calculate_summary_metrics(filtered_events)
+
+            st.markdown('<div class="section-header">📊 Timeline Summary Metrics</div>', unsafe_allow_html=True)
+            m_c1, m_c2, m_c3 = st.columns(3)
+            with m_c1:
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{metrics['total_events']}</div>
+                        <div class="timeline-metric-lbl">Total Events</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with m_c2:
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{metrics['symptom_episodes']}</div>
+                        <div class="timeline-metric-lbl">Symptom Episodes</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with m_c3:
+                avg_sev_text = f"{metrics['avg_severity']}/10" if metrics['avg_severity'] is not None else "N/A"
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{avg_sev_text}</div>
+                        <div class="timeline-metric-lbl">Avg Severity</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            m_c4, m_c5, m_c6 = st.columns(3)
+            with m_c4:
+                max_sev_text = f"{metrics['max_severity']}/10" if metrics['max_severity'] is not None else "N/A"
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{max_sev_text}</div>
+                        <div class="timeline-metric-lbl">Peak Severity</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with m_c5:
+                avg_dur_text = f"{metrics['avg_duration']}h" if metrics['avg_duration'] is not None else "N/A"
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{avg_dur_text}</div>
+                        <div class="timeline-metric-lbl">Avg Duration</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with m_c6:
+                st.markdown(f"""
+                    <div class="timeline-metric-card">
+                        <div class="timeline-metric-val">{metrics['impact_count']}</div>
+                        <div class="timeline-metric-lbl">Impacted Logs</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            # 3. Interactive Visualizations
+            st.markdown('<div class="section-header">📈 Interactive Timeline Visualizations</div>', unsafe_allow_html=True)
+            tab_sev, tab_swim, tab_ctx = st.tabs([
+                "📈 Symptom Severity Timeline",
+                "🗓️ Unified Event Swimlane",
+                "🌙 Sleep & Contextual Co-Occurrence"
+            ])
+
+            with tab_sev:
+                st.caption("Plots recorded symptom episodes and severity ratings against actual calendar dates.")
+                sev_fig = TimelineService.create_severity_timeline_chart(filtered_events)
+                st.plotly_chart(sev_fig, use_container_width=True)
+
+            with tab_swim:
+                st.caption("Displays symptom episodes alongside medication starts and functional impact observations on a unified timeline.")
+                swim_fig = TimelineService.create_unified_event_timeline_chart(filtered_events)
+                st.plotly_chart(swim_fig, use_container_width=True)
+
+            with tab_ctx:
+                st.caption("Shows how symptom severity levels coincide across restful vs. disrupted sleep quality tiers (when at least 3 entries exist).")
+                ctx_fig = TimelineService.create_contextual_cooccurrence_chart(filtered_events)
+                st.plotly_chart(ctx_fig, use_container_width=True)
+
+            # 4. Period Comparison Section
+            st.markdown('<div class="section-header">⚖️ Compare Symptoms Across Selected Periods</div>', unsafe_allow_html=True)
+            with st.expander("Configure & Compare Two Time Periods", expanded=True):
+                comp_mode = st.radio(
+                    "Comparison Period Selection",
+                    ["Recent 30 Days vs Previous 30 Days", "Recent 14 Days vs Previous 14 Days", "Custom Comparison Ranges"],
+                    horizontal=True,
+                    key="tl_comp_mode_selector"
+                )
+
+                today_c = date.today()
+                if comp_mode == "Recent 14 Days vs Previous 14 Days":
+                    p_a_start, p_a_end = today_c - timedelta(days=14), today_c
+                    p_b_start, p_b_end = today_c - timedelta(days=28), today_c - timedelta(days=15)
+                    label_a, label_b = "Recent 14 Days", "Previous 14 Days"
+                    days_a, days_b = 14, 14
+                elif comp_mode == "Recent 30 Days vs Previous 30 Days":
+                    p_a_start, p_a_end = today_c - timedelta(days=30), today_c
+                    p_b_start, p_b_end = today_c - timedelta(days=60), today_c - timedelta(days=31)
+                    label_a, label_b = "Recent 30 Days", "Previous 30 Days"
+                    days_a, days_b = 30, 30
+                else: # Custom
+                    cp_c1, cp_c2 = st.columns(2)
+                    with cp_c1:
+                        st.markdown("<b>Period A (Current / Target)</b>", unsafe_allow_html=True)
+                        p_a_start = st.date_input("Period A Start", value=today_c - timedelta(days=30), key="tl_p_a_start")
+                        p_a_end = st.date_input("Period A End", value=today_c, key="tl_p_a_end")
+                    with cp_c2:
+                        st.markdown("<b>Period B (Baseline / Comparison)</b>", unsafe_allow_html=True)
+                        p_b_start = st.date_input("Period B Start", value=today_c - timedelta(days=60), key="tl_p_b_start")
+                        p_b_end = st.date_input("Period B End", value=today_c - timedelta(days=31), key="tl_p_b_end")
+                    label_a = f"{p_a_start} to {p_a_end}"
+                    label_b = f"{p_b_start} to {p_b_end}"
+                    days_a = max(1, (p_a_end - p_a_start).days + 1)
+                    days_b = max(1, (p_b_end - p_b_start).days + 1)
+
+                # Filter events for both periods (respecting category/symptom filters if selected)
+                events_period_a = TimelineService.filter_events(
+                    raw_events,
+                    start_date=p_a_start,
+                    end_date=p_a_end,
+                    categories=selected_categories if selected_categories else None,
+                    symptoms=selected_symptoms if selected_symptoms else None
+                )
+                events_period_b = TimelineService.filter_events(
+                    raw_events,
+                    start_date=p_b_start,
+                    end_date=p_b_end,
+                    categories=selected_categories if selected_categories else None,
+                    symptoms=selected_symptoms if selected_symptoms else None
+                )
+
+                comparison_results = TimelineService.compare_periods(
+                    events_period_a,
+                    events_period_b,
+                    period_a_label=label_a,
+                    period_b_label=label_b,
+                    days_a=days_a,
+                    days_b=days_b
+                )
+
+                # Display comparative KPIs
+                deltas = comparison_results["deltas"]
+                pa_m = comparison_results["period_a"]["metrics"]
+                pb_m = comparison_results["period_b"]["metrics"]
+
+                st.markdown(f"##### Comparative Delta Summary ({label_a} vs. {label_b})")
+                cd_1, cd_2, cd_3 = st.columns(3)
+                with cd_1:
+                    ep_diff = deltas["episodes"]
+                    diff_pill = (
+                        f"<span class='delta-pill-positive'>+{ep_diff}</span>" if ep_diff > 0
+                        else f"<span class='delta-pill-negative'>{ep_diff}</span>" if ep_diff < 0
+                        else "<span class='delta-pill-neutral'>0</span>"
+                    )
+                    st.markdown(f"""
+                        <div class="period-metric-box">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Episodes Shift</div>
+                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{pa_m['symptom_episodes']} vs {pb_m['symptom_episodes']} {diff_pill}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Daily rate: {comparison_results['period_a']['daily_rate']}/d vs {comparison_results['period_b']['daily_rate']}/d</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                with cd_2:
+                    sev_diff = deltas["severity"]
+                    if sev_diff is not None:
+                        diff_pill = (
+                            f"<span class='delta-pill-positive'>+{sev_diff}</span>" if sev_diff > 0
+                            else f"<span class='delta-pill-negative'>{sev_diff}</span>" if sev_diff < 0
+                            else "<span class='delta-pill-neutral'>0.0</span>"
+                        )
+                        sev_summary = f"{pa_m['avg_severity'] or 'N/A'} vs {pb_m['avg_severity'] or 'N/A'} {diff_pill}"
+                    else:
+                        sev_summary = "N/A"
+                    st.markdown(f"""
+                        <div class="period-metric-box">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Avg Severity Shift</div>
+                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{sev_summary}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Peak: {pa_m['max_severity'] or 'N/A'}/10 vs {pb_m['max_severity'] or 'N/A'}/10</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                with cd_3:
+                    dur_diff = deltas["duration"]
+                    dur_summary = f"{pa_m['avg_duration'] or 'N/A'}h vs {pb_m['avg_duration'] or 'N/A'}h"
+                    st.markdown(f"""
+                        <div class="period-metric-box">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Avg Duration</div>
+                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{dur_summary}</div>
+                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Delta: {f'{dur_diff:+0.1f}h' if dur_diff is not None else 'N/A'}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                # Period Comparison Chart
+                st.plotly_chart(TimelineService.create_period_comparison_chart(comparison_results), use_container_width=True)
+
+                # Per-symptom breakdown table
+                sym_breakdown = comparison_results.get("symptom_breakdown", [])
+                if sym_breakdown:
+                    st.markdown("##### Symptom-by-Symptom Comparative Breakdown")
+                    breakdown_rows = []
+                    for b in sym_breakdown:
+                        breakdown_rows.append({
+                            "Symptom": b["symptom"],
+                            f"Episodes ({label_a})": b["episodes_a"],
+                            f"Episodes ({label_b})": b["episodes_b"],
+                            "Episode Delta": f"{b['episodes_diff']:+d}",
+                            f"Avg Sev ({label_a})": f"{b['avg_severity_a']}/10" if b['avg_severity_a'] is not None else "N/A",
+                            f"Avg Sev ({label_b})": f"{b['avg_severity_b']}/10" if b['avg_severity_b'] is not None else "N/A",
+                            "Severity Delta": f"{b['severity_diff']:+0.1f}" if b['severity_diff'] is not None else "N/A",
+                            "Peak Severity": f"{b['max_severity']}/10" if b['max_severity'] is not None else "N/A"
+                        })
+                    st.dataframe(pd.DataFrame(breakdown_rows), use_container_width=True, hide_index=True)
+                else:
+                    st.info("No common symptoms recorded across both comparison periods.")
+
+            # 5. Explainable Health Insights
+            st.markdown('<div class="section-header">💡 Explainable Health Insights (Rule-Based)</div>', unsafe_allow_html=True)
+            insights = TimelineService.generate_explainable_insights(filtered_events, comparison=comparison_results)
+
+            for ins in insights:
+                st.markdown(f"""
+                    <div class="insight-card-wrapper">
+                        <div style="font-weight: 700; font-size: 0.94rem; color: #2A1E24;">{ins['title']}</div>
+                        <div style="font-size: 0.85rem; color: #34272E; margin-top: 4px; line-height: 1.45;">{ins['statement']}</div>
+                        <div class="insight-evidence-box">
+                            <div><b>Exact Evidence:</b> {ins['exact_evidence']}</div>
+                            <div><b>Date Range:</b> {ins['date_range']} &bull; <b>Relevant Records:</b> {ins['record_count']}</div>
+                            <div class="insight-formula-caption">Calculation: {ins['calculation_note']}</div>
+                        </div>
+                        <div class="insight-limitation-note">⚠️ Note: {ins['limitation']}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            # 6. Chronological Health Event Feed & Detail View
+            st.markdown('<div class="section-header">📜 Chronological Health Event Feed</div>', unsafe_allow_html=True)
+            st.caption(f"Showing **{len(filtered_events)}** chronological health events grounded in your database records.")
+
+            display_events = list(filtered_events)
+            if sort_order == "Newest First":
+                display_events.reverse()
+
+            for ev in display_events:
+                is_med = ev.event_type == "medication"
+                is_sev = ev.severity is not None and ev.severity >= 7
+                card_class = "timeline-event-card event-medication" if is_med else ("timeline-event-card event-severe" if is_sev else "timeline-event-card")
+
+                type_badge = "<span class='timeline-badge-medication'>Medication Started</span>" if is_med else "<span class='timeline-badge-symptom'>Symptom Episode</span>"
+
+                sev_pill = ""
+                if ev.severity is not None:
+                    if ev.severity <= 3:
+                        sev_pill = f"<span class='timeline-severity-pill-mild'>Mild {ev.severity}/10</span>"
+                    elif ev.severity <= 6:
+                        sev_pill = f"<span class='timeline-severity-pill-mod'>Mod {ev.severity}/10</span>"
+                    else:
+                        sev_pill = f"<span class='timeline-severity-pill-sev'>Severe {ev.severity}/10</span>"
+
+                impact_pill = f"<span class='timeline-impact-pill'>{ev.impact}</span>" if ev.impact and ev.impact != "None" else ""
+
+                expander_title = f"{'💊' if is_med else '🌸'} {ev.date} — {ev.title} {'(' + str(ev.severity) + '/10)' if ev.severity else ''}"
+
+                with st.expander(expander_title, expanded=False):
+                    st.markdown(f"""
+                        <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+                            <span class="timeline-date-chip">📅 {ev.date} {ev.time or ''}</span>
+                            {type_badge}
+                            {sev_pill}
+                            {impact_pill}
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                    d_col1, d_col2 = st.columns(2)
+                    with d_col1:
+                        st.write(f"**Category:** {ev.category}")
+                        if ev.duration_hours is not None:
+                            st.write(f"**Duration:** {ev.duration_hours} hours")
+                        if ev.status:
+                            st.write(f"**Status:** {ev.status}")
+                        if is_med:
+                            st.write(f"**Dosage:** {ev.dosage or 'Standard dose'}")
+                            st.write(f"**Frequency:** {ev.frequency or 'As directed'}")
+
+                    with d_col2:
+                        if ev.context:
+                            ctx = ev.context
+                            if ctx.get("sleep"):
+                                st.write(f"**Sleep Quality:** {ctx['sleep']}")
+                            if ctx.get("stress"):
+                                st.write(f"**Stress Level:** {ctx['stress']}")
+                            if ctx.get("energy"):
+                                st.write(f"**Energy:** {ctx['energy']}")
+                            if ctx.get("cycle_phase"):
+                                st.write(f"**Cycle Phase:** {ctx['cycle_phase']}")
+
+                    if ev.notes:
+                        st.markdown(f"**Notes:** *{ev.notes}*")
+
+                    st.caption(f"Data Source: {ev.source}")
+
+                    # Edit link for symptoms
+                    if ev.event_type == "symptom":
+                        raw_id = int(ev.event_id.replace("symptom_", "")) if ev.event_id.startswith("symptom_") else None
+                        if raw_id:
+                            if st.button("✏️ Edit Record in Journal", key=f"tl_edit_{ev.event_id}", use_container_width=True):
+                                st.session_state["editing_entry_id"] = raw_id
+                                navigate_to("Symptom Journal")
+
+
+    # ==========================================
     # SCREEN 4: MEDICATION & TREATMENTS
     # ==========================================
     elif st.session_state["navigation"] == "Medication & Treatments":
@@ -1658,7 +2103,7 @@ if st.session_state.get("is_logged_in", False):
                 navigate_to("Home Dashboard")
 
         with nav_col2:
-            is_active = curr_nav in ["Symptom Journal", "Medication & Treatments", "Health Insights", "My Health Report"]
+            is_active = curr_nav in ["Symptom Journal", "Medication & Treatments", "Timeline Intelligence", "Health Insights", "My Health Report"]
             if st.button("💗 My Health", key="bnav_health", use_container_width=True, type="primary" if is_active else "secondary"):
                 navigate_to("Symptom Journal")
 

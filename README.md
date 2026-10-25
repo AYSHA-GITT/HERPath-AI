@@ -39,13 +39,14 @@ Women's health challenges are frequently compounded by systemic barriers:
 | **2. Multi-Profile & Privacy** | Local profile creation, pseudonyms, isolated records, optional menstrual tracking preference, user-controlled data erasure. | ✅ Complete |
 | **3. Smart Symptom Journal** | Full CRUD: Record, edit, delete, view, and filter symptoms. Captures category, severity (1–10), duration, onset date/time, functional impact, and sleep/stress context. | ✅ Complete |
 | **4. Medication & Treatments** | Track prescriptions, OTC supplements, and lifestyle therapies (dosage, frequency, started date) linked with active profiles. | ✅ Complete |
-| **5. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
-| **6. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
-| **7. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
-| **8. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
-| **9. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
-| **10. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
-| **11. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **5. Timeline Intelligence** | Interactive chronological health journey: multi-dimensional filters (date range presets, custom dates, categories, symptoms, severity slider, event types), dual-period symptom comparison with observation rate per day, explainable rule-based pattern insights, and 3 Plotly charts (severity trajectory, unified event swimlane, contextual co-occurrence). | ✅ Complete |
+| **6. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
+| **7. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
+| **8. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
+| **9. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
+| **10. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
+| **11. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
+| **12. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
 
 
 ---
@@ -63,6 +64,7 @@ HERPath-AI/
 ├── models.py                  # UserProfile, SymptomEntry & Medication dataclasses
 ├── validators.py              # Input validation and bounds checking
 ├── symptom_tracker.py         # Business logic service layer
+├── timeline_service.py        # HERPath Timeline Intelligence & period analytics engine
 ├── insights_engine.py         # Statistical analysis & Plotly visualization engine
 ├── safety_navigator.py        # Rule-based clinical triage hierarchy
 ├── health_library.py          # Evidence-based health education search
@@ -71,7 +73,7 @@ HERPath-AI/
 ├── .env.example               # Environment template
 ├── .gitignore                 # Excludes local databases, caches, and secrets
 ├── assets/
-│   └── styles.css             # Custom design system & iOS-inspired device shell
+│   └── styles.css             # Custom design system, timeline components & iOS shell
 ├── data/
 │   ├── health_resources.json  # Curated literature from WHO, NHS, CDC, ACOG
 │   └── seed_data.py           # Realistic, fictional demonstration data seeder
@@ -79,6 +81,7 @@ HERPath-AI/
 │   ├── test_auth.py           # Salted PIN hashing & user registration unit tests
 │   ├── test_database.py       # Persistence, CRUD, isolation & cascade tests
 │   ├── test_validators.py     # Input boundary & sanitization tests
+│   ├── test_timeline.py       # HERPath Timeline Intelligence comprehensive test suite
 │   ├── test_insights.py       # Math accuracy & non-diagnostic constraint tests
 │   ├── test_safety.py         # Clinical triage & emergency override tests
 │   ├── test_reports.py        # PDF compilation & rendering tests
@@ -170,14 +173,48 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (40/40 Passed):
-- **Frontend End-to-End (`test_frontend_e2e.py`):** Verified rendering, navigation, form inputs, triage emergency cards, library search, and report download buttons across all 7 views using Streamlit AppTest.
+### Verified Test Coverage (82/82 Passed):
+- **Timeline Intelligence (`test_timeline.py`):** Verified chronological sorting, date-range filtering, category & symptom filtering, severity sliders, missing values handling without zero-coercion, dual-period comparison with observation rates per day, empty periods, sleep/stress contextual thresholds, profile isolation, medication grounding, and Plotly figure generation.
+- **Frontend End-to-End (`test_frontend_e2e.py`):** Verified rendering, navigation, form inputs, triage emergency cards, library search, and report download buttons across all views using Streamlit AppTest.
+- **Mobile Redesign (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, quick logging flows, and single-column mobile layout.
+- **Authentication & Security (`test_auth.py`):** Verified salted SHA-256 PIN security, new user registration, profile isolation, and login authentication.
 - **Backend End-to-End (`test_backend_e2e.py`):** Verified full profile lifecycle, zero cross-profile data leakage, analytics mathematical precision, triage rule hierarchy, and ReportLab PDF compilation.
 - **Database (`test_database.py`):** Profile isolation, symptom CRUD, update persistence, cascade profile deletion, foreign-key integrity.
 - **Validators (`test_validators.py`):** Severity bounds (1–10), duration limits (<=720h), future date handling, sanitization.
 - **Insights (`test_insights.py`):** Zero division protection, null duration handling (not treating missing as 0), non-diagnostic constraint verification.
 - **Safety Navigator (`test_safety.py`):** Self-care baseline, routine consultation, prompt medical evaluation (24-48h), emergency warning overrides, non-diagnostic boundaries.
 - **Report Generator (`test_reports.py`):** Valid PDF byte stream generation for empty, single, and multi-entry records.
+
+---
+
+## 9. HERPath Timeline Intelligence & Dual-Period Analytics
+
+**HERPath Timeline Intelligence** unifies the user's recorded health observations and interventions into an interactive, explainable, and privacy-preserving chronological stream.
+
+### Key Capabilities:
+1. **Unified Chronological Health Journey:** Seamlessly interleaves symptom episodes with medication starts, recorded severity (1–10), duration, functional impact, and sleep/stress context.
+2. **Multi-Dimensional Interactive Filtering:**
+   - **Date Presets & Custom Ranges:** Quick toggles for *Last 7 Days*, *Last 30 Days*, *Last 90 Days*, *All Time*, or custom date boundaries.
+   - **Category & Specific Symptom Filtering:** Multi-select filtering across anatomical and physiological symptom taxonomy.
+   - **Severity Slider (1–10):** Focus on mild, moderate, or severe episodes.
+   - **Event Types:** Filter by Symptoms, Medications, Sleep Context, Stress Context, or Functional Disruption.
+   - **Reset Filter Action & Empty State:** Graceful handling when no records match filter criteria.
+3. **Dual-Period Comparison Analytics:**
+   - Compares two date ranges (e.g., *Recent 30 Days vs. Previous 30 Days* or custom periods).
+   - Calculates raw episode shifts, observation rates per day (accounting for unequal period lengths), average severity deltas, peak severity, and average duration shifts.
+   - Interactive grouped Plotly bar chart comparing episodes and severity.
+   - Symptom-by-symptom comparative breakdown table.
+4. **Explainable Health Pattern Insights:**
+   - Rule-based analysis layer grounded exclusively in verified database values.
+   - Every insight displays the observation, exact evidence count, date range, mathematical formula, and clinical safety limitation disclaimer.
+   - **Medical Safety Rules:** Strict refusal to infer clinical diagnoses or declare physiological causation (*"co-occurred with"*, *"was recorded alongside"*).
+5. **Interactive Plotly Visualizations:**
+   - **Symptom Severity Timeline:** Scatter and spline trajectory against real dates with color-coded severity zones (Mild, Moderate, Severe).
+   - **Unified Event Swimlane:** Chronological multi-track view of symptoms, medication start dates, and functional disruptions.
+   - **Contextual Sleep Comparison:** Severity distribution across reported sleep quality tiers when sufficient data exists ($n \ge 3$).
+6. **Chronological Event Feed & Detail View:**
+   - Expandable event cards with severity pills, impact badges, sleep/stress ratings, medication dosages, and notes.
+   - Integrated with existing CRUD services, enabling direct 1-click editing in the Symptom Journal.
 
 ---
 
