@@ -2310,6 +2310,158 @@ div[data-testid="stForm"] button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
 }
 
+/* Cycle Horizon & Milestone Pill */
+.cycle-milestone-pill {
+    background: rgba(185, 95, 123, 0.08);
+    border: 1px solid rgba(185, 95, 123, 0.2);
+    border-radius: 9999px;
+    padding: 5px 12px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #4A3748;
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* Today's Recommendation Section (Mockup Match) */
+.today-rec-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.25rem;
+    margin-bottom: 0.65rem;
+    padding: 0 0.15rem;
+}
+
+.today-rec-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #2A1E24;
+    letter-spacing: -0.2px;
+}
+
+.today-rec-seeall {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--primary-rose);
+    cursor: pointer;
+}
+
+.today-rec-grid {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1.15rem;
+}
+
+.today-rec-card {
+    flex: 1;
+    background: #FFFFFF;
+    border: 1px solid rgba(235, 216, 223, 0.7);
+    border-radius: 18px;
+    padding: 0.9rem 0.85rem;
+    box-shadow: 0 4px 14px rgba(185, 95, 123, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.today-rec-card:hover {
+    border-color: var(--primary-rose);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(185, 95, 123, 0.12);
+}
+
+.today-rec-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 4px;
+}
+
+.today-rec-name {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #2A1E24;
+}
+
+.today-rec-desc {
+    font-size: 0.76rem;
+    color: #6B5E65;
+    line-height: 1.35;
+}
+
+/* Quick Mood & Well-being Check-In Section (Screen 2 Mockup Match) */
+.quick-checkin-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 1.1rem 1rem;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 1.15rem;
+}
+
+.quick-section-subtitle {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #8C7B83;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.quick-chips-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.85rem;
+}
+
+.quick-chip {
+    background: #FDF7F9;
+    border: 1px solid rgba(185, 95, 123, 0.25);
+    border-radius: 9999px;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4A3748;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.quick-chip:hover {
+    background: #F8E4EA;
+    border-color: var(--primary-rose);
+}
+
+.quick-chip-selected {
+    background: #4E394E !important;
+    border-color: #4E394E !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(78, 57, 78, 0.25);
+}
+
+/* Energy Curve Card (Screen 3 Mockup Match) */
+.energy-curve-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 1.15rem 1rem;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 1.15rem;
+}
+
+
 
 
 

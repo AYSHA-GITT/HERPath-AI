@@ -109,7 +109,7 @@ HERPath-AI/
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (99 comprehensive unit, integration & AppTest E2E tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (103 comprehensive unit, integration & AppTest E2E tests).
 
 ---
 
@@ -176,10 +176,11 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (82/82 Passed):
+### Verified Test Coverage (103/103 Passed):
+- **Mobile Redesign & Home Dashboard (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, 5-step quick logging flow, single-column mobile layout, dynamic Cycle Day & Phase Arc widget, milestone countdown horizon, phase-specific nutrition/activity recommendations, 1-tap quick check-in SQLite persistence, spline energy curve across phases, and cycle personalization sheet.
+- **Smart Clinical Summary (`test_clinical_summary.py`):** Verified multi-preset date boundaries, null-safe duration metrics, non-causal medication comparison, patient concern synthesis, and ReportLab PDF compilation.
 - **Timeline Intelligence (`test_timeline.py`):** Verified chronological sorting, date-range filtering, category & symptom filtering, severity sliders, missing values handling without zero-coercion, dual-period comparison with observation rates per day, empty periods, sleep/stress contextual thresholds, profile isolation, medication grounding, and Plotly figure generation.
 - **Frontend End-to-End (`test_frontend_e2e.py`):** Verified rendering, navigation, form inputs, triage emergency cards, library search, and report download buttons across all views using Streamlit AppTest.
-- **Mobile Redesign (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, quick logging flows, and single-column mobile layout.
 - **Authentication & Security (`test_auth.py`):** Verified salted SHA-256 PIN security, new user registration, profile isolation, and login authentication.
 - **Backend End-to-End (`test_backend_e2e.py`):** Verified full profile lifecycle, zero cross-profile data leakage, analytics mathematical precision, triage rule hierarchy, and ReportLab PDF compilation.
 - **Database (`test_database.py`):** Profile isolation, symptom CRUD, update persistence, cascade profile deletion, foreign-key integrity.

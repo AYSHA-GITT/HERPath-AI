@@ -13,6 +13,9 @@ from pathlib import Path
 import json
 import uuid
 import math
+import textwrap
+import numpy as np
+import plotly.graph_objects as go
 
 # Internal Modules
 from config import (
@@ -647,7 +650,7 @@ with st.container(key="mobile_scroll_content"):
             phase_name = "Luteal Phase"
 
         # 1. Top Greeting Row with Avatar Pill
-        st.markdown(f"""
+        st.markdown(textwrap.dedent(f"""
             <div class="cycle-greeting-row">
                 <div>
                     <div style="font-size: 0.88rem; font-weight: 700; color: #8C7B83;">Hi, {first_name}</div>
@@ -656,41 +659,40 @@ with st.container(key="mobile_scroll_content"):
                 </div>
                 <div class="cycle-avatar-circle" title="{active_profile.display_name}">🌸</div>
             </div>
-        """, unsafe_allow_html=True)
+        """), unsafe_allow_html=True)
 
-        # 2. Horizontal Weekly Day Strip
-        # Display 6 surrounding days with 'Today' highlighted
+        # 2. Horizontal Weekly Day Strip (Clean unindented HTML to prevent markdown code block bug)
         day_pills_html = []
         start_pill_day = max(1, cycle_day - 1)
         if start_pill_day > cycle_len - 5:
             start_pill_day = max(1, cycle_len - 5)
-            
+
         for d_num in range(start_pill_day, start_pill_day + 6):
             if d_num == cycle_day:
-                day_pills_html.append(f"""
-                    <div class="cycle-day-pill cycle-day-active">
-                        <span class="day-lbl">Today</span>
-                        <div class="today-dashed-ring"><span class="today-dot"></span></div>
-                    </div>
-                """)
+                day_pills_html.append(
+                    '<div class="cycle-day-pill cycle-day-active">'
+                    '<span class="day-lbl">Today</span>'
+                    '<div class="today-dashed-ring"><span class="today-dot"></span></div>'
+                    '</div>'
+                )
             elif d_num < cycle_day:
-                day_pills_html.append(f"""
-                    <div class="cycle-day-pill cycle-day-past">
-                        <span class="day-lbl">Day {d_num}</span>
-                        <span class="day-icon">✓</span>
-                    </div>
-                """)
+                day_pills_html.append(
+                    f'<div class="cycle-day-pill cycle-day-past">'
+                    f'<span class="day-lbl">Day {d_num}</span>'
+                    f'<span class="day-icon">✓</span>'
+                    f'</div>'
+                )
             else:
-                day_pills_html.append(f"""
-                    <div class="cycle-day-pill cycle-day-future">
-                        <span class="day-lbl">Day {d_num}</span>
-                        <span class="day-icon">✓</span>
-                    </div>
-                """)
-        
+                day_pills_html.append(
+                    f'<div class="cycle-day-pill cycle-day-future">'
+                    f'<span class="day-lbl">Day {d_num}</span>'
+                    f'<span class="day-icon">✓</span>'
+                    f'</div>'
+                )
+
         st.markdown(f'<div class="cycle-day-strip">{"".join(day_pills_html)}</div>', unsafe_allow_html=True)
 
-        # 3. Semi-Circular Phase Arc Card (Exact vector rendering)
+        # 3. Semi-Circular Phase Arc Card with Milestone Horizon
         frac = (min(28, max(1, cycle_day)) - 0.5) / 28.0
         theta_deg = 180.0 - (frac * 180.0)
         theta_rad = math.radians(theta_deg)
@@ -698,7 +700,19 @@ with st.container(key="mobile_scroll_content"):
         y_m = round(125.0 - 95.0 * math.sin(theta_rad), 1)
         rot_deg = round(90.0 - theta_deg, 1)
 
-        st.markdown(f"""
+        # Calculate upcoming milestone horizon
+        if phase_name == "Menstruation Phase":
+            phase_days_left = max(1, 5 - cycle_day + 1)
+        elif phase_name == "Follicular Phase":
+            phase_days_left = max(1, 13 - cycle_day + 1)
+        elif phase_name == "Ovulation Phase":
+            phase_days_left = max(1, 16 - cycle_day + 1)
+        else:
+            phase_days_left = max(1, cycle_len - cycle_day + 1)
+
+        days_to_next_period = max(1, cycle_len - cycle_day + 1)
+
+        arc_svg_markup = textwrap.dedent(f"""
             <div class="cycle-arc-card">
                 <div class="cycle-arc-container">
                     <svg viewBox="0 0 290 148" width="100%" height="auto" style="overflow: visible;">
@@ -745,8 +759,13 @@ with st.container(key="mobile_scroll_content"):
                     <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #F472B6;"></span> Ovulation</span>
                     <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #C084FC;"></span> Luteal phase</span>
                 </div>
+                <!-- Cycle Horizon & Milestone Pill -->
+                <div style="text-align: center;">
+                    <span class="cycle-milestone-pill">⏳ Next phase in {phase_days_left}d &bull; Next period in {days_to_next_period}d</span>
+                </div>
             </div>
-        """, unsafe_allow_html=True)
+        """)
+        st.markdown(arc_svg_markup, unsafe_allow_html=True)
 
         # 4. Hero CTA Button: Log Your Symptoms (Full-width plum pill button matching design)
         st.markdown('<div class="cycle-cta-container">', unsafe_allow_html=True)
@@ -755,12 +774,220 @@ with st.container(key="mobile_scroll_content"):
             navigate_to("Symptom Journal")
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Optional Quick Cycle Day adjustment expander
-        with st.expander("⚙️ Adjust Today's Cycle Day", expanded=False):
-            st.caption("Change your active cycle day (1 to 28) to preview phase calculations or reflect your personal rhythm.")
-            new_c_day = st.slider("Active Cycle Day", min_value=1, max_value=28, value=int(cycle_day), key="slider_cycle_day_adjust")
-            if st.button("Update Cycle Day", key="btn_apply_cycle_day"):
+        # 5. Today's Recommendation (Nutrition & Activity cards matching Mockup Screen 1)
+        phase_rec = {
+            "Menstruation Phase": {
+                "nutrition_icon": "🥤",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Add iron-rich foods (spinach, lentils) and drink more warm water or herbal teas.",
+                "activity_icon": "🧘",
+                "activity_title": "Activity",
+                "activity_desc": "Choose gentle yoga, pelvic opening stretches, or a light restorative walk."
+            },
+            "Follicular Phase": {
+                "nutrition_icon": "🥗",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Support rising estrogen with lean proteins, colorful fresh greens, and probiotics.",
+                "activity_icon": "🏃‍♀️",
+                "activity_title": "Activity",
+                "activity_desc": "Stamina is increasing: great for brisk walks, pilates, or light strength work."
+            },
+            "Ovulation Phase": {
+                "nutrition_icon": "🥑",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Support your metabolic peak with anti-inflammatory healthy fats, seeds, and fiber.",
+                "activity_icon": "⚡",
+                "activity_title": "Activity",
+                "activity_desc": "Peak vitality & strength: ideal for cardio, resistance training, or dance."
+            },
+            "Luteal Phase": {
+                "nutrition_icon": "🍠",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Stabilize blood sugar with complex carbs (sweet potatoes, oats) and magnesium.",
+                "activity_icon": "🚶‍♀️",
+                "activity_title": "Activity",
+                "activity_desc": "Progesterone is high: prioritize moderate pilates, swimming, or calming breathwork."
+            }
+        }.get(phase_name, {
+            "nutrition_icon": "🥤",
+            "nutrition_title": "Nutrition",
+            "nutrition_desc": "Stay hydrated and nourish your body with wholesome, nutrient-dense foods.",
+            "activity_icon": "🧘",
+            "activity_title": "Activity",
+            "activity_desc": "Listen to your body and engage in gentle movement that feels restorative."
+        })
+
+        rec_markup = textwrap.dedent(f"""
+            <div class="today-rec-header">
+                <div class="today-rec-title">Today's recommendation</div>
+                <div class="today-rec-seeall">Phase: {phase_name.split()[0]}</div>
+            </div>
+            <div class="today-rec-grid">
+                <div class="today-rec-card">
+                    <div class="today-rec-icon-box" style="background: #FFF1F2;">{phase_rec['nutrition_icon']}</div>
+                    <div class="today-rec-name">{phase_rec['nutrition_title']}</div>
+                    <div class="today-rec-desc">{phase_rec['nutrition_desc']}</div>
+                </div>
+                <div class="today-rec-card">
+                    <div class="today-rec-icon-box" style="background: #F5F3FF;">{phase_rec['activity_icon']}</div>
+                    <div class="today-rec-name">{phase_rec['activity_title']}</div>
+                    <div class="today-rec-desc">{phase_rec['activity_desc']}</div>
+                </div>
+            </div>
+        """)
+        st.markdown(rec_markup, unsafe_allow_html=True)
+
+        with st.expander("📖 See All Phase Guidance & Lifestyle Tips", expanded=False):
+            st.markdown("""
+                - **Menstruation (Days 1–5):** Hydration, iron replenishment (spinach, beans, dark chocolate), gentle pelvic yoga, rest.
+                - **Follicular (Days 6–13):** Probiotics, fermented foods, zinc, steady endurance workouts, creativity and planning.
+                - **Ovulation (Days 14–16):** Omega-3s, leafy greens, antioxidant berries, high-intensity cardio or strength, social connection.
+                - **Luteal (Days 17–28):** Magnesium, B6, complex carbs, limiting excess caffeine, moderate pilates, calming routines.
+            """)
+
+        # 6. Quick Mood & Well-Being Check-In Section (Matching Mockup Screen 2)
+        st.markdown("""
+            <div class="section-header">⚡ Quick Mood & Well-Being Check-In</div>
+        """, unsafe_allow_html=True)
+
+        if "quick_checkin_success" in st.session_state:
+            st.success(st.session_state.pop("quick_checkin_success"))
+
+        with st.container(key="quick_checkin_box"):
+            wellbeing_options = [
+                "Everything is fine 😊",
+                "Abdominal pain / Cramps",
+                "Fatigue / Low energy",
+                "Increased appetite",
+                "Insomnia / Disrupted sleep",
+                "Headache / Migraine",
+                "Bloating / Water retention",
+                "Chills / Sensitive to cold"
+            ]
+            selected_wellbeing = st.multiselect(
+                "General Well-being",
+                options=wellbeing_options,
+                default=[],
+                help="Select any physical observations you feel right now",
+                key="home_quick_wb_select"
+            )
+
+            mood_options = [
+                "😌 Calm", "😊 Happy", "😴 Tired", "😟 Anxious",
+                "😤 Irritated", "😢 Sad", "😎 Confident", "😍 Loving", "😐 Moody", "🧘 Zen"
+            ]
+            selected_mood = st.selectbox(
+                "Current Mood",
+                options=mood_options,
+                index=0,
+                key="home_quick_mood_select"
+            )
+
+            quick_c1, quick_c2 = st.columns([2, 1])
+            with quick_c1:
+                quick_intensity = st.slider("Severity / Discomfort Level", 1, 10, value=3, key="home_quick_intensity")
+            with quick_c2:
+                st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
+                if st.button("💾 Log Quick Check-In", key="btn_save_quick_checkin", use_container_width=True, type="primary"):
+                    wb_summary = ", ".join(selected_wellbeing) if selected_wellbeing else "Check-in logged"
+                    symptom_title = selected_wellbeing[0] if selected_wellbeing else "Daily Well-being Check-in"
+                    
+                    # Map mood to stress / sleep context
+                    mood_stress = "High / Pressured" if any(w in selected_mood for w in ["Anxious", "Irritated", "Moody"]) else "Low / Calm"
+                    mood_sleep = "Disrupted / Fragmented" if "Insomnia" in str(selected_wellbeing) else "Restful (7-9 hrs)"
+                    mood_energy = "Fatigued / Low" if any(w in str(selected_wellbeing) + selected_mood for w in ["Fatigue", "Tired"]) else "Moderate"
+
+                    SymptomTrackerService.record_symptom(
+                        profile_id=active_profile.id,
+                        category="Systemic & Energy",
+                        symptom=symptom_title,
+                        onset_date=str(date.today()),
+                        severity=quick_intensity,
+                        duration_hours=None,
+                        status="Resolved",
+                        impact="None" if quick_intensity <= 3 else "Moderate (Modified daily plans)",
+                        notes=f"Quick check-in: Mood: {selected_mood}. Well-being: {wb_summary}.",
+                        context={"sleep": mood_sleep, "stress": mood_stress, "energy": mood_energy, "cycle_phase": phase_name}
+                    )
+                    st.session_state["quick_checkin_success"] = f"✅ Recorded: {selected_mood} & {symptom_title} (Day {cycle_day} • {phase_name})!"
+                    st.rerun()
+
+        # 7. Energy Level Trajectory Across Cycle Phases (Matching Mockup Screen 3)
+        with st.expander("📈 Analytics — Energy Level Curve Across Phases", expanded=False):
+            st.caption("Visualizes how energy and vitality move across the 4 hormonal phases, based on your logs and biological baseline.")
+            
+            tf_choice = st.radio(
+                "Observation Timeframe",
+                ["3 months", "6 months", "12 months"],
+                horizontal=True,
+                key="home_energy_tf_selector"
+            )
+
+            phases_list = ["Menstruation", "Follicular", "Ovulation", "Luteal"]
+            base_curve = [3.8, 2.2, 5.1, 2.4]
+
+            # Calculate real average energy ratings per phase from database records
+            all_symptoms_for_curve = SymptomTrackerService.get_history(active_profile.id)
+            phase_energy_logs: dict = {p: [] for p in phases_list}
+            for e in all_symptoms_for_curve:
+                if e.context and e.context.get("cycle_phase") and e.context.get("energy"):
+                    c_phase = e.context["cycle_phase"]
+                    matched = next((p for p in phases_list if p.lower() in c_phase.lower()), None)
+                    if matched:
+                        e_val = 8.0 if "High" in e.context["energy"] else 2.5 if "Fatigued" in e.context["energy"] else 5.0
+                        phase_energy_logs[matched].append(e_val)
+
+            y_curve = []
+            for i, p in enumerate(phases_list):
+                if phase_energy_logs[p]:
+                    y_curve.append(round(float(np.mean(phase_energy_logs[p])), 1))
+                else:
+                    y_curve.append(base_curve[i])
+
+            fig_energy = go.Figure()
+            fig_energy.add_trace(go.Scatter(
+                x=phases_list,
+                y=y_curve,
+                mode="lines+markers",
+                line=dict(shape="spline", color="#D946EF", width=3.5, smoothing=1.3),
+                marker=dict(size=11, color="#E879F9", line=dict(color="#FFFFFF", width=2.5)),
+                name="Energy Level",
+                hoverinfo="x+y"
+            ))
+
+            fig_energy.update_layout(
+                paper_bgcolor="rgba(255, 245, 248, 0.4)",
+                plot_bgcolor="rgba(255, 255, 255, 0.8)",
+                margin=dict(l=25, r=25, t=20, b=30),
+                height=220,
+                font=dict(family="sans-serif", size=11, color="#4A3748"),
+                yaxis=dict(range=[0, 10.5], dtick=2, gridcolor="rgba(244, 114, 182, 0.2)", zeroline=False, title="Energy Level (1-10)"),
+                xaxis=dict(gridcolor="rgba(244, 114, 182, 0.15)", tickfont=dict(size=10.5, color="#6B5565")),
+                showlegend=False
+            )
+            st.plotly_chart(fig_energy, use_container_width=True)
+
+        # 8. Cycle Settings & Personalization Sheet (Irregular Cycle, Length, Start Date)
+        with st.expander("⚙️ Cycle Settings & Personalization", expanded=False):
+            st.caption("Adjust your baseline cycle length, period duration, or active day. Supports irregular cycles (PCOS, perimenopause).")
+            
+            c_set1, c_set2 = st.columns(2)
+            with c_set1:
+                cur_len = pref.get("cycle_length", 28)
+                new_len = st.slider("Average Cycle Length (days)", min_value=21, max_value=45, value=int(cur_len), key="set_cycle_len")
+            with c_set2:
+                cur_flow = pref.get("period_duration", 5)
+                new_flow = st.slider("Typical Period Duration (days)", min_value=2, max_value=10, value=int(cur_flow), key="set_period_flow")
+
+            new_c_day = st.slider("Active Cycle Day (Preview / Adjust)", min_value=1, max_value=int(new_len), value=int(cycle_day), key="slider_cycle_day_adjust")
+
+            if st.button("💾 Save Cycle Preferences", key="btn_apply_cycle_settings", type="primary", use_container_width=True):
+                updated_pref = pref.copy()
+                updated_pref["cycle_length"] = new_len
+                updated_pref["period_duration"] = new_flow
+                update_profile_preferences(active_profile.id, updated_pref)
                 st.session_state["cycle_day_override"] = new_c_day
+                st.success("✅ Cycle preferences updated successfully!")
                 st.rerun()
 
         # D. Quick health actions (compact, properly spaced expandable section)
