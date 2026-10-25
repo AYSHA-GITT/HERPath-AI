@@ -373,3 +373,40 @@ def test_frontend_signin_requires_pin():
     assert not at.exception
     assert at.session_state["is_logged_in"] is True
 
+
+def test_frontend_authenticated_account_profile_has_no_login_or_create_tabs():
+    """Verifies that an authenticated user in Account & Profile sees only their profile without Login/Create tabs."""
+    at = get_authenticated_app()
+    assert at.session_state["is_logged_in"] is True
+
+    # Navigate to Account & Profile via top header user pill
+    top_user_btn = [b for b in at.button if "👤" in b.label][0]
+    top_user_btn.click().run()
+    assert not at.exception
+    assert at.session_state["navigation"] == "Account & Login"
+
+    # Confirm there are NO Login or Create Account tabs in the profile view
+    tab_labels = [t.label for t in at.tabs] if hasattr(at, "tabs") else []
+    assert "Login" not in tab_labels
+    assert "Create Account" not in tab_labels
+    assert len(tab_labels) == 0
+
+    # Confirm Account & Profile screen elements are visible
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Account & Profile" in combined_md
+    assert "SQLite Locked" in combined_md
+    assert "PIN Protected" in combined_md
+
+    # Test Logout & Lock button
+    logout_btn = [b for b in at.button if "Log Out & Lock" in b.label]
+    assert len(logout_btn) > 0, "Log Out & Lock button not found"
+    logout_btn[0].click().run()
+    assert not at.exception
+    assert at.session_state["is_logged_in"] is False
+
+    # Now that user is logged out, Login and Create Account tabs should be present
+    tab_labels_logged_out = [t.label for t in at.tabs]
+    assert "Login" in tab_labels_logged_out
+    assert "Create Account" in tab_labels_logged_out
+
+

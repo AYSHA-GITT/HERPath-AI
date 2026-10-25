@@ -292,84 +292,88 @@ def render_auth_login_screen():
     curr_pid = st.session_state.get("current_profile_id", all_profiles[0].id if all_profiles else "demo_priya")
     active_prof = p_map.get(curr_pid, all_profiles[0] if all_profiles else None)
 
-    active_auth_tab = st.session_state.get("auth_active_tab", "Login")
-
+    # 1. If already authenticated: Show dedicated Account & Profile screen directly (NO Login or Create Account tabs)
     if is_authenticated and active_prof:
-        tab_list = [
-            f"👤 Profile ({active_prof.display_name.split(' ')[0]})",
-            "Login",
-            "Create Account"
-        ]
-    else:
-        tab_list = ["Login", "Create Account"]
+        stats = get_account_stats(active_prof.id)
+        focus_list = stats["focus_areas"] if isinstance(stats["focus_areas"], list) else [str(stats["focus_areas"])]
+        focus_chips = "".join([f'<span class="auth-sec-pill" style="margin-right: 4px; margin-bottom: 4px;">🎯 {f}</span>' for f in focus_list])
 
+        st.markdown(f"""
+            <div class="page-title-block">
+                <div class="page-title">👤 Account & Profile</div>
+                <div class="page-subtitle">Your private on-device profile, security PIN, and health records</div>
+            </div>
+            <div class="vip-profile-card">
+                <div class="vip-avatar-row">
+                    <div class="vip-large-avatar">🌸</div>
+                    <div>
+                        <div class="vip-user-title">{active_prof.display_name}</div>
+                        <div class="vip-user-handle">@{active_prof.id} &bull; Member since {stats["created_at"]}</div>
+                    </div>
+                </div>
+                <div class="auth-security-badges" style="justify-content: flex-start; margin-top: 6px;">
+                    <span class="auth-sec-pill">🔒 SQLite Locked</span>
+                    <span class="auth-sec-pill">📍 Local Device</span>
+                    <span class="auth-sec-pill">🔐 PIN Protected</span>
+                    <span class="auth-sec-pill">{'🩸 Cycle Active' if stats["track_menstrual"] else '🌿 General Track'}</span>
+                </div>
+                <div style="margin-top: 10px;">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #8A7A83; text-transform: uppercase; margin-bottom: 4px;">Health Focus Areas</div>
+                    <div style="display: flex; flex-wrap: wrap;">{focus_chips}</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.metric("Symptoms Logged", stats["symptoms_count"])
+        with c2:
+            st.metric("Medications", stats["medications_count"])
+        with c3:
+            st.metric("Security", "PIN Locked 🔒")
+
+        with st.expander("🔒 Change Security PIN", expanded=False):
+            st.caption("Change your 4-digit security PIN to protect access on this device.")
+            new_pin_input = st.text_input("New 4-Digit Security PIN", type="password", key="change_pin_field", placeholder="••••")
+            if st.button("Update Security PIN", type="primary", key="btn_update_pin"):
+                if new_pin_input and len(new_pin_input.strip()) >= 4:
+                    set_user_pin(active_prof.id, new_pin_input)
+                    st.success("Security PIN updated successfully!")
+                    st.rerun()
+                else:
+                    st.error("PIN must be at least 4 digits.")
+
+        with st.expander("⚙️ Profile Customization", expanded=False):
+            with st.form("account_profile_pref_form"):
+                display_name_val = st.text_input("Display Name / Pseudonym", value=active_prof.display_name)
+                track_menstrual_toggle = st.checkbox("Track Menstrual Context", value=active_prof.preferences.get("track_menstrual", True))
+                if st.form_submit_button("Save Preferences", type="primary"):
+                    updated_pref = active_prof.preferences.copy()
+                    updated_pref["display_name"] = display_name_val
+                    updated_pref["track_menstrual"] = track_menstrual_toggle
+                    update_profile_preferences(active_prof.id, updated_pref)
+                    st.success("Preferences updated successfully!")
+                    st.rerun()
+
+        st.markdown('<div style="height: 14px;"></div>', unsafe_allow_html=True)
+        lo_c1, lo_c2 = st.columns(2)
+        with lo_c1:
+            if st.button("🚪 Log Out & Lock", key="btn_auth_logout", use_container_width=True, type="secondary"):
+                st.session_state["is_logged_in"] = False
+                st.session_state["navigation"] = "Account & Login"
+                st.rerun()
+        with lo_c2:
+            if st.button("🌸 Go to Dashboard", key="btn_auth_go_home", use_container_width=True, type="primary"):
+                navigate_to("Home Dashboard")
+        return
+
+    # 2. If unauthenticated: Show Login & Create Account tabs
+    active_auth_tab = st.session_state.get("auth_active_tab", "Login")
+    tab_list = ["Login", "Create Account"]
     if active_auth_tab not in tab_list:
         active_auth_tab = "Login"
 
-    tabs_result = st.tabs(tab_list, default=active_auth_tab, key=f"auth_tabs_{active_auth_tab}")
-    if len(tabs_result) == 3:
-        tab_account, tab_signin, tab_register = tabs_result
-    else:
-        tab_signin, tab_register = tabs_result
-        tab_account = None
-
-    if tab_account:
-        with tab_account:
-            stats = get_account_stats(active_prof.id)
-            focus_list = stats["focus_areas"] if isinstance(stats["focus_areas"], list) else [str(stats["focus_areas"])]
-            focus_chips = "".join([f'<span class="auth-sec-pill" style="margin-right: 4px; margin-bottom: 4px;">🎯 {f}</span>' for f in focus_list])
-
-            st.markdown(f"""
-                <div class="vip-profile-card">
-                    <div class="vip-avatar-row">
-                        <div class="vip-large-avatar">🌸</div>
-                        <div>
-                            <div class="vip-user-title">{active_prof.display_name}</div>
-                            <div class="vip-user-handle">@{active_prof.id} &bull; Member since {stats["created_at"]}</div>
-                        </div>
-                    </div>
-                    <div class="auth-security-badges" style="justify-content: flex-start; margin-top: 6px;">
-                        <span class="auth-sec-pill">🔒 SQLite Locked</span>
-                        <span class="auth-sec-pill">📍 Local Device</span>
-                        <span class="auth-sec-pill">🔐 PIN Protected</span>
-                        <span class="auth-sec-pill">{'🩸 Cycle Active' if stats["track_menstrual"] else '🌿 General Track'}</span>
-                    </div>
-                    <div style="margin-top: 10px;">
-                        <div style="font-size: 0.72rem; font-weight: 700; color: #8A7A83; text-transform: uppercase; margin-bottom: 4px;">Health Focus Areas</div>
-                        <div style="display: flex; flex-wrap: wrap;">{focus_chips}</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.metric("Symptoms Logged", stats["symptoms_count"])
-            with c2:
-                st.metric("Medications", stats["medications_count"])
-            with c3:
-                st.metric("Security", "PIN Locked 🔒")
-
-            with st.expander("🔒 Change Security PIN", expanded=False):
-                st.caption("Change your 4-digit security PIN to protect access on this device.")
-                new_pin_input = st.text_input("New 4-Digit Security PIN", type="password", key="change_pin_field", placeholder="••••")
-                if st.button("Update Security PIN", type="primary", key="btn_update_pin"):
-                    if new_pin_input and len(new_pin_input.strip()) >= 4:
-                        set_user_pin(active_prof.id, new_pin_input)
-                        st.success("Security PIN updated successfully!")
-                        st.rerun()
-                    else:
-                        st.error("PIN must be at least 4 digits.")
-
-            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
-            lo_c1, lo_c2 = st.columns(2)
-            with lo_c1:
-                if st.button("🚪 Log Out & Lock", key="btn_auth_logout", use_container_width=True, type="secondary"):
-                    st.session_state["is_logged_in"] = False
-                    st.session_state["navigation"] = "Account & Login"
-                    st.rerun()
-            with lo_c2:
-                if st.button("🌸 Go to Dashboard", key="btn_auth_go_home", use_container_width=True, type="primary"):
-                    navigate_to("Home Dashboard")
+    tab_signin, tab_register = st.tabs(tab_list, default=active_auth_tab, key=f"auth_tabs_{active_auth_tab}")
 
     with tab_signin:
         # Screen 1: Minimalist Mockup Login Card

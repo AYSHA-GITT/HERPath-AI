@@ -103,7 +103,7 @@ HERPath-AI/
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (67 comprehensive unit & E2E tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (68 comprehensive unit & E2E tests).
 
 ---
 
