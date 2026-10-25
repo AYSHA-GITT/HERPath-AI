@@ -685,6 +685,13 @@ div.stButton > button {
     box-sizing: border-box !important;
 }
 
+div.stButton > button p {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+}
+
 div.stButton > button:hover {
     border-color: var(--primary-rose) !important;
     background: #FFF8FA !important;
