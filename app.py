@@ -340,18 +340,40 @@ def render_auth_login_screen():
         with c3:
             st.metric("Security", "PIN Locked 🔒")
 
-        with st.expander("🔒 Change Security PIN", expanded=False):
+        # Persistent success feedback across reruns
+        if "pin_update_success" in st.session_state:
+            st.success(st.session_state.pop("pin_update_success"))
+
+        if "pref_update_success" in st.session_state:
+            st.success(st.session_state.pop("pref_update_success"))
+
+        pin_version = st.session_state.get("pin_input_version", 0)
+        pin_exp_open = st.session_state.pop("pin_expander_open", False)
+        pin_success_inside = st.session_state.pop("pin_inside_success", False)
+
+        with st.expander("🔒 Change Security PIN", expanded=pin_exp_open):
             st.caption("Change your 4-digit security PIN to protect access on this device.")
-            new_pin_input = st.text_input("New 4-Digit Security PIN", type="password", key="change_pin_field", placeholder="••••")
+            if pin_success_inside:
+                st.success("✅ Your 4-digit security PIN has been updated successfully!")
+            new_pin_input = st.text_input(
+                "New 4-Digit Security PIN",
+                type="password",
+                key=f"change_pin_field_{pin_version}",
+                placeholder="••••"
+            )
             if st.button("Update Security PIN", type="primary", key="btn_update_pin"):
                 if new_pin_input and len(new_pin_input.strip()) >= 4:
-                    set_user_pin(active_prof.id, new_pin_input)
-                    st.success("Security PIN updated successfully!")
+                    set_user_pin(active_prof.id, new_pin_input.strip())
+                    st.session_state["pin_update_success"] = "✅ Security PIN updated successfully! Your new PIN is active on this device."
+                    st.session_state["pin_expander_open"] = True
+                    st.session_state["pin_inside_success"] = True
+                    st.session_state["pin_input_version"] = pin_version + 1
                     st.rerun()
                 else:
                     st.error("PIN must be at least 4 digits.")
 
-        with st.expander("⚙️ Profile Customization", expanded=False):
+        pref_exp_open = st.session_state.pop("pref_expander_open", False)
+        with st.expander("⚙️ Profile Customization", expanded=pref_exp_open):
             with st.form("account_profile_pref_form"):
                 display_name_val = st.text_input("Display Name / Pseudonym", value=active_prof.display_name)
                 track_menstrual_toggle = st.checkbox("Track Menstrual Context", value=active_prof.preferences.get("track_menstrual", True))
@@ -360,7 +382,8 @@ def render_auth_login_screen():
                     updated_pref["display_name"] = display_name_val
                     updated_pref["track_menstrual"] = track_menstrual_toggle
                     update_profile_preferences(active_prof.id, updated_pref)
-                    st.success("Preferences updated successfully!")
+                    st.session_state["pref_update_success"] = "✅ Preferences updated successfully!"
+                    st.session_state["pref_expander_open"] = True
                     st.rerun()
 
         st.markdown('<div style="height: 14px;"></div>', unsafe_allow_html=True)
