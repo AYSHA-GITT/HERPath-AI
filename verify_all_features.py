@@ -323,7 +323,48 @@ except Exception:
     pass
 
 # -------------------------------------------------------------
-# 10. FRONTEND STREAMLIT APPTEST (ALL SCREENS & NAVIGATION)
+# 10. HEALTH INTELLIGENCE LOOP & TIMELINE VERIFICATION
+# -------------------------------------------------------------
+try:
+    from timeline_service import TimelineService, TimelineEvent
+    from voice_draft_service import parse_symptom_voice_draft
+
+    events = [
+        TimelineEvent(event_id="s1", event_type="symptom", date="2026-10-10", time="09:00", title="Migraine", category="Neurological & Head", severity=8, duration_hours=4.0, status="Ongoing", context={"sleep": "Poor / Restless", "stress": "High / Pressured"}),
+        TimelineEvent(event_id="s2", event_type="symptom", date="2026-10-12", time="10:00", title="Migraine", category="Neurological & Head", severity=7, duration_hours=3.5, status="Resolved", context={"sleep": "Poor / Restless", "stress": "High / Pressured"}),
+        TimelineEvent(event_id="s3", event_type="symptom", date="2026-10-15", time="11:00", title="Pelvic Pain", category="Pelvic & Menstrual", severity=6, duration_hours=2.0, status="Intermittent", context={"cycle_phase": "Luteal Phase"}),
+        TimelineEvent(event_id="s4", event_type="symptom", date="2026-10-16", time="12:00", title="Pelvic Pain", category="Pelvic & Menstrual", severity=7, duration_hours=2.5, status="Ongoing", context={"cycle_phase": "Luteal Phase"})
+    ]
+
+    # Test period comparison
+    events_a = events[:2]
+    events_b = events[2:]
+    comp = TimelineService.compare_periods(events_a, events_b, "Period A", "Period B")
+    assert comp["data_sufficiency"]["count_a"] == 2 and comp["data_sufficiency"]["count_b"] == 2
+    assert comp["data_sufficiency"]["is_sufficient"] is True
+
+    # Test explainable insights with evidence dates and why expander data
+    insights = TimelineService.generate_explainable_insights(events)
+    assert len(insights) >= 1
+    for ins in insights:
+        assert "supporting_dates" in ins and len(ins["supporting_dates"]) > 0
+        assert "why_explanation" in ins
+        assert "criteria" in ins["why_explanation"]
+        assert "evidence" in ins["why_explanation"]
+
+    # Test voice drafting
+    draft = parse_symptom_voice_draft("Severe migraine for 4 hours, level 8, high stress")
+    assert draft["symptom"] == "Migraine"
+    assert draft["severity"] == 8
+    assert draft["duration_hours"] == 4.0
+    assert draft["context"]["stress"] == "High / Pressured"
+
+    record_test("HERPath Health Intelligence Loop", True, f"Verified comparative shift, {len(insights)} explainable insights with supporting dates, and voice NLP drafting")
+except Exception as e:
+    record_test("HERPath Health Intelligence Loop", False, str(e))
+
+# -------------------------------------------------------------
+# 11. FRONTEND STREAMLIT APPTEST (ALL SCREENS & NAVIGATION)
 # -------------------------------------------------------------
 app_path = str(PROJECT_ROOT / "app.py")
 try:
@@ -343,17 +384,19 @@ try:
                 break
     assert not at.exception, f"Exception on login: {at.exception}"
     
-    # Test all 9 views
+    # Test all 11 views
     navs = [
         "Home Dashboard",
         "Symptom Journal",
         "Medication & Treatments",
+        "Timeline Intelligence",
         "Health Insights",
         "Care Navigator",
         "Women's Health Library",
         "My Health Report",
         "Ask HERPath",
-        "Privacy and Settings"
+        "Privacy and Settings",
+        "Account & Login"
     ]
     
     for nav in navs:
@@ -367,7 +410,7 @@ try:
     assert any("Care" in b for b in button_labels)
     assert any("Learn" in b for b in button_labels)
     
-    record_test("Frontend Streamlit AppTest Navigation", True, "Successfully mounted and navigated all 9 screens without exceptions")
+    record_test("Frontend Streamlit AppTest Navigation", True, f"Successfully mounted and navigated all {len(navs)} screens without exceptions")
 except Exception as e:
     record_test("Frontend Streamlit AppTest Navigation", False, str(e))
 

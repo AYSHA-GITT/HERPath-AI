@@ -31,13 +31,19 @@ class ClinicianReportGenerator:
         entries: List[SymptomEntry],
         start_date: str,
         end_date: str,
-        medications: Optional[List[MedicationEntry]] = None
+        medications: Optional[List[MedicationEntry]] = None,
+        user_selected_notes: Optional[Dict[int, str]] = None,
+        custom_questions: Optional[List[str]] = None,
+        include_all_notes: bool = False
     ):
         self.profile = profile
         self.entries = entries
         self.start_date = start_date
         self.end_date = end_date
         self.medications = medications or []
+        self.user_selected_notes = user_selected_notes
+        self.custom_questions = custom_questions
+        self.include_all_notes = include_all_notes
         self.insights_engine = InsightsEngine(entries)
 
     def generate_pdf_bytes(self) -> bytes:
@@ -165,11 +171,70 @@ class ClinicianReportGenerator:
             f"Average episode duration: <b>{avg_dur_text}</b>."
         )
         story.append(Paragraph(summary_text, body_style))
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 10))
 
-        # 4. Current Medications & Treatments (if any recorded)
+        # 4. Relevant Wellbeing Context Summary (Sleep, Stress, Menstrual Context)
+        if self.entries:
+            sleep_counts = {}
+            stress_counts = {}
+            cycle_counts = {}
+            for e in self.entries:
+                if e.context:
+                    sl = e.context.get("sleep")
+                    if sl:
+                        sleep_counts[sl] = sleep_counts.get(sl, 0) + 1
+                    st_val = e.context.get("stress")
+                    if st_val:
+                        stress_counts[st_val] = stress_counts.get(st_val, 0) + 1
+                    cyc = e.context.get("cycle_phase")
+                    if cyc and cyc not in ["Not tracking / NA", "None", ""]:
+                        cycle_counts[cyc] = cycle_counts.get(cyc, 0) + 1
+
+            if sleep_counts or stress_counts or cycle_counts:
+                story.append(Paragraph("2. Relevant Wellbeing & Context Summary", section_heading))
+                wellbeing_rows = [
+                    [
+                        Paragraph("Context Domain", table_header_style),
+                        Paragraph("Reported Distribution / Patterns", table_header_style),
+                    ]
+                ]
+                if sleep_counts:
+                    sleep_str = ", ".join([f"{k}: {v}" for k, v in sleep_counts.items()])
+                    wellbeing_rows.append([
+                        Paragraph("<b>Sleep Quality</b>", table_cell_style),
+                        Paragraph(sleep_str, table_cell_style)
+                    ])
+                if stress_counts:
+                    stress_str = ", ".join([f"{k}: {v}" for k, v in stress_counts.items()])
+                    wellbeing_rows.append([
+                        Paragraph("<b>Stress Levels</b>", table_cell_style),
+                        Paragraph(stress_str, table_cell_style)
+                    ])
+                if cycle_counts:
+                    cycle_str = ", ".join([f"{k}: {v}" for k, v in cycle_counts.items()])
+                    wellbeing_rows.append([
+                        Paragraph("<b>Cycle / Hormonal Phase</b>", table_cell_style),
+                        Paragraph(cycle_str, table_cell_style)
+                    ])
+
+                wb_table = Table(wellbeing_rows, colWidths=[150, 380])
+                wb_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#5C5770")),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#D8D3E8")),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8F7FC")]),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ]))
+                story.append(wb_table)
+                story.append(Spacer(1, 10))
+
+        # 5. Current Medications & Treatments (if any recorded)
+        sec_num = 3
         if self.medications:
-            story.append(Paragraph("2. Current Medications & Health Interventions", section_heading))
+            story.append(Paragraph(f"{sec_num}. Current Medications & Health Interventions", section_heading))
+            sec_num += 1
             med_rows = [[
                 Paragraph("Medication / Treatment", table_header_style),
                 Paragraph("Category", table_header_style),
@@ -196,12 +261,11 @@ class ClinicianReportGenerator:
             story.append(med_table)
             story.append(Spacer(1, 10))
 
-        # 5. Detailed Symptom Table
-        log_section_num = "3" if self.medications else "2"
-        story.append(Paragraph(f"{log_section_num}. Detailed Chronological Log", section_heading))
+        # 6. Detailed Symptom Timeline Log
+        story.append(Paragraph(f"{sec_num}. Detailed Chronological Symptom Timeline", section_heading))
+        sec_num += 1
 
         if not self.entries:
-
             story.append(Paragraph("<i>No symptom records were found for the selected reporting period.</i>", body_style))
         else:
             table_rows = [
@@ -212,7 +276,7 @@ class ClinicianReportGenerator:
                     Paragraph("Dur.", table_header_style),
                     Paragraph("Status", table_header_style),
                     Paragraph("Impact", table_header_style),
-                    Paragraph("Notes & Context", table_header_style),
+                    Paragraph("Reviewed Notes & Context", table_header_style),
                 ]
             ]
 
@@ -227,7 +291,18 @@ class ClinicianReportGenerator:
                         ctx_items.append(f"Cycle: {e.context['cycle_phase']}")
                 
                 context_str = f" [{'; '.join(ctx_items)}]" if ctx_items else ""
-                notes_full = f"{e.notes or 'None'}{context_str}"
+
+                # Privacy-preserving note handling
+                if self.include_all_notes:
+                    note_body = e.notes or "-"
+                elif self.user_selected_notes is not None and e.id in self.user_selected_notes:
+                    note_body = self.user_selected_notes[e.id] or "-"
+                elif e.notes and e.notes.strip():
+                    note_body = "<font color='#888888'><i>[Private - Excluded by Patient]</i></font>"
+                else:
+                    note_body = "-"
+
+                notes_full = f"{note_body}{context_str}"
                 dur_str = f"{e.duration_hours}h" if e.duration_hours else "-"
 
                 table_rows.append([
@@ -254,21 +329,22 @@ class ClinicianReportGenerator:
 
         story.append(Spacer(1, 14))
 
-        # 5. Suggested Clinical Discussion Topics
-        story.append(Paragraph("3. Patient Questions for Discussion with Physician", section_heading))
-        questions = [
+        # 7. Questions for Discussion with Physician
+        story.append(Paragraph(f"{sec_num}. Patient Questions for Discussion with Physician", section_heading))
+        default_questions = [
             "Based on the frequency and severity trajectory of these symptoms, what diagnostic evaluations or laboratory profiles (e.g., hormonal panel, CBC, pelvic imaging) would you recommend?",
             "Are there evidence-based pharmacologic or non-pharmacologic interventions that could help address the episodes with high severity or disruption?",
             "Do any of the observed patterns (such as sleep or cycle timing correlations) suggest specific underlying conditions to monitor (such as PCOS, endometriosis, hormonal migraine, or perimenopause)?",
             "What specific red-flag warning signs should prompt an emergency department visit or urgent same-day appointment?"
         ]
-        for q in questions:
+        questions_to_render = self.custom_questions if self.custom_questions else default_questions
+        for q in questions_to_render:
             story.append(Paragraph(f"• {q}", body_style))
             story.append(Spacer(1, 3))
 
         story.append(Spacer(1, 14))
 
-        # 6. Disclaimer & Non-Diagnostic Notice
+        # 8. Disclaimer & Non-Diagnostic Notice
         story.append(HRFlowable(width="100%", thickness=0.8, color=colors.HexColor("#D8D3E8"), spaceBefore=4, spaceAfter=8))
         disclaimer_text = (
             f"<b>CLINICAL DISCLAIMER & NOTICES:</b> {CLINICAL_DISCLAIMER} "

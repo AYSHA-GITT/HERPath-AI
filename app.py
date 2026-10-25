@@ -55,6 +55,7 @@ from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
 from data.seed_data import seed_demo_data
 from timeline_service import TimelineService, TimelineEvent
+from voice_draft_service import parse_symptom_voice_draft, get_web_speech_component_js
 from auth import (
     hash_credential,
     verify_credential,
@@ -118,6 +119,38 @@ if "last_saved_symptom" not in st.session_state:
 def navigate_to(page_name: str):
     st.session_state["navigation"] = page_name
     st.rerun()
+
+
+# Icon and Category Badging Helpers
+CATEGORY_ICON_MAP = {
+    "Pelvic & Menstrual": "🌸 Pelvic & Menstrual",
+    "Systemic & Energy": "⚡ Systemic & Energy",
+    "Neurological & Head": "🧠 Neurological & Head",
+    "Breast Health": "🎀 Breast Health",
+    "Gastrointestinal & Abdominal": "🌿 Gastrointestinal & Abdominal",
+    "Urinary & Pelvic Floor": "💧 Urinary & Pelvic Floor",
+    "Mood & Sleep": "🌙 Mood & Sleep"
+}
+
+
+def get_category_icon_badge(category: str) -> str:
+    cat = (category or "").lower()
+    if "pelvic" in cat or "menstrual" in cat:
+        return '<span class="cat-icon-badge cat-pelvic">🌸</span>'
+    elif "neuro" in cat or "head" in cat or "migraine" in cat:
+        return '<span class="cat-icon-badge cat-neuro">🧠</span>'
+    elif "systemic" in cat or "energy" in cat or "fatigue" in cat:
+        return '<span class="cat-icon-badge cat-systemic">⚡</span>'
+    elif "breast" in cat:
+        return '<span class="cat-icon-badge cat-breast">🎀</span>'
+    elif "gastro" in cat or "abdom" in cat or "digest" in cat:
+        return '<span class="cat-icon-badge cat-gi">🌿</span>'
+    elif "urin" in cat:
+        return '<span class="cat-icon-badge cat-urinary">💧</span>'
+    elif "mood" in cat or "sleep" in cat:
+        return '<span class="cat-icon-badge cat-sleep">🌙</span>'
+    else:
+        return '<span class="cat-icon-badge cat-general">✨</span>'
 
 
 # Sleek Segmented Sub-Navigation Helpers for Multi-Feature Access
@@ -393,6 +426,11 @@ def render_auth_login_screen():
                 '<div class="auth-brand-wordmark"><b>HERPath AI</b></div>'
                 '<div class="auth-mockup-title">Welcome to HERPath</div>'
                 '<div class="auth-mockup-subtitle">Your personal space for understanding and tracking your health.</div>'
+                '<div class="auth-badge-row" style="justify-content: center; margin-top: 10px;">'
+                '<span class="auth-trust-chip"><i class="bi bi-shield-check"></i> 100% On-Device</span>'
+                '<span class="auth-trust-chip"><i class="bi bi-database-lock"></i> SQLite Locked</span>'
+                '<span class="auth-trust-chip"><i class="bi bi-person-heart"></i> Anonymous Care</span>'
+                '</div>'
                 '</div>',
                 unsafe_allow_html=True
             )
@@ -454,10 +492,24 @@ def render_auth_login_screen():
             demo_dict = {p.id: p for p in demo_profs if "demo" in p.id.lower() or p.id in ["demo_priya", "demo_ananya", "demo_elena"]}
             if not demo_dict:
                 demo_dict = {p.id: p for p in demo_profs}
+
+            def format_demo_label(pid):
+                p = demo_dict[pid]
+                name_l = p.display_name.lower()
+                if "priya" in name_l or "pcos" in name_l:
+                    icon = "🌸"
+                elif "ananya" in name_l or "perimeno" in name_l or "sleep" in name_l:
+                    icon = "🌙"
+                elif "elena" in name_l or "endo" in name_l or "pelvic" in name_l:
+                    icon = "🌿"
+                else:
+                    icon = "👤"
+                return f"{icon} {p.display_name}"
+
             selected_demo_id = st.selectbox(
                 "Select Clinical Demo Persona",
                 options=list(demo_dict.keys()),
-                format_func=lambda pid: f"👤 {demo_dict[pid].display_name}",
+                format_func=format_demo_label,
                 key="reviewer_demo_selector"
             )
             if st.button("Load Demo Persona & Sign In", key="btn_load_reviewer_demo", use_container_width=True):
@@ -591,11 +643,19 @@ with st.container(key="mobile_scroll_content"):
         render_auth_login_screen()
     elif st.session_state["navigation"] == "Home Dashboard":
         # B. Greeting: Warm greeting and date on separate line with natural wrapping
+        current_hour = datetime.now().hour
+        if 5 <= current_hour < 12:
+            time_greeting = f"Good morning, {first_name} ☀️"
+        elif 12 <= current_hour < 17:
+            time_greeting = f"Good afternoon, {first_name} 🌤️"
+        else:
+            time_greeting = f"Good evening, {first_name} 🌸"
+
         today_formatted = date.today().strftime("%A, %b %d")
         st.markdown(f"""
             <div class="greeting-block">
-                <div class="greeting-title">Good evening, {first_name} 🌸</div>
-                <div class="greeting-date">{today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
+                <div class="greeting-title">{time_greeting}</div>
+                <div class="greeting-date">📅 {today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -622,7 +682,7 @@ with st.container(key="mobile_scroll_content"):
 
         # E. Daily check-in: Section heading + explanatory sentence + check-in expander
         st.markdown("""
-            <div class="section-header">Your daily check-in</div>
+            <div class="section-header">✨ Your daily check-in</div>
             <div class="clean-card" style="margin-bottom: 0.55rem;">
                 <div class="clean-card-subtext">
                     Take a moment to record your baseline energy, sleep, and emotional resilience.
@@ -668,7 +728,7 @@ with st.container(key="mobile_scroll_content"):
                 st.rerun()
 
         # F. Recent activity: Section heading + up to 3 entries with dividers + separate View all button
-        st.markdown('<div class="section-header">Recent activity</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header">📋 Recent activity</div>', unsafe_allow_html=True)
         if metrics["total_entries"] == 0:
             st.markdown("""
                 <div class="clean-card" style="text-align: center; padding: 1.1rem 1rem;">
@@ -686,11 +746,15 @@ with st.container(key="mobile_scroll_content"):
                     else f"<span class='severity-pill-severe'>Sev {entry.severity}</span>"
                 )
                 border_bottom = "border-bottom: 1px solid #F0E2E7;" if i < len(recent_entries) - 1 else ""
+                cat_icon = get_category_icon_badge(entry.category)
                 st.markdown(f"""
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.2rem; {border_bottom}">
-                        <div>
-                            <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">{entry.symptom}</div>
-                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">{entry.onset_date} &bull; {entry.category}</div>
+                        <div style="display: flex; align-items: center;">
+                            {cat_icon}
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">{entry.symptom}</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">{entry.onset_date} &bull; {entry.category}</div>
+                            </div>
                         </div>
                         <div>{sev_badge}</div>
                     </div>
@@ -760,7 +824,7 @@ with st.container(key="mobile_scroll_content"):
 
         render_my_health_subnav("Symptom Journal")
 
-        tab_add, tab_history = st.tabs(["➕ Log a Symptom", "📜 Symptom History"])
+        tab_add, tab_voice, tab_history = st.tabs(["➕ Log a Symptom", "🎙️ Voice Draft & Review", "📜 Symptom History"])
 
         track_menstrual = active_profile.preferences.get("track_menstrual", True)
 
@@ -819,6 +883,7 @@ with st.container(key="mobile_scroll_content"):
                     index=cat_default_idx,
                     help="Physiological area of the symptom."
                 )
+                st.markdown(f'<div style="margin-top: -6px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">{get_category_icon_badge(selected_category)} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">{selected_category}</span></div>', unsafe_allow_html=True)
 
                 common_symptoms = SYMPTOM_TAXONOMY.get(selected_category, [])
                 sym_default_val = edit_entry.symptom if edit_entry else common_symptoms[0] if common_symptoms else ""
@@ -836,6 +901,20 @@ with st.container(key="mobile_scroll_content"):
                         <span class="form-step-badge">Step 2 of 3 &bull; Severity and duration</span>
                         <div style="font-size: 0.90rem; font-weight: 600; color: var(--text-primary); margin-top: 2px;">Step 2: How intense is it right now?</div>
                     </div>
+                    <div class="severity-guide-grid">
+                        <div class="severity-guide-item" style="background: #E8F5EE; color: #1E6B45;">
+                            <span>🟢</span> <div><b>1-3 Mild</b><br/><span style="font-size:0.69rem; color:#4E8062;">Noticeable, manageable</span></div>
+                        </div>
+                        <div class="severity-guide-item" style="background: #FEF3C7; color: #92400E;">
+                            <span>🟡</span> <div><b>4-6 Moderate</b><br/><span style="font-size:0.69rem; color:#855B1E;">Discomfort, modifies plans</span></div>
+                        </div>
+                        <div class="severity-guide-item" style="background: #FEE2E2; color: #991B1B;">
+                            <span>🟠</span> <div><b>7-8 Severe</b><br/><span style="font-size:0.69rem; color:#913636;">High pain, disrupts tasks</span></div>
+                        </div>
+                        <div class="severity-guide-item" style="background: #FCE7F3; color: #831843;">
+                            <span>🔴</span> <div><b>9-10 Critical</b><br/><span style="font-size:0.69rem; color:#852C53;">Incapacitating, rest needed</span></div>
+                        </div>
+                    </div>
                 """, unsafe_allow_html=True)
                 default_sev = edit_entry.severity if edit_entry else 5
                 severity = st.slider(
@@ -847,13 +926,13 @@ with st.container(key="mobile_scroll_content"):
 
                 # Accessible Severity Text Pill
                 if severity <= 3:
-                    st.markdown("<span class='severity-pill-mild'>Mild (1–3): Noticeable but routines manageable</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='severity-pill-mild'>🟢 Mild (1–3): Noticeable but routines manageable</span>", unsafe_allow_html=True)
                 elif severity <= 6:
-                    st.markdown("<span class='severity-pill-moderate'>Moderate (4–6): Notable discomfort, interferes with some activities</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='severity-pill-moderate'>🟡 Moderate (4–6): Notable discomfort, interferes with some activities</span>", unsafe_allow_html=True)
                 elif severity <= 8:
-                    st.markdown("<span class='severity-pill-severe'>Severe (7–8): Significantly limits daily functioning</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='severity-pill-severe'>🟠 Severe (7–8): Significantly limits daily functioning</span>", unsafe_allow_html=True)
                 else:
-                    st.markdown("<span class='severity-pill-severe'>Debilitating (9–10): Requires immediate rest or medical evaluation</span>", unsafe_allow_html=True)
+                    st.markdown("<span class='severity-pill-severe'>🔴 Debilitating (9–10): Requires immediate rest or medical evaluation</span>", unsafe_allow_html=True)
 
                 # Step 3: Date
                 st.markdown("""
@@ -874,33 +953,33 @@ with st.container(key="mobile_scroll_content"):
                 """, unsafe_allow_html=True)
                 with st.expander("➕ Add more details (Duration, Impact, Sleep, Stress, Cycle, Notes)", expanded=is_editing):
                     default_dur = edit_entry.duration_hours if edit_entry and edit_entry.duration_hours is not None else 0.0
-                    duration_hours = st.number_input("Duration (hours, optional)", min_value=0.0, max_value=720.0, value=float(default_dur), step=0.5)
+                    duration_hours = st.number_input("⏱️ Duration (hours, optional)", min_value=0.0, max_value=720.0, value=float(default_dur), step=0.5)
 
                     statuses = ["Ongoing", "Resolved", "Intermittent"]
                     stat_idx = statuses.index(edit_entry.status) if edit_entry and edit_entry.status in statuses else 0
-                    status = st.selectbox("Status", statuses, index=stat_idx)
+                    status = st.selectbox("📌 Status", statuses, index=stat_idx)
 
-                    onset_time = st.text_input("Time of Onset (Optional)", value=edit_entry.onset_time or "" if edit_entry else "", placeholder="e.g. 14:30")
+                    onset_time = st.text_input("⏰ Time of Onset (Optional)", value=edit_entry.onset_time or "" if edit_entry else "", placeholder="e.g. 14:30")
 
                     impact_idx = DAILY_IMPACT_LEVELS.index(edit_entry.impact) if edit_entry and edit_entry.impact in DAILY_IMPACT_LEVELS else 0
-                    daily_impact = st.selectbox("Impact on Daily Activities", DAILY_IMPACT_LEVELS, index=impact_idx)
+                    daily_impact = st.selectbox("🎯 Impact on Daily Activities", DAILY_IMPACT_LEVELS, index=impact_idx)
 
                     ctx = edit_entry.context if edit_entry else {}
                     slp_idx = SLEEP_QUALITIES.index(ctx["sleep"]) if ctx.get("sleep") in SLEEP_QUALITIES else 0
                     strss_idx = STRESS_LEVELS.index(ctx["stress"]) if ctx.get("stress") in STRESS_LEVELS else 1
                     enrg_idx = ENERGY_LEVELS.index(ctx["energy"]) if ctx.get("energy") in ENERGY_LEVELS else 1
 
-                    sleep_quality = st.selectbox("Recent Sleep Quality", SLEEP_QUALITIES, index=slp_idx)
-                    stress_level = st.selectbox("Recent Stress Level", STRESS_LEVELS, index=strss_idx)
-                    energy_level = st.selectbox("Energy Level", ENERGY_LEVELS, index=enrg_idx)
+                    sleep_quality = st.selectbox("🛌 Recent Sleep Quality", SLEEP_QUALITIES, index=slp_idx)
+                    stress_level = st.selectbox("🧘 Recent Stress Level", STRESS_LEVELS, index=strss_idx)
+                    energy_level = st.selectbox("⚡ Energy Level", ENERGY_LEVELS, index=enrg_idx)
 
                     cycle_phase = "Not tracking / NA"
                     if track_menstrual:
                         cyc_idx = CYCLE_PHASES.index(ctx["cycle_phase"]) if ctx.get("cycle_phase") in CYCLE_PHASES else 0
-                        cycle_phase = st.selectbox("Menstrual Cycle Phase (Optional)", CYCLE_PHASES, index=cyc_idx)
+                        cycle_phase = st.selectbox("🩸 Menstrual Cycle Phase (Optional)", CYCLE_PHASES, index=cyc_idx)
 
                     notes = st.text_area(
-                        "Personal Notes / Observations (Optional)",
+                        "📝 Personal Notes / Observations (Optional)",
                         value=edit_entry.notes if edit_entry else "",
                         placeholder="Describe specific triggers, medications taken, or relief factors.",
                         max_chars=1000
@@ -979,7 +1058,155 @@ with st.container(key="mobile_scroll_content"):
                         else:
                             st.error(f"Error saving entry: {err}")
 
-        # Tab 2: History & Records
+        # Tab: Voice & Quick Observation Logging (Draft & Review)
+        with tab_voice:
+            st.markdown("""
+                <div class="clean-card" style="margin-bottom: 0.9rem;">
+                    <div style="font-weight: 700; font-size: 1.05rem; color: #2A1E24;">🎙️ Voice & Spoken Draft Logging</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">
+                        Dictate or type your health observation naturally. HERPath extracts symptom name, severity, duration, impact, and context into an <b>editable draft</b> so you can review and verify all details before saving to your journal.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # Web Speech API button + JS fallback
+            st.markdown(get_web_speech_component_js(), unsafe_allow_html=True)
+            
+            c_mic1, c_mic2 = st.columns([1, 2])
+            with c_mic1:
+                st.markdown("""
+                    <button id="voice-rec-btn" onclick="startVoiceRecognition()" style="
+                        width: 100%;
+                        background: #F4EBF0;
+                        color: #6C2B4B;
+                        border: 1.5px solid #D5B4C4;
+                        border-radius: 8px;
+                        padding: 10px 14px;
+                        font-weight: 700;
+                        font-size: 0.88rem;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 6px;
+                        margin-top: 4px;
+                    ">🎙️ Browser Microphone</button>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; text-align: center;">Click to dictate in supported browsers</div>
+                """, unsafe_allow_html=True)
+            with c_mic2:
+                st.caption("ℹ️ **Privacy & Speech Guarantee:** Speech recognition runs directly in your browser. If speech recognition is unsupported or disabled, simply type or paste into the box below.")
+
+            spoken_input = st.text_area(
+                "Spoken Observation or Text Notes",
+                placeholder="e.g., 'Severe migraine since 10am, pain level 8, lasted 4 hours, feeling terrible stress, couldn't work'",
+                height=90,
+                key="voice_spoken_text_input"
+            )
+
+            col_parse, col_clear = st.columns([2, 1])
+            with col_parse:
+                if st.button("✨ Generate Draft Symptom Entry", key="btn_parse_voice_draft", type="primary", use_container_width=True):
+                    if spoken_input and spoken_input.strip():
+                        draft = parse_symptom_voice_draft(spoken_input)
+                        st.session_state["voice_draft"] = draft
+                        st.rerun()
+                    else:
+                        st.warning("Please dictate or type an observation first.")
+            with col_clear:
+                if st.button("Clear Input", key="btn_clear_voice_input", use_container_width=True):
+                    st.session_state["voice_spoken_text_input"] = ""
+                    st.session_state["voice_draft"] = None
+                    st.rerun()
+
+            # Render editable Draft Review Card if draft exists
+            draft = st.session_state.get("voice_draft")
+            if draft:
+                st.markdown("""
+                    <div class="voice-draft-card">
+                        <div style="font-weight: 700; font-size: 1.05rem; color: #2A1E24; margin-bottom: 4px;">
+                            📋 Review & Edit Draft Symptom Entry
+                        </div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 12px;">
+                            Review extracted data carefully. You can adjust any field before confirming to your permanent health journal.
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                if draft.get("parsed_fields"):
+                    st.markdown("<b>Identified Attributes:</b>", unsafe_allow_html=True)
+                    pills_html = " ".join([f"<span class='voice-field-pill'>✓ {pf}</span>" for pf in draft["parsed_fields"]])
+                    st.markdown(f"<div style='margin-bottom: 12px;'>{pills_html}</div>", unsafe_allow_html=True)
+
+                vd_c1, vd_c2 = st.columns(2)
+                with vd_c1:
+                    all_categories = list(SYMPTOM_TAXONOMY.keys())
+                    cat_idx = all_categories.index(draft["category"]) if draft["category"] in all_categories else 0
+                    v_category = st.selectbox("🏷️ Draft Category", all_categories, index=cat_idx, key="v_edit_cat")
+                    
+                    cat_syms = SYMPTOM_TAXONOMY.get(v_category, [])
+                    sym_idx = cat_syms.index(draft["symptom"]) if draft["symptom"] in cat_syms else 0
+                    v_symptom = st.selectbox("🩺 Draft Symptom", cat_syms if cat_syms else [draft["symptom"]], index=sym_idx, key="v_edit_sym")
+                    
+                    v_date = st.date_input("📅 Onset Date", value=date.today(), key="v_edit_date")
+                    status_opts = ["Ongoing", "Resolved", "Intermittent"]
+                    stat_idx = status_opts.index(draft.get("status", "Ongoing")) if draft.get("status") in status_opts else 0
+                    v_status = st.selectbox("📌 Episode Status", status_opts, index=stat_idx, key="v_edit_status")
+
+                with vd_c2:
+                    v_severity = st.slider("🌡️ Severity Rating (1 - 10)", min_value=1, max_value=10, value=int(draft["severity"]), key="v_edit_sev")
+                    v_duration = st.number_input("⏱️ Duration (hours)", min_value=0.0, max_value=72.0, value=float(draft["duration_hours"]), step=0.5, key="v_edit_dur")
+                    
+                    imp_opts = DAILY_IMPACT_LEVELS
+                    imp_idx = imp_opts.index(draft["impact"]) if draft["impact"] in imp_opts else 0
+                    v_impact = st.selectbox("🚶‍♀️ Daily Activity Impact", imp_opts, index=imp_idx, key="v_edit_imp")
+
+                v_notes = st.text_area("📝 Notes & Spoken Observations", value=draft.get("notes", ""), key="v_edit_notes")
+
+                v_ctx = draft.get("context", {})
+                if v_ctx:
+                    ctx_pills = []
+                    if v_ctx.get("sleep"):
+                        ctx_pills.append(f"<span class='voice-field-pill'>🛏️ Sleep: {v_ctx['sleep']}</span>")
+                    if v_ctx.get("stress"):
+                        ctx_pills.append(f"<span class='voice-field-pill'>⚡ Stress: {v_ctx['stress']}</span>")
+                    if v_ctx.get("cycle_phase"):
+                        ctx_pills.append(f"<span class='voice-field-pill'>🌙 Cycle: {v_ctx['cycle_phase']}</span>")
+                    if ctx_pills:
+                        st.markdown(f"<div style='margin-bottom: 8px;'><b>🌿 Wellbeing Context:</b> {' '.join(ctx_pills)}</div>", unsafe_allow_html=True)
+
+                save_c1, save_c2 = st.columns(2)
+                with save_c1:
+                    if st.button("💾 Confirm & Save to Health Journal", key="btn_confirm_voice_draft", type="primary", use_container_width=True):
+                        success, new_id, err = SymptomTrackerService.record_symptom(
+                            profile_id=active_profile.id,
+                            category=v_category,
+                            symptom=v_symptom,
+                            onset_date=str(v_date),
+                            severity=v_severity,
+                            duration_hours=v_duration,
+                            status=v_status,
+                            impact=v_impact,
+                            notes=v_notes,
+                            context=v_ctx
+                        )
+                        if success:
+                            st.session_state["voice_draft"] = None
+                            st.session_state["last_saved_symptom"] = {
+                                "symptom": v_symptom,
+                                "category": v_category,
+                                "severity": v_severity,
+                                "onset_date": str(v_date)
+                            }
+                            st.success(f"Confirmed and saved '{v_symptom}' to journal!")
+                            st.rerun()
+                        else:
+                            st.error(f"Error saving draft: {err}")
+                with save_c2:
+                    if st.button("❌ Discard Draft", key="btn_discard_voice_draft", use_container_width=True):
+                        st.session_state["voice_draft"] = None
+                        st.rerun()
+
+        # Tab 3: History & Records
         with tab_history:
             st.markdown("##### Filter History")
             filter_cat = st.selectbox("Category", ["All Categories"] + list(SYMPTOM_TAXONOMY.keys()))
@@ -1141,6 +1368,12 @@ with st.container(key="mobile_scroll_content"):
             <div class="page-title-block">
                 <div class="page-title">⏱️ HERPath Timeline Intelligence</div>
                 <div class="page-subtitle">Interactive, explainable chronological view of your recorded health journey, symptom episodes, medications, and contextual patterns.</div>
+            </div>
+            <div class="intelligence-loop-banner">
+                <div class="intelligence-loop-title">🔄 HERPath Health Intelligence Loop</div>
+                <div class="intelligence-loop-subtitle">
+                    Continuous, evidence-linked loop connecting daily symptom tracking, dual-period comparison, explainable pattern identification, and clinician-ready consultation reporting.
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -1408,9 +1641,19 @@ with st.container(key="mobile_scroll_content"):
                 deltas = comparison_results["deltas"]
                 pa_m = comparison_results["period_a"]["metrics"]
                 pb_m = comparison_results["period_b"]["metrics"]
+                suff = comparison_results.get("data_sufficiency", {})
+
+                # Data Sufficiency Warning Banner
+                if not suff.get("is_sufficient", True):
+                    st.markdown(f"""
+                        <div class="data-sufficiency-card">
+                            <b>⚠️ Data Sufficiency Notice:</b> {suff.get('message', 'Limited records in selected periods.')}<br/>
+                            <span style="font-size:0.78rem;">Records in {label_a}: <b>{suff.get('count_a', 0)}</b> &bull; Records in {label_b}: <b>{suff.get('count_b', 0)}</b>. Calculations use actual recorded entries without synthetic data or imputation.</span>
+                        </div>
+                    """, unsafe_allow_html=True)
 
                 st.markdown(f"##### Comparative Delta Summary ({label_a} vs. {label_b})")
-                cd_1, cd_2, cd_3 = st.columns(3)
+                cd_1, cd_2, cd_3, cd_4 = st.columns(4)
                 with cd_1:
                     ep_diff = deltas["episodes"]
                     diff_pill = (
@@ -1420,9 +1663,9 @@ with st.container(key="mobile_scroll_content"):
                     )
                     st.markdown(f"""
                         <div class="period-metric-box">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Episodes Shift</div>
-                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{pa_m['symptom_episodes']} vs {pb_m['symptom_episodes']} {diff_pill}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Daily rate: {comparison_results['period_a']['daily_rate']}/d vs {comparison_results['period_b']['daily_rate']}/d</div>
+                            <div style="font-size: 0.73rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 4px;">📊 Frequency Shift</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{pa_m['symptom_episodes']} vs {pb_m['symptom_episodes']} {diff_pill}</div>
+                            <div style="font-size: 0.70rem; color: var(--text-secondary);">Daily: {comparison_results['period_a']['daily_rate']}/d vs {comparison_results['period_b']['daily_rate']}/d</div>
                         </div>
                     """, unsafe_allow_html=True)
 
@@ -1439,9 +1682,9 @@ with st.container(key="mobile_scroll_content"):
                         sev_summary = "N/A"
                     st.markdown(f"""
                         <div class="period-metric-box">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Avg Severity Shift</div>
-                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{sev_summary}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Peak: {pa_m['max_severity'] or 'N/A'}/10 vs {pb_m['max_severity'] or 'N/A'}/10</div>
+                            <div style="font-size: 0.73rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 4px;">🌡️ Avg Severity</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{sev_summary}</div>
+                            <div style="font-size: 0.70rem; color: var(--text-secondary);">Peak: {pa_m['max_severity'] or 'N/A'}/10 vs {pb_m['max_severity'] or 'N/A'}/10</div>
                         </div>
                     """, unsafe_allow_html=True)
 
@@ -1450,9 +1693,24 @@ with st.container(key="mobile_scroll_content"):
                     dur_summary = f"{pa_m['avg_duration'] or 'N/A'}h vs {pb_m['avg_duration'] or 'N/A'}h"
                     st.markdown(f"""
                         <div class="period-metric-box">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Avg Duration</div>
-                            <div style="font-size: 1.35rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{dur_summary}</div>
-                            <div style="font-size: 0.72rem; color: var(--text-secondary);">Delta: {f'{dur_diff:+0.1f}h' if dur_diff is not None else 'N/A'}</div>
+                            <div style="font-size: 0.73rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 4px;">⏱️ Avg Duration</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{dur_summary}</div>
+                            <div style="font-size: 0.70rem; color: var(--text-secondary);">Delta: {f'{dur_diff:+0.1f}h' if dur_diff is not None else 'N/A'}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                with cd_4:
+                    imp_diff = deltas.get("impact", 0)
+                    imp_pill = (
+                        f"<span class='delta-pill-positive'>+{imp_diff}</span>" if imp_diff > 0
+                        else f"<span class='delta-pill-negative'>{imp_diff}</span>" if imp_diff < 0
+                        else "<span class='delta-pill-neutral'>0</span>"
+                    )
+                    st.markdown(f"""
+                        <div class="period-metric-box">
+                            <div style="font-size: 0.73rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: flex; align-items: center; gap: 4px;">🚶‍♀️ Activity Impact</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #2A1E24; margin: 4px 0;">{pa_m['impact_count']} vs {pb_m['impact_count']} {imp_pill}</div>
+                            <div style="font-size: 0.70rem; color: var(--text-secondary);">Impact rate: {comparison_results['period_a']['impact_rate']}% vs {comparison_results['period_b']['impact_rate']}%</div>
                         </div>
                     """, unsafe_allow_html=True)
 
@@ -1473,29 +1731,90 @@ with st.container(key="mobile_scroll_content"):
                             f"Avg Sev ({label_a})": f"{b['avg_severity_a']}/10" if b['avg_severity_a'] is not None else "N/A",
                             f"Avg Sev ({label_b})": f"{b['avg_severity_b']}/10" if b['avg_severity_b'] is not None else "N/A",
                             "Severity Delta": f"{b['severity_diff']:+0.1f}" if b['severity_diff'] is not None else "N/A",
-                            "Peak Severity": f"{b['max_severity']}/10" if b['max_severity'] is not None else "N/A"
+                            f"Impact Logs ({label_a})": b.get("impact_a", 0),
+                            f"Impact Logs ({label_b})": b.get("impact_b", 0),
+                            "Impact Delta": f"{b.get('impact_diff', 0):+d}"
                         })
                     st.dataframe(pd.DataFrame(breakdown_rows), use_container_width=True, hide_index=True)
                 else:
                     st.info("No common symptoms recorded across both comparison periods.")
 
-            # 5. Explainable Health Insights
-            st.markdown('<div class="section-header">💡 Explainable Health Insights (Rule-Based)</div>', unsafe_allow_html=True)
+            # 5. Explainable Health Insights (Rule-Based)
+            st.markdown('<div class="section-header">💡 Explainable Health Patterns (Grounded & Non-Diagnostic)</div>', unsafe_allow_html=True)
             insights = TimelineService.generate_explainable_insights(filtered_events, comparison=comparison_results)
 
+            category_icon_map = {
+                "Cycle Context": "🌙",
+                "Stress Context": "⚡",
+                "Sleep Context": "💤",
+                "Episode Duration": "⏱️",
+                "Frequency": "📊",
+                "Severity": "🌡️",
+                "Trajectory": "📈",
+                "Impact": "🛡️",
+                "Baseline": "ℹ️"
+            }
+
             for ins in insights:
-                st.markdown(f"""
-                    <div class="insight-card-wrapper">
-                        <div style="font-weight: 700; font-size: 0.94rem; color: #2A1E24;">{ins['title']}</div>
-                        <div style="font-size: 0.85rem; color: #34272E; margin-top: 4px; line-height: 1.45;">{ins['statement']}</div>
-                        <div class="insight-evidence-box">
-                            <div><b>Exact Evidence:</b> {ins['exact_evidence']}</div>
-                            <div><b>Date Range:</b> {ins['date_range']} &bull; <b>Relevant Records:</b> {ins['record_count']}</div>
-                            <div class="insight-formula-caption">Calculation: {ins['calculation_note']}</div>
-                        </div>
-                        <div class="insight-limitation-note">⚠️ Note: {ins['limitation']}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+                supporting_dates = ins.get("supporting_dates", [])
+                date_chips_html = ""
+                if supporting_dates:
+                    chips = [f"<span class='timeline-date-chip'>📅 {d}</span>" for d in supporting_dates[:6]]
+                    date_chips_html = " ".join(chips)
+                    if len(supporting_dates) > 6:
+                        date_chips_html += f" <span style='font-size:0.74rem; color:#8C7B83;'>+{len(supporting_dates)-6} more dates</span>"
+
+                supp_dates_row = f"<div style='margin-top: 4px;'><b>📅 Supporting Dates:</b> {date_chips_html}</div>" if date_chips_html else ""
+                exact_ev = ins.get('exact_evidence', '')
+                calc_note = ins.get('calculation_note', '')
+                limitation_note = ins.get('limitation', '')
+                cat_name = ins.get('category', 'Pattern')
+                cat_icon = category_icon_map.get(cat_name, '💡')
+
+                insight_card_html = (
+                    f"<div class='insight-card-wrapper'>"
+                    f"<div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;'>"
+                    f"<span style='font-weight: 700; font-size: 0.94rem; color: #2A1E24;'>{cat_icon} {ins['title']}</span>"
+                    f"<span style='font-size: 0.72rem; background: #F4EBF0; color: #6C2B4B; padding: 2px 7px; border-radius: 4px; font-weight: 600;'>{cat_icon} {cat_name}</span>"
+                    f"</div>"
+                    f"<div style='font-size: 0.85rem; color: #34272E; margin-top: 4px; line-height: 1.45;'>{ins['statement']}</div>"
+                    f"<div class='insight-evidence-box'>"
+                    f"<div><b>📋 Exact Evidence:</b> {exact_ev}</div>"
+                    f"<div><b>🗓️ Date Range Analyzed:</b> {ins['date_range']} &bull; <b>🔢 Relevant Records:</b> {ins['record_count']}</div>"
+                    f"{supp_dates_row}"
+                    f"<div class='insight-formula-caption' style='margin-top: 4px;'><b>🧮 Calculation:</b> {calc_note}</div>"
+                    f"</div>"
+                    f"<div class='insight-limitation-note'>🛡️ <b>Clinical Boundary Note:</b> {limitation_note}</div>"
+                    f"</div>"
+                )
+                st.markdown(insight_card_html, unsafe_allow_html=True)
+
+                # "Why am I seeing this?" Interactive Action Expander
+                why = ins.get("why_explanation", {})
+                if why:
+                    with st.expander(f"🔍 Why am I seeing this? — {cat_icon} {ins['title']}", expanded=False):
+                        supp_dates_text = ", ".join(supporting_dates) if supporting_dates else "No date entries"
+                        crit = why.get('criteria', 'Rule condition met.')
+                        form = why.get('formula', calc_note)
+                        evid = why.get('evidence', exact_ev)
+                        safety = why.get('safety_note', 'Recorded observations reflect temporal co-occurrence; they do not establish causation or clinical diagnoses.')
+                        clin_q = why.get('clinical_question', 'Discuss this observation during your next clinical appointment.')
+
+                        why_box_html = (
+                            f"<div class='why-seeing-box'>"
+                            f"<div style='margin-bottom: 6px;'><span class='why-tag'>🎯 Trigger Criteria</span>{crit}</div>"
+                            f"<div style='margin-bottom: 6px;'><span class='why-tag'>🧮 Exact Formula</span><code>{form}</code></div>"
+                            f"<div style='margin-bottom: 6px;'><span class='why-tag'>📑 Supporting Records</span>{evid}</div>"
+                            f"<div style='margin-bottom: 6px;'><span class='why-tag'>🗓️ Supporting Dates</span>{supp_dates_text}</div>"
+                            f"<div style='margin-top: 8px; margin-bottom: 6px; padding: 7px 10px; background: #FFF4E5; border-radius: 6px; color: #8A5300; font-size: 0.79rem; line-height: 1.45;'>"
+                            f"<b>🛡️ Clinical Safety Boundary:</b> {safety}"
+                            f"</div>"
+                            f"<div style='margin-top: 6px; padding: 7px 10px; background: #EBF3FF; border-radius: 6px; color: #004085; font-size: 0.79rem; line-height: 1.45;'>"
+                            f"<b>🩺 Suggested Clinician Question:</b> {clin_q}"
+                            f"</div>"
+                            f"</div>"
+                        )
+                        st.markdown(why_box_html, unsafe_allow_html=True)
 
             # 6. Chronological Health Event Feed & Detail View
             st.markdown('<div class="section-header">📜 Chronological Health Event Feed</div>', unsafe_allow_html=True)
@@ -1505,25 +1824,40 @@ with st.container(key="mobile_scroll_content"):
             if sort_order == "Newest First":
                 display_events.reverse()
 
+            category_sym_icons = {
+                "Neurological & Head": "🧠",
+                "Pelvic & Menstrual": "🌸",
+                "Systemic & Energy": "⚡",
+                "Breast Health": "🎀",
+                "Musculoskeletal & Joints": "🦴",
+                "Digestive & Gut": "🥑",
+                "Skin, Hair & Nails": "✨",
+                "Mental Wellbeing & Mood": "💭",
+                "Sleep & Rest": "🌙",
+                "Medications": "💊",
+                "Supplements": "🌿"
+            }
+
             for ev in display_events:
                 is_med = ev.event_type == "medication"
                 is_sev = ev.severity is not None and ev.severity >= 7
                 card_class = "timeline-event-card event-medication" if is_med else ("timeline-event-card event-severe" if is_sev else "timeline-event-card")
+                ev_icon = "💊" if is_med else category_sym_icons.get(ev.category, "🌸")
 
-                type_badge = "<span class='timeline-badge-medication'>Medication Started</span>" if is_med else "<span class='timeline-badge-symptom'>Symptom Episode</span>"
+                type_badge = "<span class='timeline-badge-medication'>💊 Medication Started</span>" if is_med else f"<span class='timeline-badge-symptom'>{ev_icon} Symptom Episode</span>"
 
                 sev_pill = ""
                 if ev.severity is not None:
                     if ev.severity <= 3:
-                        sev_pill = f"<span class='timeline-severity-pill-mild'>Mild {ev.severity}/10</span>"
+                        sev_pill = f"<span class='timeline-severity-pill-mild'>🟢 Mild {ev.severity}/10</span>"
                     elif ev.severity <= 6:
-                        sev_pill = f"<span class='timeline-severity-pill-mod'>Mod {ev.severity}/10</span>"
+                        sev_pill = f"<span class='timeline-severity-pill-mod'>🟡 Mod {ev.severity}/10</span>"
                     else:
-                        sev_pill = f"<span class='timeline-severity-pill-sev'>Severe {ev.severity}/10</span>"
+                        sev_pill = f"<span class='timeline-severity-pill-sev'>🔴 Severe {ev.severity}/10</span>"
 
-                impact_pill = f"<span class='timeline-impact-pill'>{ev.impact}</span>" if ev.impact and ev.impact != "None" else ""
+                impact_pill = f"<span class='timeline-impact-pill'>⚡ {ev.impact}</span>" if ev.impact and ev.impact != "None" else ""
 
-                expander_title = f"{'💊' if is_med else '🌸'} {ev.date} — {ev.title} {'(' + str(ev.severity) + '/10)' if ev.severity else ''}"
+                expander_title = f"{ev_icon} {ev.date} — {ev.title} {'(' + str(ev.severity) + '/10)' if ev.severity else ''}"
 
                 with st.expander(expander_title, expanded=False):
                     st.markdown(f"""
@@ -1537,29 +1871,29 @@ with st.container(key="mobile_scroll_content"):
 
                     d_col1, d_col2 = st.columns(2)
                     with d_col1:
-                        st.write(f"**Category:** {ev.category}")
+                        st.write(f"**🏷️ Category:** {ev.category}")
                         if ev.duration_hours is not None:
-                            st.write(f"**Duration:** {ev.duration_hours} hours")
+                            st.write(f"**⏱️ Duration:** {ev.duration_hours} hours")
                         if ev.status:
-                            st.write(f"**Status:** {ev.status}")
+                            st.write(f"**📌 Status:** {ev.status}")
                         if is_med:
-                            st.write(f"**Dosage:** {ev.dosage or 'Standard dose'}")
-                            st.write(f"**Frequency:** {ev.frequency or 'As directed'}")
+                            st.write(f"**💊 Dosage:** {ev.dosage or 'Standard dose'}")
+                            st.write(f"**🔁 Frequency:** {ev.frequency or 'As directed'}")
 
                     with d_col2:
                         if ev.context:
                             ctx = ev.context
                             if ctx.get("sleep"):
-                                st.write(f"**Sleep Quality:** {ctx['sleep']}")
+                                st.write(f"**🛏️ Sleep Quality:** {ctx['sleep']}")
                             if ctx.get("stress"):
-                                st.write(f"**Stress Level:** {ctx['stress']}")
+                                st.write(f"**⚡ Stress Level:** {ctx['stress']}")
                             if ctx.get("energy"):
-                                st.write(f"**Energy:** {ctx['energy']}")
+                                st.write(f"**🔋 Energy:** {ctx['energy']}")
                             if ctx.get("cycle_phase"):
-                                st.write(f"**Cycle Phase:** {ctx['cycle_phase']}")
+                                st.write(f"**🌙 Cycle Phase:** {ctx['cycle_phase']}")
 
                     if ev.notes:
-                        st.markdown(f"**Notes:** *{ev.notes}*")
+                        st.markdown(f"**📝 Notes:** *{ev.notes}*")
 
                     st.caption(f"Data Source: {ev.source}")
 
@@ -1589,14 +1923,14 @@ with st.container(key="mobile_scroll_content"):
 
         with tab_med_add:
             with st.form("add_medication_form", clear_on_submit=True):
-                med_name = st.text_input("Medication / Treatment Name *", placeholder="e.g. Magnesium Glycinate, Sumatriptan")
-                med_cat = st.selectbox("Category *", ["Prescription", "OTC / Supplement", "Lifestyle / Physical Therapy"])
-                med_dosage = st.text_input("Dosage / Strength", placeholder="e.g. 400 mg, 1 tablet")
-                med_freq = st.selectbox("Frequency", [
+                med_name = st.text_input("💊 Medication / Treatment Name *", placeholder="e.g. Magnesium Glycinate, Sumatriptan")
+                med_cat = st.selectbox("🏷️ Category *", ["Prescription", "OTC / Supplement", "Lifestyle / Physical Therapy"])
+                med_dosage = st.text_input("💧 Dosage / Strength", placeholder="e.g. 400 mg, 1 tablet")
+                med_freq = st.selectbox("⏰ Frequency", [
                     "Once daily at bedtime", "Once daily in morning", "As needed at symptom onset", "Twice daily with meals", "Other"
                 ])
-                med_start = st.date_input("Date Started", value=date.today())
-                med_notes = st.text_area("Notes / Instructions", placeholder="e.g. Take with food")
+                med_start = st.date_input("📅 Date Started", value=date.today())
+                med_notes = st.text_area("📝 Notes / Instructions", placeholder="e.g. Take with food")
                 med_submit = st.form_submit_button("💾 Save Medication / Treatment", type="primary")
 
                 if med_submit:
@@ -1625,11 +1959,14 @@ with st.container(key="mobile_scroll_content"):
                     st.markdown(f"""
                         <div class="clean-card" style="padding: 0.85rem 1rem; margin-bottom: 0.6rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="font-weight: 600; font-size: 0.95rem;">{med.name}</div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="cat-icon-badge" style="background:#EBF5FB; color:#2980B9;">💊</span>
+                                    <div style="font-weight: 600; font-size: 0.95rem;">{med.name}</div>
+                                </div>
                                 <span class="badge-selfcare">{med.category}</span>
                             </div>
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
-                                {med.dosage or 'Standard dose'} &bull; <i>{med.frequency}</i>
+                            <div style="font-size: 0.83rem; color: var(--text-secondary); margin-top: 0.35rem; padding-left: 42px;">
+                                💧 {med.dosage or 'Standard dose'} &bull; ⏰ <i>{med.frequency}</i>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -1813,21 +2150,22 @@ with st.container(key="mobile_scroll_content"):
         search_query = st.text_input("🔍 Search library topics or symptoms", placeholder="e.g. PCOS, migraine, iron...")
         categories = health_library.get_categories()
         chosen_cat = st.selectbox("Category", categories)
+        st.markdown(f'<div style="margin-top: -6px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">{get_category_icon_badge(chosen_cat)} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-primary);">{chosen_cat}</span></div>', unsafe_allow_html=True)
 
         filtered_articles = health_library.search_resources(query=search_query, category=chosen_cat)
-        st.caption(f"Showing **{len(filtered_articles)}** resources.")
+        st.caption(f"Showing **{len(filtered_articles)}** verified resources.")
 
         for art in filtered_articles:
             st.markdown(f"""
                 <div class="clean-card" style="margin-bottom: 0.75rem;">
                     <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-rose); text-transform: uppercase;">
-                        {art['source_org']} &bull; {art['category']}
+                        🏛️ {art['source_org']} &bull; 📚 {art['category']}
                     </div>
-                    <div class="clean-card-title">{art['title']}</div>
+                    <div class="clean-card-title">📖 {art['title']}</div>
                     <div class="clean-card-subtext">{art['summary']}</div>
                     <div style="margin-top: 0.5rem; font-size: 0.84rem;">
                         <a href="{art['source_url']}" target="_blank" style="color: var(--primary-rose); font-weight: 600; text-decoration: none;">
-                            Read verified article &rarr;
+                            🔗 Read verified article &rarr;
                         </a>
                     </div>
                 </div>
@@ -1847,36 +2185,92 @@ with st.container(key="mobile_scroll_content"):
 
         render_my_health_subnav("My Health Report")
 
-        rep_start = st.date_input("Start Date", value=date.today() - timedelta(days=30))
-        rep_end = st.date_input("End Date", value=date.today() + timedelta(days=1))
+        rep_start = st.date_input("Start Date", value=date.today() - timedelta(days=30), key="rep_start_date")
+        rep_end = st.date_input("End Date", value=date.today() + timedelta(days=1), key="rep_end_date")
 
         report_entries = SymptomTrackerService.get_history(
             profile_id=active_profile.id,
             start_date=str(rep_start),
             end_date=str(rep_end)
         )
+        report_meds = get_medications(active_profile.id)
 
         rep_engine = InsightsEngine(report_entries)
         rep_metrics = rep_engine.calculate_summary_metrics()
 
-        rep_r1_c1, rep_r1_c2 = st.columns(2)
+        # Step 1: Pre-Export Overview
+        st.markdown("##### 📊 1. Reporting Period Summary")
+        rep_r1_c1, rep_r1_c2, rep_r1_c3, rep_r1_c4 = st.columns(4)
         with rep_r1_c1:
             st.metric("Entries in Period", rep_metrics["total_entries"])
         with rep_r1_c2:
             st.metric("Distinct Dates", rep_metrics["distinct_days"])
-
-        rep_r2_c1, rep_r2_c2 = st.columns(2)
-        with rep_r2_c1:
+        with rep_r1_c3:
             st.metric("Avg Severity", f"{rep_metrics['avg_severity']}/10")
-        with rep_r2_c2:
+        with rep_r1_c4:
             st.metric("Top Reported Symptom", rep_metrics["top_symptom"])
+
+        # Wellbeing Context Preview
+        sleep_logs = [e for e in report_entries if e.context and e.context.get("sleep")]
+        stress_logs = [e for e in report_entries if e.context and e.context.get("stress")]
+        st.caption(f"Context captured in period: 🛏️ **{len(sleep_logs)}** sleep ratings &bull; ⚡ **{len(stress_logs)}** stress ratings &bull; 💊 **{len(report_meds)}** active treatments.")
+
+        # Step 2: Privacy Protection & Selective Notes
+        st.markdown("##### 🔒 2. Privacy-Preserving Journal Notes Review")
+        st.markdown("""
+            <div style="font-size: 0.84rem; color: #5C5770; background: #FAF9FD; border: 1px solid #E5E1F0; border-radius: 6px; padding: 0.6rem 0.85rem; margin-bottom: 0.6rem;">
+                🔒 <b>Privacy Protection:</b> Private diary notes are <b>omitted by default</b> to protect your personal reflections. Review your notes below and select only those you want shared in your doctor's clinical summary.
+            </div>
+        """, unsafe_allow_html=True)
+
+        include_all_notes = st.checkbox("🔓 Include all journal notes without omission", value=False, key="rep_include_all_notes")
+
+        selected_notes_dict = {}
+        entries_with_notes = [e for e in report_entries if e.notes and e.notes.strip()]
+        if not include_all_notes and entries_with_notes:
+            with st.expander(f"📝 Select Specific Notes to Include ({len(entries_with_notes)} entries with notes)", expanded=True):
+                for e in entries_with_notes:
+                    checked = st.checkbox(
+                        f"📅 {e.onset_date} — {e.symptom} ({e.severity}/10): \"{e.notes[:80]}{'...' if len(e.notes) > 80 else ''}\"",
+                        key=f"rep_note_select_{e.id}",
+                        value=False
+                    )
+                    if checked:
+                        selected_notes_dict[e.id] = e.notes
+        elif not include_all_notes and not entries_with_notes:
+            st.caption("No written diary notes in the selected date range.")
+
+        # Step 3: Questions for the Clinician
+        st.markdown("##### 🩺 3. Questions for Discussion with Physician")
+        with st.expander("💬 Review & Customize Clinician Questions", expanded=False):
+            st.caption("Select the questions you want printed on your clinical report:")
+            q1 = st.checkbox("🔬 Diagnostic evaluations / lab profiles recommendation", value=True, key="rep_q1")
+            q2 = st.checkbox("💊 Evidence-based acute vs. preventative treatment options", value=True, key="rep_q2")
+            q3 = st.checkbox("🌸 Hormonal / sleep pattern correlations and monitoring", value=True, key="rep_q3")
+            q4 = st.checkbox("🚨 Urgent red-flag warning signs requiring emergency care", value=True, key="rep_q4")
+            custom_q_input = st.text_input("✍️ Add your own personal question for the doctor (optional):", key="rep_custom_q")
+
+            custom_questions = []
+            if q1:
+                custom_questions.append("Based on the frequency and severity trajectory of these symptoms, what diagnostic evaluations or laboratory profiles (e.g., hormonal panel, CBC, pelvic imaging) would you recommend?")
+            if q2:
+                custom_questions.append("Are there evidence-based pharmacologic or non-pharmacologic interventions that could help address the episodes with high severity or disruption?")
+            if q3:
+                custom_questions.append("Do any of the observed patterns (such as sleep or cycle timing correlations) suggest specific underlying conditions to monitor (such as PCOS, endometriosis, hormonal migraine, or perimenopause)?")
+            if q4:
+                custom_questions.append("What specific red-flag warning signs should prompt an emergency department visit or urgent same-day appointment?")
+            if custom_q_input and custom_q_input.strip():
+                custom_questions.append(custom_q_input.strip())
 
         generator = ClinicianReportGenerator(
             profile=active_profile,
             entries=report_entries,
             start_date=str(rep_start),
             end_date=str(rep_end),
-            medications=get_medications(active_profile.id)
+            medications=report_meds,
+            user_selected_notes=selected_notes_dict if not include_all_notes else None,
+            custom_questions=custom_questions if custom_questions else None,
+            include_all_notes=include_all_notes
         )
 
         try:
@@ -1884,7 +2278,7 @@ with st.container(key="mobile_scroll_content"):
             file_name = f"HERPath_Report_{active_profile.id}_{rep_start}_{rep_end}.pdf"
 
             st.download_button(
-                label="📥 Download Clinician Health Report",
+                label="📥 Download Clinician Health Report (PDF)",
                 data=pdf_bytes,
                 file_name=file_name,
                 mime="application/pdf",
@@ -1909,7 +2303,15 @@ with st.container(key="mobile_scroll_content"):
 
         render_learn_subnav("Ask HERPath")
 
-        user_query = st.text_input("Enter your health question:", placeholder="e.g. iron deficiency fatigue, PCOS symptoms")
+        st.markdown("""
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.8rem;">
+                <span class="auth-trust-chip"><i class="bi bi-lightbulb"></i> "What causes cyclic migraines?"</span>
+                <span class="auth-trust-chip"><i class="bi bi-lightbulb"></i> "PCOS vs Endometriosis"</span>
+                <span class="auth-trust-chip"><i class="bi bi-lightbulb"></i> "Perimenopause sleep"</span>
+            </div>
+        """, unsafe_allow_html=True)
+
+        user_query = st.text_input("💬 Ask a health question or topic:", placeholder="e.g. iron deficiency fatigue, PCOS symptoms")
 
         if user_query:
             emergency_assessment = SafetyNavigator.evaluate(
@@ -1930,14 +2332,14 @@ with st.container(key="mobile_scroll_content"):
 
             matches = health_library.search_resources(query=user_query)
             if matches:
-                st.markdown(f"#### Grounded Findings ({len(matches)} Relevant Guides)")
+                st.markdown(f"#### 📖 Grounded Findings ({len(matches)} Relevant Guides)")
                 for match in matches[:3]:
                     st.markdown(f"""
                         <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); margin-bottom: 0.65rem;">
                             <div style="font-size: 0.74rem; font-weight: 700; color: var(--primary-rose); text-transform: uppercase;">
-                                {match['source_org']} &bull; {match['category']}
+                                🏛️ {match['source_org']} &bull; 📚 {match['category']}
                             </div>
-                            <div class="clean-card-title">{match['title']}</div>
+                            <div class="clean-card-title">📖 {match['title']}</div>
                             <div class="clean-card-subtext">{match['summary']}</div>
                         </div>
                     """, unsafe_allow_html=True)
