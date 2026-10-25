@@ -105,3 +105,108 @@ def test_mobile_accessible_severity_feedback():
     combined_md = " ".join([m.value for m in at.markdown])
     # Initial severity slider value is 5 (Moderate)
     assert "Moderate (4–6): Notable discomfort" in combined_md
+
+
+def test_mobile_home_cycle_arc_and_milestone():
+    """Verifies that the Home Dashboard renders the semi-circular arc, day strip, and countdown milestone without raw HTML code blocks."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    combined_md = " ".join([m.value for m in at.markdown])
+
+    # 1. Day strip & arc elements
+    assert "cycle-day-strip" in combined_md
+    assert "cycle-arc-card" in combined_md
+    assert "cycle-milestone-pill" in combined_md
+
+    # 2. Milestone countdown text
+    assert "Next phase in" in combined_md
+    assert "Next period in" in combined_md
+
+    # 3. No unescaped or indented raw HTML blocks rendered as markdown pre/code
+    assert not any(m.value.startswith("    <div class=\"cycle-day-pill") for m in at.markdown)
+    assert not any(m.value.startswith("    <div class=\"cycle-arc-card") for m in at.markdown)
+
+    # 4. Hero CTA button
+    button_labels = [b.label for b in at.button]
+    assert any("Log Your Symptoms" in b for b in button_labels)
+
+
+def test_mobile_home_today_recommendations():
+    """Verifies that phase-specific nutrition and activity recommendation cards render on the Home Dashboard."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Today's recommendation" in combined_md
+    assert "today-rec-card" in combined_md
+    assert "Nutrition" in combined_md
+    assert "Activity" in combined_md
+    
+    # Check expander label for phase guidance
+    expander_labels = [e.label for e in at.expander]
+    assert any("See All Phase Guidance" in lbl for lbl in expander_labels)
+
+
+def test_mobile_home_quick_checkin_flow():
+    """Verifies that the 1-Tap Quick Mood & Well-Being Check-In can record an entry directly into SQLite."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Quick Mood & Well-Being Check-In" in combined_md
+
+    # Check multi-select for well-being
+    wb_select = [ms for ms in at.multiselect if ms.key == "home_quick_wb_select"]
+    assert len(wb_select) == 1
+    wb_select[0].set_value(["Abdominal pain / Cramps", "Fatigue / Low energy"])
+
+    # Check mood selectbox
+    mood_select = [sb for sb in at.selectbox if sb.key == "home_quick_mood_select"]
+    assert len(mood_select) == 1
+    mood_select[0].set_value("😴 Tired")
+
+    # Find and click the quick checkin button
+    save_btns = [b for b in at.button if b.key == "btn_save_quick_checkin"]
+    assert len(save_btns) == 1
+    save_btns[0].click().run()
+    assert not at.exception
+
+    # Check success notification
+    assert any("Recorded:" in s.value for s in at.success)
+
+
+def test_mobile_home_energy_curve_and_settings():
+    """Verifies the presence of the Energy Level Curve expander and Cycle Personalization sheet."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    expander_labels = [e.label for e in at.expander]
+    assert any("Energy Level Curve" in lbl for lbl in expander_labels)
+    assert any("Cycle Settings" in lbl for lbl in expander_labels)
+
+
+def test_mobile_home_period_start_tap():
+    """Verifies that clicking 'My Period Started Today' resets the cycle to Day 1, saves to SQLite, and updates phase horizons."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    # Locate the period start button
+    period_btn = [b for b in at.button if b.key == "home_btn_period_today"]
+    assert len(period_btn) == 1
+    assert "My Period Started Today" in period_btn[0].label
+
+    # Click the button
+    period_btn[0].click().run()
+    assert not at.exception
+
+    # Verify Day 1 is now displayed
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Day 1" in combined_md
+    assert "Menstruation Phase" in combined_md
+
+    # Verify persistent success notification
+    assert any("Period logged! Cycle reset to Day 1" in s.value for s in at.success)
+
+
+

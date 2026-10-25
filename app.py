@@ -9,9 +9,14 @@ A thoughtfully designed, personal wellness companion for mobile phones and moder
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date, timedelta
+import calendar
 from pathlib import Path
 import json
 import uuid
+import math
+import textwrap
+import numpy as np
+import plotly.graph_objects as go
 
 # Internal Modules
 from config import (
@@ -53,6 +58,8 @@ from insights_engine import InsightsEngine
 from safety_navigator import SafetyNavigator
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
+from clinical_summary_service import ClinicalSummaryService, ClinicalSummaryData
+from cycle_service import CycleService, CycleStatisticsData, MonthCalendarData
 from data.seed_data import seed_demo_data
 from timeline_service import TimelineService, TimelineEvent
 from voice_draft_service import parse_symptom_voice_draft, get_web_speech_component_js
@@ -113,6 +120,16 @@ if "selected_body_focus" not in st.session_state:
 
 if "last_saved_symptom" not in st.session_state:
     st.session_state["last_saved_symptom"] = None
+
+if "cal_year" not in st.session_state:
+    st.session_state["cal_year"] = date.today().year
+
+if "cal_month" not in st.session_state:
+    st.session_state["cal_month"] = date.today().month
+
+if "calendar_selected_date" not in st.session_state:
+    st.session_state["calendar_selected_date"] = str(date.today())
+
 
 
 # Helper to switch views cleanly
@@ -373,18 +390,40 @@ def render_auth_login_screen():
         with c3:
             st.metric("Security", "PIN Locked 🔒")
 
-        with st.expander("🔒 Change Security PIN", expanded=False):
+        # Persistent success feedback across reruns
+        if "pin_update_success" in st.session_state:
+            st.success(st.session_state.pop("pin_update_success"))
+
+        if "pref_update_success" in st.session_state:
+            st.success(st.session_state.pop("pref_update_success"))
+
+        pin_version = st.session_state.get("pin_input_version", 0)
+        pin_exp_open = st.session_state.pop("pin_expander_open", False)
+        pin_success_inside = st.session_state.pop("pin_inside_success", False)
+
+        with st.expander("🔒 Change Security PIN", expanded=pin_exp_open):
             st.caption("Change your 4-digit security PIN to protect access on this device.")
-            new_pin_input = st.text_input("New 4-Digit Security PIN", type="password", key="change_pin_field", placeholder="••••")
+            if pin_success_inside:
+                st.success("✅ Your 4-digit security PIN has been updated successfully!")
+            new_pin_input = st.text_input(
+                "New 4-Digit Security PIN",
+                type="password",
+                key=f"change_pin_field_{pin_version}",
+                placeholder="••••"
+            )
             if st.button("Update Security PIN", type="primary", key="btn_update_pin"):
                 if new_pin_input and len(new_pin_input.strip()) >= 4:
-                    set_user_pin(active_prof.id, new_pin_input)
-                    st.success("Security PIN updated successfully!")
+                    set_user_pin(active_prof.id, new_pin_input.strip())
+                    st.session_state["pin_update_success"] = "✅ Security PIN updated successfully! Your new PIN is active on this device."
+                    st.session_state["pin_expander_open"] = True
+                    st.session_state["pin_inside_success"] = True
+                    st.session_state["pin_input_version"] = pin_version + 1
                     st.rerun()
                 else:
                     st.error("PIN must be at least 4 digits.")
 
-        with st.expander("⚙️ Profile Customization", expanded=False):
+        pref_exp_open = st.session_state.pop("pref_expander_open", False)
+        with st.expander("⚙️ Profile Customization", expanded=pref_exp_open):
             with st.form("account_profile_pref_form"):
                 display_name_val = st.text_input("Display Name / Pseudonym", value=active_prof.display_name)
                 track_menstrual_toggle = st.checkbox("Track Menstrual Context", value=active_prof.preferences.get("track_menstrual", True))
@@ -393,7 +432,8 @@ def render_auth_login_screen():
                     updated_pref["display_name"] = display_name_val
                     updated_pref["track_menstrual"] = track_menstrual_toggle
                     update_profile_preferences(active_prof.id, updated_pref)
-                    st.success("Preferences updated successfully!")
+                    st.session_state["pref_update_success"] = "✅ Preferences updated successfully!"
+                    st.session_state["pref_expander_open"] = True
                     st.rerun()
 
         st.markdown('<div style="height: 14px;"></div>', unsafe_allow_html=True)
@@ -642,7 +682,7 @@ with st.container(key="mobile_scroll_content"):
     elif st.session_state["navigation"] == "Account & Login":
         render_auth_login_screen()
     elif st.session_state["navigation"] == "Home Dashboard":
-        # B. Greeting: Warm greeting and date on separate line with natural wrapping
+        # B. Cycle & Greeting Header (Matching femtech mobile redesign)
         current_hour = datetime.now().hour
         if 5 <= current_hour < 12:
             time_greeting = f"Good morning, {first_name} ☀️"
@@ -652,19 +692,635 @@ with st.container(key="mobile_scroll_content"):
             time_greeting = f"Good evening, {first_name} 🌸"
 
         today_formatted = date.today().strftime("%A, %b %d")
-        st.markdown(f"""
-            <div class="greeting-block">
-                <div class="greeting-title">{time_greeting}</div>
-                <div class="greeting-date">📅 {today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
+        
+        # Display persistent cycle reset notification if active
+        if "cycle_reset_success" in st.session_state:
+            st.success(st.session_state.pop("cycle_reset_success"))
+
+        # Calculate or load cycle day
+        pref = active_profile.preferences or {}
+        cycle_len = pref.get("cycle_length", 28)
+        flow_duration = pref.get("period_duration", 5)
+        
+        # Determine current cycle day
+        if "cycle_day_override" in st.session_state:
+            cycle_day = st.session_state["cycle_day_override"]
+        elif pref.get("period_start_date"):
+            try:
+                p_start = datetime.strptime(pref["period_start_date"], "%Y-%m-%d").date()
+                diff_d = (date.today() - p_start).days
+                cycle_day = (diff_d % cycle_len) + 1
+            except Exception:
+                cycle_day = 2
+        else:
+            # Default to Day 2 for demonstration
+            cycle_day = 2
+
+        # Biologically adaptive phase calculation:
+        # Menstruation: Days 1 to flow_duration
+        # Luteal phase is biologically stable (~14 days before next period)
+        ovulation_day = max(flow_duration + 2, cycle_len - 14)
+        
+        if 1 <= cycle_day <= flow_duration:
+            phase_name = "Menstruation Phase"
+            phase_days_left = flow_duration - cycle_day + 1
+        elif flow_duration < cycle_day < ovulation_day - 1:
+            phase_name = "Follicular Phase"
+            phase_days_left = (ovulation_day - 1) - cycle_day + 1
+        elif (ovulation_day - 1) <= cycle_day <= (ovulation_day + 1):
+            phase_name = "Ovulation Phase"
+            phase_days_left = (ovulation_day + 1) - cycle_day + 1
+        else:
+            phase_name = "Luteal Phase"
+            phase_days_left = cycle_len - cycle_day + 1
+
+        days_to_next_period = max(1, cycle_len - cycle_day + 1)
+
+        # 1. Top Greeting Row with Avatar Pill
+        st.markdown(textwrap.dedent(f"""
+            <div class="cycle-greeting-row">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #8C7B83;">{time_greeting}</div>
+                    <div class="cycle-greeting-title">Ready for a good day ?</div>
+                    <div style="font-size: 0.76rem; color: #A1929A; margin-top: 2px;">📅 {today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
+                </div>
+                <div class="cycle-avatar-circle" title="{active_profile.display_name}">🌸</div>
             </div>
+        """), unsafe_allow_html=True)
+
+        # 2. Horizontal Weekly Day Strip (Clean unindented HTML to prevent markdown code block bug)
+        day_pills_html = []
+        start_pill_day = max(1, cycle_day - 1)
+        if start_pill_day > cycle_len - 5:
+            start_pill_day = max(1, cycle_len - 5)
+
+        for d_num in range(start_pill_day, start_pill_day + 6):
+            if d_num == cycle_day:
+                day_pills_html.append(
+                    '<div class="cycle-day-pill cycle-day-active">'
+                    '<span class="day-lbl">Today</span>'
+                    '<div class="today-dashed-ring"><span class="today-dot"></span></div>'
+                    '</div>'
+                )
+            elif d_num < cycle_day:
+                day_pills_html.append(
+                    f'<div class="cycle-day-pill cycle-day-past">'
+                    f'<span class="day-lbl">Day {d_num}</span>'
+                    f'<span class="day-icon">✓</span>'
+                    f'</div>'
+                )
+            else:
+                day_pills_html.append(
+                    f'<div class="cycle-day-pill cycle-day-future">'
+                    f'<span class="day-lbl">Day {d_num}</span>'
+                    f'<span class="day-icon">✓</span>'
+                    f'</div>'
+                )
+
+        st.markdown(f'<div class="cycle-day-strip">{"".join(day_pills_html)}</div>', unsafe_allow_html=True)
+
+        # 3. Semi-Circular Phase Arc Card with Milestone Horizon
+        frac = (min(cycle_len, max(1, cycle_day)) - 0.5) / float(cycle_len)
+        theta_deg = 180.0 - (frac * 180.0)
+        theta_rad = math.radians(theta_deg)
+        x_m = round(145.0 + 95.0 * math.cos(theta_rad), 1)
+        y_m = round(125.0 - 95.0 * math.sin(theta_rad), 1)
+        rot_deg = round(90.0 - theta_deg, 1)
+
+        arc_svg_markup = textwrap.dedent(f"""
+            <div class="cycle-arc-card">
+                <div class="cycle-arc-container">
+                    <svg viewBox="0 0 290 148" width="100%" height="auto" style="overflow: visible;">
+                        <defs>
+                            <linearGradient id="gradMenstrual" x1="0%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" stop-color="#F43F5E" />
+                                <stop offset="100%" stop-color="#FB7185" />
+                            </linearGradient>
+                            <linearGradient id="gradFollicular" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#FB923C" />
+                                <stop offset="100%" stop-color="#FDBA74" />
+                            </linearGradient>
+                            <linearGradient id="gradOvulation" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#F472B6" />
+                                <stop offset="100%" stop-color="#FBCFE8" />
+                            </linearGradient>
+                            <linearGradient id="gradLuteal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#C084FC" />
+                                <stop offset="100%" stop-color="#DDD6FE" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Arc Segments: Menstruation (Days 1-5) -->
+                        <path d="M 50.1 121.7 A 95 95 0 0 1 65.3 73.3" stroke="url(#gradMenstrual)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Follicular (Days 6-13) -->
+                        <path d="M 69.1 67.8 A 95 95 0 0 1 131.8 30.9" stroke="url(#gradFollicular)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Ovulation (Days 14-16) -->
+                        <path d="M 138.4 30.2 A 95 95 0 0 1 171.2 33.7" stroke="url(#gradOvulation)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Luteal (Days 17-28) -->
+                        <path d="M 177.5 35.7 A 95 95 0 0 1 239.9 121.7" stroke="url(#gradLuteal)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Active Indicator Pointer Triangle -->
+                        <g transform="translate({x_m}, {y_m}) rotate({rot_deg})">
+                            <path d="M 0,-12 L 8,6 C 7,8 5,9 0,8.5 C -5,9 -7,8 -8,6 Z" fill="#4E394E" stroke="#FFFFFF" stroke-width="2.5" />
+                        </g>
+                    </svg>
+                    <div class="cycle-arc-center-text">
+                        <div class="cycle-arc-day-title">Day {cycle_day}</div>
+                        <div class="cycle-arc-phase-subtitle">{phase_name}</div>
+                    </div>
+                </div>
+                <!-- Phase Legend -->
+                <div class="cycle-phase-legend">
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #F43F5E;"></span> Menstruation</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #FB923C;"></span> Follicular phase</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #F472B6;"></span> Ovulation</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #C084FC;"></span> Luteal phase</span>
+                </div>
+                <!-- Cycle Horizon & Milestone Pill -->
+                <div style="text-align: center;">
+                    <span class="cycle-milestone-pill">⏳ Next phase in {phase_days_left}d &bull; Next period in {days_to_next_period}d</span>
+                </div>
+            </div>
+        """)
+        st.markdown(arc_svg_markup, unsafe_allow_html=True)
+
+        # 4. Hero CTA Button: Log Your Symptoms (Full-width plum pill button matching design)
+        st.markdown('<div class="cycle-cta-container">', unsafe_allow_html=True)
+        if st.button("Log Your Symptoms", use_container_width=True, type="primary", key="home_btn_log_symptoms"):
+            st.session_state["default_cycle_phase"] = phase_name
+            navigate_to("Symptom Journal")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # 4b. 1-Tap Period Start Quick Action
+        st.markdown('<div class="cycle-period-tap-btn" style="margin-top: 8px;">', unsafe_allow_html=True)
+        if st.button("🩸 My Period Started Today (Set to Day 1)", use_container_width=True, key="home_btn_period_today", help="Instantly resets cycle tracking to Day 1 with today as the anchor start date"):
+            updated_pref = pref.copy()
+            updated_pref["period_start_date"] = str(date.today())
+            update_profile_preferences(active_profile.id, updated_pref)
+            st.session_state["cycle_day_override"] = 1
+            
+            # Record Day 1 menstrual start in SQLite
+            SymptomTrackerService.record_symptom(
+                profile_id=active_profile.id,
+                category="Pelvic & Menstrual",
+                symptom="Menstrual Bleeding (Period Start)",
+                onset_date=str(date.today()),
+                severity=4,
+                duration_hours=None,
+                status="Ongoing",
+                impact="None",
+                notes="Logged via 1-tap period start button on Home Dashboard.",
+                context={"sleep": "Restful (7-9 hrs)", "stress": "Low / Calm", "energy": "Moderate", "cycle_phase": "Menstruation Phase"}
+            )
+            st.session_state["cycle_reset_success"] = f"🩸 Period logged! Cycle reset to Day 1 ({today_formatted}). All upcoming phase countdowns updated."
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # 5. Today's Recommendation (Nutrition & Activity cards matching Mockup Screen 1)
+        phase_rec = {
+            "Menstruation Phase": {
+                "nutrition_icon": "🥤",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Add iron-rich foods (spinach, lentils) and drink more warm water or herbal teas.",
+                "activity_icon": "🧘",
+                "activity_title": "Activity",
+                "activity_desc": "Choose gentle yoga, pelvic opening stretches, or a light restorative walk."
+            },
+            "Follicular Phase": {
+                "nutrition_icon": "🥗",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Support rising estrogen with lean proteins, colorful fresh greens, and probiotics.",
+                "activity_icon": "🏃‍♀️",
+                "activity_title": "Activity",
+                "activity_desc": "Stamina is increasing: great for brisk walks, pilates, or light strength work."
+            },
+            "Ovulation Phase": {
+                "nutrition_icon": "🥑",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Support your metabolic peak with anti-inflammatory healthy fats, seeds, and fiber.",
+                "activity_icon": "⚡",
+                "activity_title": "Activity",
+                "activity_desc": "Peak vitality & strength: ideal for cardio, resistance training, or dance."
+            },
+            "Luteal Phase": {
+                "nutrition_icon": "🍠",
+                "nutrition_title": "Nutrition",
+                "nutrition_desc": "Stabilize blood sugar with complex carbs (sweet potatoes, oats) and magnesium.",
+                "activity_icon": "🚶‍♀️",
+                "activity_title": "Activity",
+                "activity_desc": "Progesterone is high: prioritize moderate pilates, swimming, or calming breathwork."
+            }
+        }.get(phase_name, {
+            "nutrition_icon": "🥤",
+            "nutrition_title": "Nutrition",
+            "nutrition_desc": "Stay hydrated and nourish your body with wholesome, nutrient-dense foods.",
+            "activity_icon": "🧘",
+            "activity_title": "Activity",
+            "activity_desc": "Listen to your body and engage in gentle movement that feels restorative."
+        })
+
+        rec_markup = textwrap.dedent(f"""
+            <div class="today-rec-header">
+                <div class="today-rec-title">Today's recommendation</div>
+                <div class="today-rec-seeall">Phase: {phase_name.split()[0]}</div>
+            </div>
+            <div class="today-rec-grid">
+                <div class="today-rec-card">
+                    <div class="today-rec-icon-box" style="background: #FFF1F2;">{phase_rec['nutrition_icon']}</div>
+                    <div class="today-rec-name">{phase_rec['nutrition_title']}</div>
+                    <div class="today-rec-desc">{phase_rec['nutrition_desc']}</div>
+                </div>
+                <div class="today-rec-card">
+                    <div class="today-rec-icon-box" style="background: #F5F3FF;">{phase_rec['activity_icon']}</div>
+                    <div class="today-rec-name">{phase_rec['activity_title']}</div>
+                    <div class="today-rec-desc">{phase_rec['activity_desc']}</div>
+                </div>
+            </div>
+        """)
+        st.markdown(rec_markup, unsafe_allow_html=True)
+
+        with st.expander("📖 See All Phase Guidance & Lifestyle Tips", expanded=False):
+            st.markdown("""
+                - **Menstruation (Days 1–5):** Hydration, iron replenishment (spinach, beans, dark chocolate), gentle pelvic yoga, rest.
+                - **Follicular (Days 6–13):** Probiotics, fermented foods, zinc, steady endurance workouts, creativity and planning.
+                - **Ovulation (Days 14–16):** Omega-3s, leafy greens, antioxidant berries, high-intensity cardio or strength, social connection.
+                - **Luteal (Days 17–28):** Magnesium, B6, complex carbs, limiting excess caffeine, moderate pilates, calming routines.
+            """)
+
+        # 6. Quick Mood & Well-Being Check-In Section (Matching Mockup Screen 2)
+        st.markdown("""
+            <div class="section-header">⚡ Quick Mood & Well-Being Check-In</div>
         """, unsafe_allow_html=True)
 
-        # C. Primary Action: How are you feeling today? + One prominent Log a symptom button
+        if "quick_checkin_success" in st.session_state:
+            st.success(st.session_state.pop("quick_checkin_success"))
+
+        with st.container(key="quick_checkin_box"):
+            wellbeing_options = [
+                "Everything is fine 😊",
+                "Abdominal pain / Cramps",
+                "Fatigue / Low energy",
+                "Increased appetite",
+                "Insomnia / Disrupted sleep",
+                "Headache / Migraine",
+                "Bloating / Water retention",
+                "Chills / Sensitive to cold"
+            ]
+            selected_wellbeing = st.multiselect(
+                "General Well-being",
+                options=wellbeing_options,
+                default=[],
+                help="Select any physical observations you feel right now",
+                key="home_quick_wb_select"
+            )
+
+            mood_options = [
+                "😌 Calm", "😊 Happy", "😴 Tired", "😟 Anxious",
+                "😤 Irritated", "😢 Sad", "😎 Confident", "😍 Loving", "😐 Moody", "🧘 Zen"
+            ]
+            selected_mood = st.selectbox(
+                "Current Mood",
+                options=mood_options,
+                index=0,
+                key="home_quick_mood_select"
+            )
+
+            quick_c1, quick_c2 = st.columns([2, 1])
+            with quick_c1:
+                quick_intensity = st.slider("Severity / Discomfort Level", 1, 10, value=3, key="home_quick_intensity")
+            with quick_c2:
+                st.markdown('<div style="height: 28px;"></div>', unsafe_allow_html=True)
+                if st.button("💾 Log Quick Check-In", key="btn_save_quick_checkin", use_container_width=True, type="primary"):
+                    wb_summary = ", ".join(selected_wellbeing) if selected_wellbeing else "Check-in logged"
+                    symptom_title = selected_wellbeing[0] if selected_wellbeing else "Daily Well-being Check-in"
+                    
+                    # Map mood to stress / sleep context
+                    mood_stress = "High / Pressured" if any(w in selected_mood for w in ["Anxious", "Irritated", "Moody"]) else "Low / Calm"
+                    mood_sleep = "Disrupted / Fragmented" if "Insomnia" in str(selected_wellbeing) else "Restful (7-9 hrs)"
+                    mood_energy = "Fatigued / Low" if any(w in str(selected_wellbeing) + selected_mood for w in ["Fatigue", "Tired"]) else "Moderate"
+
+                    SymptomTrackerService.record_symptom(
+                        profile_id=active_profile.id,
+                        category="Systemic & Energy",
+                        symptom=symptom_title,
+                        onset_date=str(date.today()),
+                        severity=quick_intensity,
+                        duration_hours=None,
+                        status="Resolved",
+                        impact="None" if quick_intensity <= 3 else "Moderate (Modified daily plans)",
+                        notes=f"Quick check-in: Mood: {selected_mood}. Well-being: {wb_summary}.",
+                        context={"sleep": mood_sleep, "stress": mood_stress, "energy": mood_energy, "cycle_phase": phase_name}
+                    )
+                    st.session_state["quick_checkin_success"] = f"✅ Recorded: {selected_mood} & {symptom_title} (Day {cycle_day} • {phase_name})!"
+                    st.rerun()
+
+        # 6b. Full Month Health Calendar & Historical Cycle Statistics
         st.markdown("""
-            <div class="primary-prompt-label">How are you feeling today?</div>
+            <div class="section-header">📅 Cycle Calendar & History</div>
         """, unsafe_allow_html=True)
-        if st.button("＋ Log a symptom", use_container_width=True, type="primary", key="home_btn_log_symptom"):
-            navigate_to("Symptom Journal")
+
+        tab_cal_view, tab_stats_view = st.tabs(["📅 Month Calendar & Heatmap", "📊 Historical Cycle Statistics"])
+
+        with tab_cal_view:
+            # Initialize calendar state in session_state if missing
+            if "cal_year" not in st.session_state:
+                st.session_state["cal_year"] = date.today().year
+            if "cal_month" not in st.session_state:
+                st.session_state["cal_month"] = date.today().month
+
+            # Month Navigation Bar
+            nav_c1, nav_c2, nav_c3, nav_c4 = st.columns([1, 3, 1, 1.2])
+            with nav_c1:
+                if st.button("◀", key="cal_btn_prev_month", help="Previous Month", use_container_width=True):
+                    if st.session_state["cal_month"] == 1:
+                        st.session_state["cal_month"] = 12
+                        st.session_state["cal_year"] -= 1
+                    else:
+                        st.session_state["cal_month"] -= 1
+                    st.rerun()
+            with nav_c2:
+                month_display_name = calendar.month_name[st.session_state["cal_month"]]
+                st.markdown(f'<div style="text-align: center; font-weight: 800; font-size: 1.05rem; color: #2A1E24; padding-top: 5px;">{month_display_name} {st.session_state["cal_year"]}</div>', unsafe_allow_html=True)
+            with nav_c3:
+                if st.button("▶", key="cal_btn_next_month", help="Next Month", use_container_width=True):
+                    if st.session_state["cal_month"] == 12:
+                        st.session_state["cal_month"] = 1
+                        st.session_state["cal_year"] += 1
+                    else:
+                        st.session_state["cal_month"] += 1
+                    st.rerun()
+            with nav_c4:
+                if st.button("Today", key="cal_btn_today", help="Jump to Current Month", use_container_width=True):
+                    st.session_state["cal_year"] = date.today().year
+                    st.session_state["cal_month"] = date.today().month
+                    st.session_state["calendar_selected_date"] = str(date.today())
+                    st.rerun()
+
+            # Retrieve calendar data scoped strictly to active profile
+            cal_data = CycleService.get_month_calendar_data(
+                active_profile.id,
+                st.session_state["cal_year"],
+                st.session_state["cal_month"]
+            )
+
+            # Accessible Legend (Icons and Labels)
+            st.markdown(textwrap.dedent("""
+                <div class="month-cal-legend-bar">
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-period"></span> 🩸 Period</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-predicted"></span> 🔮 Est. Period</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-symptom"></span> 🟡 Symptom</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-med"></span> 💊 Medication</span>
+                </div>
+            """), unsafe_allow_html=True)
+
+            # Determine selected date (default to today or 1st of month)
+            sel_date_str = st.session_state.get("calendar_selected_date", str(date.today()))
+            if not sel_date_str.startswith(f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}"):
+                sel_date_str = f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}-01"
+
+            # Render 7-column calendar grid
+            weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            header_html = "".join([f'<div class="month-cal-header-cell">{w}</div>' for w in weekdays])
+            
+            first_day_weekday, num_days = calendar.monthrange(st.session_state["cal_year"], st.session_state["cal_month"])
+            pad_cells = "".join(['<div class="month-cal-cell" style="opacity: 0.15; background: transparent; border: none;"></div>' for _ in range(first_day_weekday)])
+            
+            day_cells_html = []
+            for d in cal_data.days:
+                cell_classes = ["month-cal-cell", "month-cal-cell-active"]
+                if d.is_today:
+                    cell_classes.append("month-cal-cell-today")
+                if d.date_str == sel_date_str:
+                    cell_classes.append("month-cal-cell-selected")
+                if d.has_period:
+                    cell_classes.append("month-cal-cell-period")
+                elif d.is_predicted_period:
+                    cell_classes.append("month-cal-cell-predicted")
+
+                dots = []
+                if d.has_period:
+                    dots.append('<span class="cal-dot cal-dot-period"></span>')
+                elif d.is_predicted_period:
+                    dots.append('<span class="cal-dot cal-dot-predicted"></span>')
+                if d.symptom_count > 0:
+                    dots.append('<span class="cal-dot cal-dot-symptom"></span>')
+                if len(d.medications) > 0:
+                    dots.append('<span class="cal-dot cal-dot-med"></span>')
+
+                dots_html = f'<div class="month-cal-dots-row">{"".join(dots)}</div>' if dots else '<div style="height: 6px;"></div>'
+
+                day_cells_html.append(
+                    f'<div class="{" ".join(cell_classes)}">'
+                    f'<span class="month-cal-day-num">{d.day_num}</span>'
+                    f'{dots_html}'
+                    f'</div>'
+                )
+
+            grid_html = f'<div class="month-cal-grid">{header_html}{pad_cells}{"".join(day_cells_html)}</div>'
+            st.markdown(grid_html, unsafe_allow_html=True)
+
+            # Interactive Date Inspector Selector
+            day_nums = list(range(1, num_days + 1))
+            current_sel_day_num = int(sel_date_str.split("-")[2]) if sel_date_str.startswith(f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}") else 1
+            
+            st.markdown('<div style="height: 8px;"></div>', unsafe_allow_html=True)
+            chosen_day = st.select_slider(
+                "📅 Select Date to Inspect",
+                options=day_nums,
+                value=current_sel_day_num,
+                format_func=lambda d: f"{calendar.month_abbr[st.session_state.get('cal_month', date.today().month)]} {d}",
+                key="cal_day_select_slider"
+            )
+            inspect_date_str = f"{st.session_state.get('cal_year', date.today().year)}-{st.session_state.get('cal_month', date.today().month):02d}-{chosen_day:02d}"
+            st.session_state["calendar_selected_date"] = inspect_date_str
+
+            inspected_day_data = next((d for d in cal_data.days if d.date_str == inspect_date_str), None)
+
+            if inspected_day_data:
+                insp_dt = datetime.strptime(inspect_date_str, "%Y-%m-%d")
+                insp_title = insp_dt.strftime("%A, %B %d, %Y")
+
+                status_pill = ""
+                if inspected_day_data.has_period:
+                    status_pill = '<span class="auth-sec-pill" style="background: #FFE4EC; color: #E11D48; border-color: #FB7185;">🩸 Recorded Period Day</span>'
+                elif inspected_day_data.is_predicted_period:
+                    status_pill = '<span class="auth-sec-pill" style="background: #F5F3FF; color: #7C3AED; border-color: #C084FC;">🔮 Estimated Future Period (Unconfirmed)</span>'
+
+                st.markdown(f"""
+                    <div class="cal-inspector-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div class="cal-inspector-title">📋 Health Records: {insp_title}</div>
+                            <div>{status_pill}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                if inspected_day_data.symptoms:
+                    st.markdown(f"**Recorded Symptoms ({len(inspected_day_data.symptoms)})** &bull; *Peak Severity: {inspected_day_data.max_severity}/10*")
+                    for sym in inspected_day_data.symptoms:
+                        s_sev = sym["severity"]
+                        s_color = "#10B981" if s_sev <= 3 else "#F59E0B" if s_sev <= 6 else "#EF4444"
+                        st.markdown(f"""
+                            <div style="background: #FFF9FA; border-left: 3px solid {s_color}; border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; font-size: 0.82rem;">
+                                <b>{sym['symptom']}</b> &bull; Severity: <span style="font-weight: 700; color: {s_color};">{s_sev}/10</span> &bull; <i>{sym['category']}</i>
+                                <div style="color: #6B5E65; font-size: 0.76rem; margin-top: 2px;">Impact: {sym.get('impact', 'None')} &bull; Status: {sym.get('status', 'Ongoing')} {f'• Notes: {sym["notes"]}' if sym.get('notes') else ''}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("ℹ️ No health records were entered for this day. *(A blank day means no record was entered, not necessarily that the day was symptom-free).*")
+
+                if inspected_day_data.medications:
+                    st.caption(f"💊 **Active Therapies / Medications on this day:** {', '.join(inspected_day_data.medications)}")
+
+                cal_cur_month = st.session_state.get('cal_month', date.today().month)
+                if st.button(f"➕ Log Symptom for {calendar.month_abbr[cal_cur_month]} {chosen_day}", key=f"btn_log_for_{inspect_date_str}"):
+                    st.session_state["default_log_date"] = inspect_date_str
+                    navigate_to("Symptom Journal")
+
+        with tab_stats_view:
+            cycle_stats = CycleService.calculate_cycle_statistics(active_profile.id)
+
+            st.markdown(textwrap.dedent("""
+                <div class="clean-card" style="margin-bottom: 0.75rem;">
+                    <div style="font-size: 0.82rem; color: #5B4A55; line-height: 1.4;">
+                        <b>Historical Cycle Statistics & Variation Analytics:</b> Calculates intervals strictly between consecutive recorded period start dates. Never assumes every cycle is 28 days and excludes unrecorded gaps.
+                    </div>
+                </div>
+            """), unsafe_allow_html=True)
+
+            s1, s2, s3, s4 = st.columns(4)
+            with s1:
+                st.metric("Cycles Analyzed", f"{cycle_stats.total_cycles_analyzed}", help="Number of complete, consecutive cycle intervals analyzed")
+            with s2:
+                avg_display = f"{cycle_stats.average_cycle_length}d" if cycle_stats.average_cycle_length else "—"
+                st.metric("Average Length", avg_display, help="Mathematical mean of recorded cycle intervals")
+            with s3:
+                range_display = f"{cycle_stats.shortest_cycle}d – {cycle_stats.longest_cycle}d" if cycle_stats.shortest_cycle else "—"
+                st.metric("Cycle Range", range_display, help="Shortest to longest recorded cycle duration")
+            with s4:
+                var_display = f"±{cycle_stats.variation_days}d" if cycle_stats.variation_days is not None else "—"
+                st.metric("Variability", var_display, help="Interval variation across analyzed cycles")
+
+            st.markdown(f"""
+                <div class="cycle-clinical-box">
+                    <div style="font-weight: 800; color: #2A1E24; margin-bottom: 4px;">Pattern Assessment: {cycle_stats.variation_status}</div>
+                    <div>{cycle_stats.clinical_note}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if cycle_stats.intervals:
+                st.markdown("**Recorded Cycle Intervals**")
+                table_rows = []
+                for intv in cycle_stats.intervals:
+                    status_badge = "✅ Typical" if (intv.is_valid and intv.length_days <= 38) else "⚠️ Irregular/Long" if intv.is_valid else "❌ Gap Excluded"
+                    table_rows.append({
+                        "Cycle": f"Cycle {intv.cycle_index}",
+                        "Period Start Date": intv.start_date,
+                        "Next Period Date": intv.end_date,
+                        "Duration (Days)": f"{intv.length_days} days",
+                        "Status": status_badge,
+                        "Clinical Assessment": intv.notes
+                    })
+                st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+            else:
+                st.caption("No completed cycle intervals available yet. Record at least 2 distinct period start dates to view your interval history.")
+
+        # 7. Energy Level Trajectory Across Cycle Phases (Matching Mockup Screen 3)
+        with st.expander("📈 Analytics — Energy Level Curve Across Phases", expanded=False):
+            st.caption("Visualizes how energy and vitality move across the 4 hormonal phases, based on your logs and biological baseline.")
+            
+            tf_choice = st.radio(
+                "Observation Timeframe",
+                ["3 months", "6 months", "12 months"],
+                horizontal=True,
+                key="home_energy_tf_selector"
+            )
+
+            phases_list = ["Menstruation", "Follicular", "Ovulation", "Luteal"]
+            base_curve = [3.8, 2.2, 5.1, 2.4]
+
+            # Calculate real average energy ratings per phase from database records
+            all_symptoms_for_curve = SymptomTrackerService.get_history(active_profile.id)
+            phase_energy_logs: dict = {p: [] for p in phases_list}
+            for e in all_symptoms_for_curve:
+                if e.context and e.context.get("cycle_phase") and e.context.get("energy"):
+                    c_phase = e.context["cycle_phase"]
+                    matched = next((p for p in phases_list if p.lower() in c_phase.lower()), None)
+                    if matched:
+                        e_val = 8.0 if "High" in e.context["energy"] else 2.5 if "Fatigued" in e.context["energy"] else 5.0
+                        phase_energy_logs[matched].append(e_val)
+
+            y_curve = []
+            for i, p in enumerate(phases_list):
+                if phase_energy_logs[p]:
+                    y_curve.append(round(float(np.mean(phase_energy_logs[p])), 1))
+                else:
+                    y_curve.append(base_curve[i])
+
+            fig_energy = go.Figure()
+            fig_energy.add_trace(go.Scatter(
+                x=phases_list,
+                y=y_curve,
+                mode="lines+markers",
+                line=dict(shape="spline", color="#D946EF", width=3.5, smoothing=1.3),
+                marker=dict(size=11, color="#E879F9", line=dict(color="#FFFFFF", width=2.5)),
+                name="Energy Level",
+                hoverinfo="x+y"
+            ))
+
+            fig_energy.update_layout(
+                paper_bgcolor="rgba(255, 245, 248, 0.4)",
+                plot_bgcolor="rgba(255, 255, 255, 0.8)",
+                margin=dict(l=25, r=25, t=20, b=30),
+                height=220,
+                font=dict(family="sans-serif", size=11, color="#4A3748"),
+                yaxis=dict(range=[0, 10.5], dtick=2, gridcolor="rgba(244, 114, 182, 0.2)", zeroline=False, title="Energy Level (1-10)"),
+                xaxis=dict(gridcolor="rgba(244, 114, 182, 0.15)", tickfont=dict(size=10.5, color="#6B5565")),
+                showlegend=False
+            )
+            st.plotly_chart(fig_energy, use_container_width=True)
+
+        # 8. Cycle Settings & Personalization Sheet (Irregular Cycle, Length, Start Date)
+        with st.expander("⚙️ Cycle Settings & Personalization", expanded=False):
+            st.caption("Adjust your baseline cycle length, period duration, or anchor start date. Supports irregular cycles (PCOS, perimenopause).")
+            
+            c_set1, c_set2 = st.columns(2)
+            with c_set1:
+                cur_len = pref.get("cycle_length", 28)
+                new_len = st.slider("Average Cycle Length (days)", min_value=21, max_value=45, value=int(cur_len), key="set_cycle_len")
+            with c_set2:
+                cur_flow = pref.get("period_duration", 5)
+                new_flow = st.slider("Typical Period Duration (days)", min_value=2, max_value=10, value=int(cur_flow), key="set_period_flow")
+
+            # Period Start Date Anchor
+            cur_start_str = pref.get("period_start_date", "")
+            try:
+                cur_start_val = datetime.strptime(cur_start_str, "%Y-%m-%d").date() if cur_start_str else (date.today() - timedelta(days=int(cycle_day) - 1))
+            except Exception:
+                cur_start_val = date.today()
+
+            chosen_start_date = st.date_input(
+                "Last Period Start Date (Day 1 Anchor)",
+                value=cur_start_val,
+                max_value=date.today(),
+                key="set_period_start_date",
+                help="Set the date your last period began to align your cycle automatically."
+            )
+
+            new_c_day = st.slider("Active Cycle Day (Manual Override / Preview)", min_value=1, max_value=int(new_len), value=int(cycle_day), key="slider_cycle_day_adjust")
+
+            if st.button("💾 Save Cycle Preferences", key="btn_apply_cycle_settings", type="primary", use_container_width=True):
+                updated_pref = pref.copy()
+                updated_pref["cycle_length"] = new_len
+                updated_pref["period_duration"] = new_flow
+                updated_pref["period_start_date"] = str(chosen_start_date)
+                update_profile_preferences(active_profile.id, updated_pref)
+                
+                # If the manual slider was adjusted to a different day, respect it; otherwise calculate from start date
+                diff_d = (date.today() - chosen_start_date).days
+                calc_day = (diff_d % new_len) + 1
+                final_day = new_c_day if new_c_day != cycle_day else calc_day
+                st.session_state["cycle_day_override"] = final_day
+                st.session_state["cycle_reset_success"] = f"✅ Cycle preferences updated! Active Day set to Day {final_day} (Period start: {chosen_start_date})."
+                st.rerun()
 
         # D. Quick health actions (compact, properly spaced expandable section)
         with st.expander("⚡ Quick Health Actions", expanded=False):
@@ -2173,43 +2829,356 @@ with st.container(key="mobile_scroll_content"):
 
 
     # ==========================================
-    # SCREEN 7: MY HEALTH REPORT (Clinician PDF)
+    # SCREEN 7: SMART CLINICAL SUMMARY & CONSULTATION KIT
     # ==========================================
-    elif st.session_state["navigation"] == "My Health Report":
+    elif st.session_state["navigation"] in ["My Health Report", "Smart Clinical Summary"]:
         st.markdown("""
             <div class="page-title-block">
-                <div class="page-title">📄 Clinician-Ready Health Report</div>
-                <div class="page-subtitle">Export a structured PDF summary of your observations for your doctor.</div>
+                <div class="page-title">📋 Smart Clinical Summary & Consultation Kit</div>
+                <div class="page-subtitle">Convert your recorded health history into a concise, structured, doctor-friendly consultation summary.</div>
+            </div>
+            <div class="disclaimer-box">
+                <b>Clinical Purpose:</b> Synthesizes user-recorded health observations into a structured briefing for clinical consultations. Strictly non-diagnostic; timing observations do not establish medical causation.
             </div>
         """, unsafe_allow_html=True)
 
         render_my_health_subnav("My Health Report")
 
-        rep_start = st.date_input("Start Date", value=date.today() - timedelta(days=30), key="rep_start_date")
-        rep_end = st.date_input("End Date", value=date.today() + timedelta(days=1), key="rep_end_date")
+        # 1. Reporting Period Controls
+        st.markdown('<div class="section-header">📅 Select Reporting Period & Controls</div>', unsafe_allow_html=True)
 
-        report_entries = SymptomTrackerService.get_history(
-            profile_id=active_profile.id,
-            start_date=str(rep_start),
-            end_date=str(rep_end)
+        period_preset = st.radio(
+            "Reporting Period Preset",
+            ["Last 30 Days", "Last 7 Days", "Last 90 Days", "Custom Date Range"],
+            horizontal=True,
+            key="summary_period_preset"
         )
         report_meds = get_medications(active_profile.id)
 
-        rep_engine = InsightsEngine(report_entries)
-        rep_metrics = rep_engine.calculate_summary_metrics()
+        today_val = date.today()
+        if period_preset == "Last 7 Days":
+            rep_start = today_val - timedelta(days=7)
+            rep_end = today_val
+        elif period_preset == "Last 30 Days":
+            rep_start = today_val - timedelta(days=30)
+            rep_end = today_val
+        elif period_preset == "Last 90 Days":
+            rep_start = today_val - timedelta(days=90)
+            rep_end = today_val
+        else: # Custom Date Range
+            c_d1, c_d2 = st.columns(2)
+            with c_d1:
+                rep_start = st.date_input("Start Date *", value=today_val - timedelta(days=30), key="summary_custom_start")
+            with c_d2:
+                rep_end = st.date_input("End Date *", value=today_val, key="summary_custom_end")
 
-        # Step 1: Pre-Export Overview
-        st.markdown("##### 📊 1. Reporting Period Summary")
-        rep_r1_c1, rep_r1_c2, rep_r1_c3, rep_r1_c4 = st.columns(4)
+        # Validate date range
+        if rep_start > rep_end:
+            st.error("⚠️ Start Date cannot be after End Date. Please select a valid date range.")
+            rep_start, rep_end = rep_end, rep_start
+
+        # 2. Patient's Main Concerns & Priorities
+        with st.expander("🎯 Patient Consultation Priorities & Questions (Optional)", expanded=True):
+            st.caption("Select or write the main topics you want to discuss with your doctor. These will be highlighted in your summary without being treated as medical diagnoses.")
+
+            common_concern_options = [
+                "Discussing baseline diagnostic evaluations (hormonal panels, ultrasound, CBC)",
+                "Evaluating current medication efficacy, dosages, or side effects",
+                "Severe symptom flare-ups causing work/study disruption or bedrest",
+                "Possible connections between symptom peaks and menstrual cycle phases",
+                "Non-pharmacological management strategies (nutrition, sleep hygiene, pain management)",
+                "Reviewing warning signs or red flags requiring urgent evaluation"
+            ]
+
+            selected_preset_concerns = st.multiselect(
+                "Common Consultation Priorities",
+                options=common_concern_options,
+                default=[],
+                key="summary_preset_concerns"
+            )
+
+            custom_concern_text = st.text_input(
+                "Add a Specific Question or Personal Concern for Your Doctor",
+                placeholder="e.g. Pelvic cramping has become more intense in days 1-3; want to discuss pelvic imaging.",
+                key="summary_custom_concern"
+            )
+
+            all_user_concerns = list(selected_preset_concerns)
+            if custom_concern_text and custom_concern_text.strip():
+                all_user_concerns.append(custom_concern_text.strip())
+
+        # Action: Generate / Refresh button
+        col_gen1, col_gen2 = st.columns([3, 1])
+        with col_gen1:
+            st.caption(f"Active Reporting Window: **{rep_start}** to **{rep_end}** &bull; Profile: **{active_profile.display_name}**")
+        with col_gen2:
+            refresh_clicked = st.button("🔄 Refresh Summary", key="btn_refresh_summary", use_container_width=True)
+
+        # 3. Instantiate ClinicalSummaryService
+        summary_service = ClinicalSummaryService(
+            profile_id=active_profile.id,
+            start_date=str(rep_start),
+            end_date=str(rep_end),
+            patient_concerns=all_user_concerns
+        )
+        clinical_data = summary_service.generate_summary()
+
+        # 4. KPI Metrics Bar (Preserves exact metric labels for test_frontend_e2e compatibility)
+        st.markdown('<div class="section-header">📊 Summary Highlights at a Glance</div>', unsafe_allow_html=True)
+        rep_r1_c1, rep_r1_c2 = st.columns(2)
         with rep_r1_c1:
-            st.metric("Entries in Period", rep_metrics["total_entries"])
+            st.metric("Entries in Period", clinical_data.total_entries)
         with rep_r1_c2:
-            st.metric("Distinct Dates", rep_metrics["distinct_days"])
-        with rep_r1_c3:
-            st.metric("Avg Severity", f"{rep_metrics['avg_severity']}/10")
-        with rep_r1_c4:
-            st.metric("Top Reported Symptom", rep_metrics["top_symptom"])
+            st.metric("Distinct Dates", clinical_data.distinct_days)
 
+        rep_r2_c1, rep_r2_c2 = st.columns(2)
+        with rep_r2_c1:
+            avg_sev_str = f"{clinical_data.avg_severity}/10" if clinical_data.avg_severity is not None else "0.0/10"
+            st.metric("Avg Severity", avg_sev_str)
+        with rep_r2_c2:
+            top_sym = clinical_data.frequent_symptoms[0].symptom if clinical_data.frequent_symptoms else "None"
+            st.metric("Top Reported Symptom", top_sym)
+
+        # Empty state notification if 0 entries in period
+        if clinical_data.total_entries == 0:
+            st.markdown(f"""
+                <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 1rem 1.2rem; margin: 1rem 0;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">No Records Found in Selected Period</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        No symptom entries were recorded between <b>{rep_start}</b> and <b>{rep_end}</b> for {active_profile.display_name}.
+                        You can adjust the reporting period above or record entries in your <a href="#" style="color: var(--primary-rose);">Symptom Journal</a>.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # 5. Structured Clinical Summary Preview Tabs
+        st.markdown('<div class="section-header">📋 Structured Clinical Summary Sections</div>', unsafe_allow_html=True)
+
+        tab_ov, tab_sym, tab_life, tab_med, tab_check, tab_copy = st.tabs([
+            "1. Overview & Concerns",
+            "2. Symptom Patterns",
+            "3. Lifestyle & Impact",
+            "4. Medications & Treatments",
+            "5. Discussion Checklist",
+            "6. Copy Plain Text"
+        ])
+
+        with tab_ov:
+            st.markdown("##### Consultation Overview")
+            if clinical_data.patient_concerns:
+                st.markdown("**Patient-Reported Consultation Priorities:**")
+                for pc in clinical_data.patient_concerns:
+                    st.markdown(f"""
+                        <div class="clinical-concern-item">
+                            <span class="clinical-concern-badge">Patient Goal</span>
+                            <div style="font-size: 0.86rem; color: var(--text-primary); font-weight: 600;">{pc}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
+
+            max_sev_desc = (
+                f"Peak recorded severity was <b>{clinical_data.max_severity}/10</b> for <i>{clinical_data.max_severity_symptom}</i> on {clinical_data.max_severity_date}."
+                if clinical_data.max_severity else "No severity ratings logged."
+            )
+            st.markdown(f"""
+                <div class="clinical-summary-card clinical-summary-card-accent">
+                    <div class="clinical-section-title">🏥 Reporting Period Overview</div>
+                    <div style="font-size: 0.88rem; color: var(--text-primary); line-height: 1.5;">
+                        Across the <b>{clinical_data.calendar_days}</b>-day reporting window (<b>{clinical_data.start_date}</b> to <b>{clinical_data.end_date}</b>),
+                        a total of <b>{clinical_data.total_entries}</b> symptom entries were documented across <b>{clinical_data.distinct_days}</b> distinct days.
+                        The average recorded severity was <b>{clinical_data.avg_severity or 'N/A'}/10</b>. {max_sev_desc}
+                    </div>
+                    <div class="clinical-observation-callout">
+                        <b>Duration Documentation:</b> {clinical_data.duration_stats.summary_statement}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        with tab_sym:
+            st.markdown("##### Symptom Frequencies, Severities & Trajectory")
+            if clinical_data.frequent_symptoms:
+                sym_rows = []
+                for fs in clinical_data.frequent_symptoms:
+                    sym_rows.append({
+                        "Symptom": fs.symptom,
+                        "Category": fs.category,
+                        "Logs": fs.entry_count,
+                        "Distinct Days": fs.distinct_days,
+                        "% of Total": f"{fs.percentage_of_entries}%",
+                        "Avg Severity": f"{fs.avg_severity}/10",
+                        "Range": f"{fs.min_severity}–{fs.max_severity}",
+                        "Avg Duration": f"{fs.avg_duration} hrs" if fs.avg_duration else "Not recorded"
+                    })
+                st.dataframe(pd.DataFrame(sym_rows), use_container_width=True, hide_index=True)
+            else:
+                st.info("No symptom records logged in this period.")
+
+            st.markdown(f"""
+                <div class="clinical-summary-card" style="border-left: 4.5px solid var(--primary-rose);">
+                    <div class="clinical-section-title">📈 Temporal Trajectory (Earlier vs. Recent Window)</div>
+                    <div style="font-size: 0.86rem; color: var(--text-primary); line-height: 1.45;">
+                        {clinical_data.progression.trajectory_statement}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if clinical_data.repeated_severe:
+                st.markdown("**Repeated High-Severity Findings (≥7/10):**")
+                for rs in clinical_data.repeated_severe:
+                    st.markdown(f"""
+                        <div class="clinical-concern-item" style="border-color: rgba(225, 29, 72, 0.3);">
+                            <span class="clinical-concern-badge" style="background: #E11D48;">Severe Cluster</span>
+                            <div style="font-size: 0.86rem; color: var(--text-primary);">
+                                <b>{rs.symptom}</b> ({rs.category}): recorded at high severity across <b>{rs.count_severe}</b> entries.
+                                Peaked at <b>{rs.max_severity}/10</b> on {', '.join(rs.dates)}.
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            if clinical_data.notable_episodes:
+                with st.expander(f"Notable Recorded Episodes ({len(clinical_data.notable_episodes)} entries with severity ≥8 or severe impact)", expanded=False):
+                    for ep in clinical_data.notable_episodes[:10]:
+                        st.markdown(f"• **{ep.date}** — **{ep.symptom}** ({ep.severity}/10) | Impact: *{ep.impact}* | Notes: *{ep.notes or 'None'}*")
+
+        with tab_life:
+            st.markdown("##### Lifestyle Context & Functional Impact")
+            st.caption("Summarizes recorded context. The doctor can distinguish recorded observations from missing or unrecorded fields.")
+
+            life = clinical_data.lifestyle_impact
+            life_records = [
+                {
+                    "Observation Area": "Sleep Quality",
+                    "Documented": f"{life.sleep.documented_entries} / {life.sleep.total_entries}",
+                    "Rate": f"{life.sleep.documentation_rate}%",
+                    "Summary Statement": life.sleep.summary_statement
+                },
+                {
+                    "Observation Area": "Stress Levels",
+                    "Documented": f"{life.stress.documented_entries} / {life.stress.total_entries}",
+                    "Rate": f"{life.stress.documentation_rate}%",
+                    "Summary Statement": life.stress.summary_statement
+                },
+                {
+                    "Observation Area": "Energy Vitality",
+                    "Documented": f"{life.energy.documented_entries} / {life.energy.total_entries}",
+                    "Rate": f"{life.energy.documentation_rate}%",
+                    "Summary Statement": life.energy.summary_statement
+                },
+                {
+                    "Observation Area": "Menstrual Cycle",
+                    "Documented": f"{life.cycle_phase.documented_entries} / {life.cycle_phase.total_entries}",
+                    "Rate": f"{life.cycle_phase.documentation_rate}%",
+                    "Summary Statement": life.cycle_phase.summary_statement
+                },
+                {
+                    "Observation Area": "Daily Functional Impact",
+                    "Documented": f"{life.functional_impact.documented_entries} / {life.functional_impact.total_entries}",
+                    "Rate": f"{life.functional_impact.documentation_rate}%",
+                    "Summary Statement": life.functional_impact.summary_statement
+                }
+            ]
+            st.dataframe(pd.DataFrame(life_records), use_container_width=True, hide_index=True)
+
+            c_imp1, c_imp2 = st.columns(2)
+            with c_imp1:
+                st.markdown(f"""
+                    <div class="clinical-summary-card clinical-summary-card-amber">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Work / Study Disruption</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #92400E; margin: 4px 0;">{life.work_study_disruption_count} entries</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Logged difficulty attending to work, study, or social plans.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c_imp2:
+                st.markdown(f"""
+                    <div class="clinical-summary-card clinical-summary-card-amber">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Bedrest / Incapacitation</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #92400E; margin: 4px 0;">{life.bedrest_count} entries</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Required complete rest due to high symptom intensity.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        with tab_med:
+            st.markdown("##### Medication & Treatment Chronology")
+            st.caption("Temporal observations around medication start dates. Phrased neutrally; timing alone does not establish causation.")
+
+            if clinical_data.treatments:
+                for t in clinical_data.treatments:
+                    with st.expander(f"💊 {t.name} ({t.category}) — Started: {t.started_date or 'Not logged'}", expanded=True):
+                        st.markdown(f"**Dosage & Frequency:** {t.dosage} &bull; {t.frequency}")
+                        if t.notes:
+                            st.markdown(f"**Notes:** *{t.notes}*")
+                        st.markdown(f"""
+                            <div class="clinical-observation-callout">
+                                <b>Before vs. After Observation:</b> {t.observation_statement}
+                            </div>
+                            <div class="clinical-noncausal-notice">
+                                Note: Symptom severity differences between observation periods are purely chronological and do not infer physiological causation or medication efficacy.
+                            </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("No medications or treatments currently recorded in database.")
+
+        with tab_check:
+            st.markdown("##### Doctor Discussion Checklist")
+            st.caption("Practical checklist prompts categorized for an efficient 10–15 minute medical consultation.")
+
+            st.markdown("###### A. Symptoms to Discuss")
+            for item in clinical_data.checklist.symptoms_to_discuss:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### B. Changes Noticed")
+            for item in clinical_data.checklist.changes_noticed:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### C. Effects on Daily Activities")
+            for item in clinical_data.checklist.effects_on_daily_activities:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### D. Medication & Treatment Questions")
+            for item in clinical_data.checklist.medication_questions:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### E. Questions for My Clinician")
+            for item in clinical_data.checklist.questions_for_clinician:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        with tab_copy:
+            st.markdown("##### Copyable Clinical Summary Text")
+            st.caption("Clean plain text formatted for telehealth messaging, portal notes, or printing.")
+
+            plain_text = summary_service.generate_plain_text_summary()
+            st.text_area("Plain-Text Summary (Select All & Copy)", value=plain_text, height=340)
+
+        # 6. PDF Export & Download Button
+        st.markdown('<div class="section-header">📥 Export Clinician-Ready PDF</div>', unsafe_allow_html=True)
+
+        report_entries = summary_service.entries
+        report_meds = summary_service.medications
         # Wellbeing Context Preview
         sleep_logs = [e for e in report_entries if e.context and e.context.get("sleep")]
         stress_logs = [e for e in report_entries if e.context and e.context.get("stress")]
@@ -2264,10 +3233,12 @@ with st.container(key="mobile_scroll_content"):
 
         generator = ClinicianReportGenerator(
             profile=active_profile,
-            entries=report_entries,
+            entries=summary_service.entries,
             start_date=str(rep_start),
             end_date=str(rep_end),
-            medications=report_meds,
+            medications=summary_service.medications,
+            patient_concerns=all_user_concerns,
+            summary_data=clinical_data,
             user_selected_notes=selected_notes_dict if not include_all_notes else None,
             custom_questions=custom_questions if custom_questions else None,
             include_all_notes=include_all_notes
@@ -2275,7 +3246,7 @@ with st.container(key="mobile_scroll_content"):
 
         try:
             pdf_bytes = generator.generate_pdf_bytes()
-            file_name = f"HERPath_Report_{active_profile.id}_{rep_start}_{rep_end}.pdf"
+            file_name = f"HERPath_Smart_Clinical_Summary_{active_profile.id}_{rep_start}_{rep_end}.pdf"
 
             st.download_button(
                 label="📥 Download Clinician Health Report (PDF)",
@@ -2287,6 +3258,7 @@ with st.container(key="mobile_scroll_content"):
             )
         except Exception as e:
             st.error(f"Error compiling PDF: {str(e)}")
+
 
 
     # ==========================================

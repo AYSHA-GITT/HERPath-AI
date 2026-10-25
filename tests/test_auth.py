@@ -155,3 +155,36 @@ def test_get_account_stats(auth_db):
     assert stats["symptoms_count"] == 0
     assert stats["medications_count"] == 0
     assert stats["has_pin"] is False
+
+
+def test_update_pin_ui_feedback():
+    """Verifies that updating the security PIN displays a visible confirmation message to the user."""
+    from pathlib import Path
+    from streamlit.testing.v1 import AppTest
+
+    app_file = str(Path(__file__).resolve().parent.parent / "app.py")
+    at = AppTest.from_file(app_file, default_timeout=30)
+    at.session_state["is_logged_in"] = True
+    at.session_state["current_profile_id"] = "demo_priya"
+    at.session_state["navigation"] = "Account & Login"
+    at.run()
+    assert not at.exception
+
+    try:
+        # Locate the change PIN input and update button
+        pin_inputs = [ti for ti in at.text_input if ti.key and "change_pin_field" in ti.key]
+        assert len(pin_inputs) > 0
+        pin_inputs[0].set_value("9876")
+
+        update_buttons = [b for b in at.button if b.key == "btn_update_pin"]
+        assert len(update_buttons) > 0
+        update_buttons[0].click().run()
+
+        assert not at.exception
+        # Check that success message is displayed on screen
+        success_texts = [s.value for s in at.success]
+        combined_success = " ".join(success_texts)
+        assert "Security PIN updated successfully" in combined_success
+    finally:
+        set_user_pin("demo_priya", "1234")
+

@@ -40,13 +40,16 @@ Women's health challenges are frequently compounded by systemic barriers:
 | **3. Smart Symptom Journal** | Full CRUD: Record, edit, delete, view, and filter symptoms. Captures category, severity (1–10), duration, onset date/time, functional impact, and sleep/stress context. | ✅ Complete |
 | **4. Medication & Treatments** | Track prescriptions, OTC supplements, and lifestyle therapies (dosage, frequency, started date) linked with active profiles. | ✅ Complete |
 | **5. Timeline Intelligence** | Interactive chronological health journey: multi-dimensional filters (date range presets, custom dates, categories, symptoms, severity slider, event types), dual-period symptom comparison with observation rate per day, explainable rule-based pattern insights, and 3 Plotly charts (severity trajectory, unified event swimlane, contextual co-occurrence). | ✅ Complete |
-| **6. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
-| **7. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
-| **8. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
-| **9. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
-| **10. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
-| **11. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
-| **12. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **6. Smart Clinical Summary** | Converts actual health history into a structured, doctor-ready consultation briefing: 6 dedicated sections (Overview, Symptom Patterns & Trajectory, Lifestyle & Functional Impact, Treatment Chronology with neutral non-causal phrasing, Patient Concerns, and Doctor Discussion Checklist), multi-preset reporting periods (7d, 30d, 90d, custom), 1-click clipboard plain-text export, and 1–2 page professional PDF compilation. | ✅ Complete |
+| **7. Personal Health Insights** | Interactive Plotly timelines, symptom frequency distributions, contextual comparisons, co-occurrence heatmaps, and explainable pattern statements. | ✅ Complete |
+| **8. Doctor Consultation Kit** | Interactive 10-minute visit prep tool generating opening statements and evidence-grounded questions tailored to appointment goals. | ✅ Complete |
+| **9. Care Guidance & Safety** | Transparent rule-based clinical triage hierarchy (Emergency, Prompt, Routine, Self-Care) plus Regional Emergency SOS Helplines (112, 1091, 181, 911, 999). | ✅ Complete |
+| **10. Verified Health Library** | Searchable directory of peer-reviewed educational articles from WHO, NHS, CDC, ACOG, and Mayo Clinic. | ✅ Complete |
+| **11. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
+| **12. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
+| **13. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **14. Full Month Calendar & Heatmap** | 7-column monthly grid with heatmap dots (confirmed periods, estimated future periods, symptoms, medications), month navigation, and interactive Day Inspector. | ✅ Complete |
+| **15. Historical Cycle Statistics** | Mathematically honest cycle intervals, shortest/longest cycles, sample counts, gap filtering, and non-diagnostic variation assessment. | ✅ Complete |
 
 
 ---
@@ -65,6 +68,8 @@ HERPath-AI/
 ├── validators.py              # Input validation and bounds checking
 ├── symptom_tracker.py         # Business logic service layer
 ├── timeline_service.py        # HERPath Timeline Intelligence & period analytics engine
+├── clinical_summary_service.py# Smart Clinical Summary synthesis & consultation engine
+├── cycle_service.py           # Cycle Statistics & Month Calendar synthesis service
 ├── insights_engine.py         # Statistical analysis & Plotly visualization engine
 ├── safety_navigator.py        # Rule-based clinical triage hierarchy
 ├── health_library.py          # Evidence-based health education search
@@ -82,6 +87,8 @@ HERPath-AI/
 │   ├── test_database.py       # Persistence, CRUD, isolation & cascade tests
 │   ├── test_validators.py     # Input boundary & sanitization tests
 │   ├── test_timeline.py       # HERPath Timeline Intelligence comprehensive test suite
+│   ├── test_clinical_summary.py # Smart Clinical Summary & consultation kit tests
+│   ├── test_cycle_service.py  # Cycle Statistics, PCOS boundaries & Calendar tests
 │   ├── test_insights.py       # Math accuracy & non-diagnostic constraint tests
 │   ├── test_safety.py         # Clinical triage & emergency override tests
 │   ├── test_reports.py        # PDF compilation & rendering tests
@@ -106,7 +113,7 @@ HERPath-AI/
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (68 comprehensive unit & E2E tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (112 comprehensive unit, integration & AppTest E2E tests).
 
 ---
 
@@ -173,10 +180,12 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (82/82 Passed):
+### Verified Test Coverage (112/112 Passed):
+- **Cycle Intelligence & Full Month Calendar (`test_cycle_service.py`):** Verified profile isolation, honest handling of insufficient data (0 and 1 period recorded), mathematically accurate cycle intervals, exclusion of anomalous gaps (>75d), non-diagnostic PCOS safety boundaries, clear visual/logical separation of confirmed periods vs. estimated future periods without database writes, and Streamlit AppTest calendar UI interaction.
+- **Mobile Redesign & Home Dashboard (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, 5-step quick logging flow, single-column mobile layout, dynamic Cycle Day & Phase Arc widget, milestone countdown horizon, 1-tap "My Period Started Today (Day 1)" instant SQLite reset, phase-specific nutrition/activity recommendations, 1-tap quick check-in SQLite persistence, spline energy curve across phases, and cycle personalization sheet with anchor start date picker.
+- **Smart Clinical Summary (`test_clinical_summary.py`):** Verified multi-preset date boundaries, null-safe duration metrics, non-causal medication comparison, patient concern synthesis, and ReportLab PDF compilation.
 - **Timeline Intelligence (`test_timeline.py`):** Verified chronological sorting, date-range filtering, category & symptom filtering, severity sliders, missing values handling without zero-coercion, dual-period comparison with observation rates per day, empty periods, sleep/stress contextual thresholds, profile isolation, medication grounding, and Plotly figure generation.
 - **Frontend End-to-End (`test_frontend_e2e.py`):** Verified rendering, navigation, form inputs, triage emergency cards, library search, and report download buttons across all views using Streamlit AppTest.
-- **Mobile Redesign (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, quick logging flows, and single-column mobile layout.
 - **Authentication & Security (`test_auth.py`):** Verified salted SHA-256 PIN security, new user registration, profile isolation, and login authentication.
 - **Backend End-to-End (`test_backend_e2e.py`):** Verified full profile lifecycle, zero cross-profile data leakage, analytics mathematical precision, triage rule hierarchy, and ReportLab PDF compilation.
 - **Database (`test_database.py`):** Profile isolation, symptom CRUD, update persistence, cascade profile deletion, foreign-key integrity.
