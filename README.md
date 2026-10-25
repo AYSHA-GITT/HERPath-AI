@@ -48,6 +48,8 @@ Women's health challenges are frequently compounded by systemic barriers:
 | **11. Clinician Health Report** | ReportLab PDF generator compiling structured clinical summaries, observation tables, active medications, trajectories, and physician discussion questions. | ✅ Complete |
 | **12. Data Portability & Backup** | Privacy-first data portability: One-click complete JSON backup export, spreadsheet CSV export, and JSON restore functionality. | ✅ Complete |
 | **13. Ask HERPath Assistant** | Grounded health literacy search over curated medical literature with strict non-diagnostic boundaries and emergency overrides. | ✅ Complete |
+| **14. Full Month Calendar & Heatmap** | 7-column monthly grid with heatmap dots (confirmed periods, estimated future periods, symptoms, medications), month navigation, and interactive Day Inspector. | ✅ Complete |
+| **15. Historical Cycle Statistics** | Mathematically honest cycle intervals, shortest/longest cycles, sample counts, gap filtering, and non-diagnostic variation assessment. | ✅ Complete |
 
 
 ---
@@ -67,6 +69,7 @@ HERPath-AI/
 ├── symptom_tracker.py         # Business logic service layer
 ├── timeline_service.py        # HERPath Timeline Intelligence & period analytics engine
 ├── clinical_summary_service.py# Smart Clinical Summary synthesis & consultation engine
+├── cycle_service.py           # Cycle Statistics & Month Calendar synthesis service
 ├── insights_engine.py         # Statistical analysis & Plotly visualization engine
 ├── safety_navigator.py        # Rule-based clinical triage hierarchy
 ├── health_library.py          # Evidence-based health education search
@@ -85,6 +88,7 @@ HERPath-AI/
 │   ├── test_validators.py     # Input boundary & sanitization tests
 │   ├── test_timeline.py       # HERPath Timeline Intelligence comprehensive test suite
 │   ├── test_clinical_summary.py # Smart Clinical Summary & consultation kit tests
+│   ├── test_cycle_service.py  # Cycle Statistics, PCOS boundaries & Calendar tests
 │   ├── test_insights.py       # Math accuracy & non-diagnostic constraint tests
 │   ├── test_safety.py         # Clinical triage & emergency override tests
 │   ├── test_reports.py        # PDF compilation & rendering tests
@@ -109,7 +113,7 @@ HERPath-AI/
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (104 comprehensive unit, integration & AppTest E2E tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (112 comprehensive unit, integration & AppTest E2E tests).
 
 ---
 
@@ -176,7 +180,8 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (104/104 Passed):
+### Verified Test Coverage (112/112 Passed):
+- **Cycle Intelligence & Full Month Calendar (`test_cycle_service.py`):** Verified profile isolation, honest handling of insufficient data (0 and 1 period recorded), mathematically accurate cycle intervals, exclusion of anomalous gaps (>75d), non-diagnostic PCOS safety boundaries, clear visual/logical separation of confirmed periods vs. estimated future periods without database writes, and Streamlit AppTest calendar UI interaction.
 - **Mobile Redesign & Home Dashboard (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, 5-step quick logging flow, single-column mobile layout, dynamic Cycle Day & Phase Arc widget, milestone countdown horizon, 1-tap "My Period Started Today (Day 1)" instant SQLite reset, phase-specific nutrition/activity recommendations, 1-tap quick check-in SQLite persistence, spline energy curve across phases, and cycle personalization sheet with anchor start date picker.
 - **Smart Clinical Summary (`test_clinical_summary.py`):** Verified multi-preset date boundaries, null-safe duration metrics, non-causal medication comparison, patient concern synthesis, and ReportLab PDF compilation.
 - **Timeline Intelligence (`test_timeline.py`):** Verified chronological sorting, date-range filtering, category & symptom filtering, severity sliders, missing values handling without zero-coercion, dual-period comparison with observation rates per day, empty periods, sleep/stress contextual thresholds, profile isolation, medication grounding, and Plotly figure generation.

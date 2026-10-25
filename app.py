@@ -9,6 +9,7 @@ A thoughtfully designed, personal wellness companion for mobile phones and moder
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date, timedelta
+import calendar
 from pathlib import Path
 import json
 import uuid
@@ -58,6 +59,7 @@ from safety_navigator import SafetyNavigator
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
 from clinical_summary_service import ClinicalSummaryService, ClinicalSummaryData
+from cycle_service import CycleService, CycleStatisticsData, MonthCalendarData
 from data.seed_data import seed_demo_data
 from timeline_service import TimelineService, TimelineEvent
 from auth import (
@@ -117,6 +119,16 @@ if "selected_body_focus" not in st.session_state:
 
 if "last_saved_symptom" not in st.session_state:
     st.session_state["last_saved_symptom"] = None
+
+if "cal_year" not in st.session_state:
+    st.session_state["cal_year"] = date.today().year
+
+if "cal_month" not in st.session_state:
+    st.session_state["cal_month"] = date.today().month
+
+if "calendar_selected_date" not in st.session_state:
+    st.session_state["calendar_selected_date"] = str(date.today())
+
 
 
 # Helper to switch views cleanly
@@ -939,6 +951,217 @@ with st.container(key="mobile_scroll_content"):
                     )
                     st.session_state["quick_checkin_success"] = f"✅ Recorded: {selected_mood} & {symptom_title} (Day {cycle_day} • {phase_name})!"
                     st.rerun()
+
+        # 6b. Full Month Health Calendar & Historical Cycle Statistics
+        st.markdown("""
+            <div class="section-header">📅 Cycle Calendar & History</div>
+        """, unsafe_allow_html=True)
+
+        tab_cal_view, tab_stats_view = st.tabs(["📅 Month Calendar & Heatmap", "📊 Historical Cycle Statistics"])
+
+        with tab_cal_view:
+            # Initialize calendar state in session_state if missing
+            if "cal_year" not in st.session_state:
+                st.session_state["cal_year"] = date.today().year
+            if "cal_month" not in st.session_state:
+                st.session_state["cal_month"] = date.today().month
+
+            # Month Navigation Bar
+            nav_c1, nav_c2, nav_c3, nav_c4 = st.columns([1, 3, 1, 1.2])
+            with nav_c1:
+                if st.button("◀", key="cal_btn_prev_month", help="Previous Month", use_container_width=True):
+                    if st.session_state["cal_month"] == 1:
+                        st.session_state["cal_month"] = 12
+                        st.session_state["cal_year"] -= 1
+                    else:
+                        st.session_state["cal_month"] -= 1
+                    st.rerun()
+            with nav_c2:
+                month_display_name = calendar.month_name[st.session_state["cal_month"]]
+                st.markdown(f'<div style="text-align: center; font-weight: 800; font-size: 1.05rem; color: #2A1E24; padding-top: 5px;">{month_display_name} {st.session_state["cal_year"]}</div>', unsafe_allow_html=True)
+            with nav_c3:
+                if st.button("▶", key="cal_btn_next_month", help="Next Month", use_container_width=True):
+                    if st.session_state["cal_month"] == 12:
+                        st.session_state["cal_month"] = 1
+                        st.session_state["cal_year"] += 1
+                    else:
+                        st.session_state["cal_month"] += 1
+                    st.rerun()
+            with nav_c4:
+                if st.button("Today", key="cal_btn_today", help="Jump to Current Month", use_container_width=True):
+                    st.session_state["cal_year"] = date.today().year
+                    st.session_state["cal_month"] = date.today().month
+                    st.session_state["calendar_selected_date"] = str(date.today())
+                    st.rerun()
+
+            # Retrieve calendar data scoped strictly to active profile
+            cal_data = CycleService.get_month_calendar_data(
+                active_profile.id,
+                st.session_state["cal_year"],
+                st.session_state["cal_month"]
+            )
+
+            # Accessible Legend (Icons and Labels)
+            st.markdown(textwrap.dedent("""
+                <div class="month-cal-legend-bar">
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-period"></span> 🩸 Period</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-predicted"></span> 🔮 Est. Period</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-symptom"></span> 🟡 Symptom</span>
+                    <span class="cal-legend-badge"><span class="cal-dot cal-dot-med"></span> 💊 Medication</span>
+                </div>
+            """), unsafe_allow_html=True)
+
+            # Determine selected date (default to today or 1st of month)
+            sel_date_str = st.session_state.get("calendar_selected_date", str(date.today()))
+            if not sel_date_str.startswith(f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}"):
+                sel_date_str = f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}-01"
+
+            # Render 7-column calendar grid
+            weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            header_html = "".join([f'<div class="month-cal-header-cell">{w}</div>' for w in weekdays])
+            
+            first_day_weekday, num_days = calendar.monthrange(st.session_state["cal_year"], st.session_state["cal_month"])
+            pad_cells = "".join(['<div class="month-cal-cell" style="opacity: 0.15; background: transparent; border: none;"></div>' for _ in range(first_day_weekday)])
+            
+            day_cells_html = []
+            for d in cal_data.days:
+                cell_classes = ["month-cal-cell", "month-cal-cell-active"]
+                if d.is_today:
+                    cell_classes.append("month-cal-cell-today")
+                if d.date_str == sel_date_str:
+                    cell_classes.append("month-cal-cell-selected")
+                if d.has_period:
+                    cell_classes.append("month-cal-cell-period")
+                elif d.is_predicted_period:
+                    cell_classes.append("month-cal-cell-predicted")
+
+                dots = []
+                if d.has_period:
+                    dots.append('<span class="cal-dot cal-dot-period"></span>')
+                elif d.is_predicted_period:
+                    dots.append('<span class="cal-dot cal-dot-predicted"></span>')
+                if d.symptom_count > 0:
+                    dots.append('<span class="cal-dot cal-dot-symptom"></span>')
+                if len(d.medications) > 0:
+                    dots.append('<span class="cal-dot cal-dot-med"></span>')
+
+                dots_html = f'<div class="month-cal-dots-row">{"".join(dots)}</div>' if dots else '<div style="height: 6px;"></div>'
+
+                day_cells_html.append(
+                    f'<div class="{" ".join(cell_classes)}">'
+                    f'<span class="month-cal-day-num">{d.day_num}</span>'
+                    f'{dots_html}'
+                    f'</div>'
+                )
+
+            grid_html = f'<div class="month-cal-grid">{header_html}{pad_cells}{"".join(day_cells_html)}</div>'
+            st.markdown(grid_html, unsafe_allow_html=True)
+
+            # Interactive Date Inspector Selector
+            day_nums = list(range(1, num_days + 1))
+            current_sel_day_num = int(sel_date_str.split("-")[2]) if sel_date_str.startswith(f"{st.session_state['cal_year']}-{st.session_state['cal_month']:02d}") else 1
+            
+            st.markdown('<div style="height: 8px;"></div>', unsafe_allow_html=True)
+            chosen_day = st.select_slider(
+                "📅 Select Date to Inspect",
+                options=day_nums,
+                value=current_sel_day_num,
+                format_func=lambda d: f"{calendar.month_abbr[st.session_state.get('cal_month', date.today().month)]} {d}",
+                key="cal_day_select_slider"
+            )
+            inspect_date_str = f"{st.session_state.get('cal_year', date.today().year)}-{st.session_state.get('cal_month', date.today().month):02d}-{chosen_day:02d}"
+            st.session_state["calendar_selected_date"] = inspect_date_str
+
+            inspected_day_data = next((d for d in cal_data.days if d.date_str == inspect_date_str), None)
+
+            if inspected_day_data:
+                insp_dt = datetime.strptime(inspect_date_str, "%Y-%m-%d")
+                insp_title = insp_dt.strftime("%A, %B %d, %Y")
+
+                status_pill = ""
+                if inspected_day_data.has_period:
+                    status_pill = '<span class="auth-sec-pill" style="background: #FFE4EC; color: #E11D48; border-color: #FB7185;">🩸 Recorded Period Day</span>'
+                elif inspected_day_data.is_predicted_period:
+                    status_pill = '<span class="auth-sec-pill" style="background: #F5F3FF; color: #7C3AED; border-color: #C084FC;">🔮 Estimated Future Period (Unconfirmed)</span>'
+
+                st.markdown(f"""
+                    <div class="cal-inspector-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div class="cal-inspector-title">📋 Health Records: {insp_title}</div>
+                            <div>{status_pill}</div>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+                if inspected_day_data.symptoms:
+                    st.markdown(f"**Recorded Symptoms ({len(inspected_day_data.symptoms)})** &bull; *Peak Severity: {inspected_day_data.max_severity}/10*")
+                    for sym in inspected_day_data.symptoms:
+                        s_sev = sym["severity"]
+                        s_color = "#10B981" if s_sev <= 3 else "#F59E0B" if s_sev <= 6 else "#EF4444"
+                        st.markdown(f"""
+                            <div style="background: #FFF9FA; border-left: 3px solid {s_color}; border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; font-size: 0.82rem;">
+                                <b>{sym['symptom']}</b> &bull; Severity: <span style="font-weight: 700; color: {s_color};">{s_sev}/10</span> &bull; <i>{sym['category']}</i>
+                                <div style="color: #6B5E65; font-size: 0.76rem; margin-top: 2px;">Impact: {sym.get('impact', 'None')} &bull; Status: {sym.get('status', 'Ongoing')} {f'• Notes: {sym["notes"]}' if sym.get('notes') else ''}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.info("ℹ️ No health records were entered for this day. *(A blank day means no record was entered, not necessarily that the day was symptom-free).*")
+
+                if inspected_day_data.medications:
+                    st.caption(f"💊 **Active Therapies / Medications on this day:** {', '.join(inspected_day_data.medications)}")
+
+                cal_cur_month = st.session_state.get('cal_month', date.today().month)
+                if st.button(f"➕ Log Symptom for {calendar.month_abbr[cal_cur_month]} {chosen_day}", key=f"btn_log_for_{inspect_date_str}"):
+                    st.session_state["default_log_date"] = inspect_date_str
+                    navigate_to("Symptom Journal")
+
+        with tab_stats_view:
+            cycle_stats = CycleService.calculate_cycle_statistics(active_profile.id)
+
+            st.markdown(textwrap.dedent("""
+                <div class="clean-card" style="margin-bottom: 0.75rem;">
+                    <div style="font-size: 0.82rem; color: #5B4A55; line-height: 1.4;">
+                        <b>Historical Cycle Statistics & Variation Analytics:</b> Calculates intervals strictly between consecutive recorded period start dates. Never assumes every cycle is 28 days and excludes unrecorded gaps.
+                    </div>
+                </div>
+            """), unsafe_allow_html=True)
+
+            s1, s2, s3, s4 = st.columns(4)
+            with s1:
+                st.metric("Cycles Analyzed", f"{cycle_stats.total_cycles_analyzed}", help="Number of complete, consecutive cycle intervals analyzed")
+            with s2:
+                avg_display = f"{cycle_stats.average_cycle_length}d" if cycle_stats.average_cycle_length else "—"
+                st.metric("Average Length", avg_display, help="Mathematical mean of recorded cycle intervals")
+            with s3:
+                range_display = f"{cycle_stats.shortest_cycle}d – {cycle_stats.longest_cycle}d" if cycle_stats.shortest_cycle else "—"
+                st.metric("Cycle Range", range_display, help="Shortest to longest recorded cycle duration")
+            with s4:
+                var_display = f"±{cycle_stats.variation_days}d" if cycle_stats.variation_days is not None else "—"
+                st.metric("Variability", var_display, help="Interval variation across analyzed cycles")
+
+            st.markdown(f"""
+                <div class="cycle-clinical-box">
+                    <div style="font-weight: 800; color: #2A1E24; margin-bottom: 4px;">Pattern Assessment: {cycle_stats.variation_status}</div>
+                    <div>{cycle_stats.clinical_note}</div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if cycle_stats.intervals:
+                st.markdown("**Recorded Cycle Intervals**")
+                table_rows = []
+                for intv in cycle_stats.intervals:
+                    status_badge = "✅ Typical" if (intv.is_valid and intv.length_days <= 38) else "⚠️ Irregular/Long" if intv.is_valid else "❌ Gap Excluded"
+                    table_rows.append({
+                        "Cycle": f"Cycle {intv.cycle_index}",
+                        "Period Start Date": intv.start_date,
+                        "Next Period Date": intv.end_date,
+                        "Duration (Days)": f"{intv.length_days} days",
+                        "Status": status_badge,
+                        "Clinical Assessment": intv.notes
+                    })
+                st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+            else:
+                st.caption("No completed cycle intervals available yet. Record at least 2 distinct period start dates to view your interval history.")
 
         # 7. Energy Level Trajectory Across Cycle Phases (Matching Mockup Screen 3)
         with st.expander("📈 Analytics — Energy Level Curve Across Phases", expanded=False):
