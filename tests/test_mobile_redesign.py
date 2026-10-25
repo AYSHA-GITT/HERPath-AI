@@ -186,3 +186,27 @@ def test_mobile_home_energy_curve_and_settings():
     assert any("Cycle Settings" in lbl for lbl in expander_labels)
 
 
+def test_mobile_home_period_start_tap():
+    """Verifies that clicking 'My Period Started Today' resets the cycle to Day 1, saves to SQLite, and updates phase horizons."""
+    at = get_authenticated_app()
+    assert not at.exception
+
+    # Locate the period start button
+    period_btn = [b for b in at.button if b.key == "home_btn_period_today"]
+    assert len(period_btn) == 1
+    assert "My Period Started Today" in period_btn[0].label
+
+    # Click the button
+    period_btn[0].click().run()
+    assert not at.exception
+
+    # Verify Day 1 is now displayed
+    combined_md = " ".join([m.value for m in at.markdown])
+    assert "Day 1" in combined_md
+    assert "Menstruation Phase" in combined_md
+
+    # Verify persistent success notification
+    assert any("Period logged! Cycle reset to Day 1" in s.value for s in at.success)
+
+
+

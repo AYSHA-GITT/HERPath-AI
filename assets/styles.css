@@ -2310,6 +2310,28 @@ div[data-testid="stForm"] button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
 }
 
+/* Secondary 1-Tap Period Reset Pill Button */
+.cycle-period-tap-btn .stButton > button {
+    background: #FFF0F4 !important;
+    color: #B95F7B !important;
+    border: 1.5px solid rgba(185, 95, 123, 0.38) !important;
+    border-radius: 9999px !important;
+    padding: 0.55rem 1.25rem !important;
+    font-size: 0.88rem !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(185, 95, 123, 0.08) !important;
+    transition: all 0.2s ease !important;
+    letter-spacing: 0.1px !important;
+}
+
+.cycle-period-tap-btn .stButton > button:hover {
+    background: #FCE4EC !important;
+    border-color: #B95F7B !important;
+    color: #8C3952 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(185, 95, 123, 0.18) !important;
+}
+
 /* Cycle Horizon & Milestone Pill */
 .cycle-milestone-pill {
     background: rgba(185, 95, 123, 0.08);

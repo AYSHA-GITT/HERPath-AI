@@ -621,9 +621,14 @@ with st.container(key="mobile_scroll_content"):
         # B. Cycle & Greeting Header (Matching femtech mobile redesign)
         today_formatted = date.today().strftime("%A, %b %d")
         
+        # Display persistent cycle reset notification if active
+        if "cycle_reset_success" in st.session_state:
+            st.success(st.session_state.pop("cycle_reset_success"))
+
         # Calculate or load cycle day
         pref = active_profile.preferences or {}
         cycle_len = pref.get("cycle_length", 28)
+        flow_duration = pref.get("period_duration", 5)
         
         # Determine current cycle day
         if "cycle_day_override" in st.session_state:
@@ -639,15 +644,25 @@ with st.container(key="mobile_scroll_content"):
             # Default to Day 2 for demonstration
             cycle_day = 2
 
-        # Cycle Phase resolution
-        if 1 <= cycle_day <= 5:
+        # Biologically adaptive phase calculation:
+        # Menstruation: Days 1 to flow_duration
+        # Luteal phase is biologically stable (~14 days before next period)
+        ovulation_day = max(flow_duration + 2, cycle_len - 14)
+        
+        if 1 <= cycle_day <= flow_duration:
             phase_name = "Menstruation Phase"
-        elif 6 <= cycle_day <= 13:
+            phase_days_left = flow_duration - cycle_day + 1
+        elif flow_duration < cycle_day < ovulation_day - 1:
             phase_name = "Follicular Phase"
-        elif 14 <= cycle_day <= 16:
+            phase_days_left = (ovulation_day - 1) - cycle_day + 1
+        elif (ovulation_day - 1) <= cycle_day <= (ovulation_day + 1):
             phase_name = "Ovulation Phase"
+            phase_days_left = (ovulation_day + 1) - cycle_day + 1
         else:
             phase_name = "Luteal Phase"
+            phase_days_left = cycle_len - cycle_day + 1
+
+        days_to_next_period = max(1, cycle_len - cycle_day + 1)
 
         # 1. Top Greeting Row with Avatar Pill
         st.markdown(textwrap.dedent(f"""
@@ -693,24 +708,12 @@ with st.container(key="mobile_scroll_content"):
         st.markdown(f'<div class="cycle-day-strip">{"".join(day_pills_html)}</div>', unsafe_allow_html=True)
 
         # 3. Semi-Circular Phase Arc Card with Milestone Horizon
-        frac = (min(28, max(1, cycle_day)) - 0.5) / 28.0
+        frac = (min(cycle_len, max(1, cycle_day)) - 0.5) / float(cycle_len)
         theta_deg = 180.0 - (frac * 180.0)
         theta_rad = math.radians(theta_deg)
         x_m = round(145.0 + 95.0 * math.cos(theta_rad), 1)
         y_m = round(125.0 - 95.0 * math.sin(theta_rad), 1)
         rot_deg = round(90.0 - theta_deg, 1)
-
-        # Calculate upcoming milestone horizon
-        if phase_name == "Menstruation Phase":
-            phase_days_left = max(1, 5 - cycle_day + 1)
-        elif phase_name == "Follicular Phase":
-            phase_days_left = max(1, 13 - cycle_day + 1)
-        elif phase_name == "Ovulation Phase":
-            phase_days_left = max(1, 16 - cycle_day + 1)
-        else:
-            phase_days_left = max(1, cycle_len - cycle_day + 1)
-
-        days_to_next_period = max(1, cycle_len - cycle_day + 1)
 
         arc_svg_markup = textwrap.dedent(f"""
             <div class="cycle-arc-card">
@@ -772,6 +775,31 @@ with st.container(key="mobile_scroll_content"):
         if st.button("Log Your Symptoms", use_container_width=True, type="primary", key="home_btn_log_symptoms"):
             st.session_state["default_cycle_phase"] = phase_name
             navigate_to("Symptom Journal")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # 4b. 1-Tap Period Start Quick Action
+        st.markdown('<div class="cycle-period-tap-btn" style="margin-top: 8px;">', unsafe_allow_html=True)
+        if st.button("🩸 My Period Started Today (Set to Day 1)", use_container_width=True, key="home_btn_period_today", help="Instantly resets cycle tracking to Day 1 with today as the anchor start date"):
+            updated_pref = pref.copy()
+            updated_pref["period_start_date"] = str(date.today())
+            update_profile_preferences(active_profile.id, updated_pref)
+            st.session_state["cycle_day_override"] = 1
+            
+            # Record Day 1 menstrual start in SQLite
+            SymptomTrackerService.record_symptom(
+                profile_id=active_profile.id,
+                category="Pelvic & Menstrual",
+                symptom="Menstrual Bleeding (Period Start)",
+                onset_date=str(date.today()),
+                severity=4,
+                duration_hours=None,
+                status="Ongoing",
+                impact="None",
+                notes="Logged via 1-tap period start button on Home Dashboard.",
+                context={"sleep": "Restful (7-9 hrs)", "stress": "Low / Calm", "energy": "Moderate", "cycle_phase": "Menstruation Phase"}
+            )
+            st.session_state["cycle_reset_success"] = f"🩸 Period logged! Cycle reset to Day 1 ({today_formatted}). All upcoming phase countdowns updated."
+            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
         # 5. Today's Recommendation (Nutrition & Activity cards matching Mockup Screen 1)
@@ -969,7 +997,7 @@ with st.container(key="mobile_scroll_content"):
 
         # 8. Cycle Settings & Personalization Sheet (Irregular Cycle, Length, Start Date)
         with st.expander("⚙️ Cycle Settings & Personalization", expanded=False):
-            st.caption("Adjust your baseline cycle length, period duration, or active day. Supports irregular cycles (PCOS, perimenopause).")
+            st.caption("Adjust your baseline cycle length, period duration, or anchor start date. Supports irregular cycles (PCOS, perimenopause).")
             
             c_set1, c_set2 = st.columns(2)
             with c_set1:
@@ -979,15 +1007,36 @@ with st.container(key="mobile_scroll_content"):
                 cur_flow = pref.get("period_duration", 5)
                 new_flow = st.slider("Typical Period Duration (days)", min_value=2, max_value=10, value=int(cur_flow), key="set_period_flow")
 
-            new_c_day = st.slider("Active Cycle Day (Preview / Adjust)", min_value=1, max_value=int(new_len), value=int(cycle_day), key="slider_cycle_day_adjust")
+            # Period Start Date Anchor
+            cur_start_str = pref.get("period_start_date", "")
+            try:
+                cur_start_val = datetime.strptime(cur_start_str, "%Y-%m-%d").date() if cur_start_str else (date.today() - timedelta(days=int(cycle_day) - 1))
+            except Exception:
+                cur_start_val = date.today()
+
+            chosen_start_date = st.date_input(
+                "Last Period Start Date (Day 1 Anchor)",
+                value=cur_start_val,
+                max_value=date.today(),
+                key="set_period_start_date",
+                help="Set the date your last period began to align your cycle automatically."
+            )
+
+            new_c_day = st.slider("Active Cycle Day (Manual Override / Preview)", min_value=1, max_value=int(new_len), value=int(cycle_day), key="slider_cycle_day_adjust")
 
             if st.button("💾 Save Cycle Preferences", key="btn_apply_cycle_settings", type="primary", use_container_width=True):
                 updated_pref = pref.copy()
                 updated_pref["cycle_length"] = new_len
                 updated_pref["period_duration"] = new_flow
+                updated_pref["period_start_date"] = str(chosen_start_date)
                 update_profile_preferences(active_profile.id, updated_pref)
-                st.session_state["cycle_day_override"] = new_c_day
-                st.success("✅ Cycle preferences updated successfully!")
+                
+                # If the manual slider was adjusted to a different day, respect it; otherwise calculate from start date
+                diff_d = (date.today() - chosen_start_date).days
+                calc_day = (diff_d % new_len) + 1
+                final_day = new_c_day if new_c_day != cycle_day else calc_day
+                st.session_state["cycle_day_override"] = final_day
+                st.session_state["cycle_reset_success"] = f"✅ Cycle preferences updated! Active Day set to Day {final_day} (Period start: {chosen_start_date})."
                 st.rerun()
 
         # D. Quick health actions (compact, properly spaced expandable section)
