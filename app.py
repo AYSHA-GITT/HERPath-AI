@@ -107,36 +107,38 @@ def navigate_to(page_name: str):
 # Sleek Segmented Sub-Navigation Helpers for Multi-Feature Access
 def render_my_health_subnav(current_screen: str):
     """Renders a sleek 4-segment sub-navigation pill bar for all My Health screens."""
-    s1, s2, s3, s4 = st.columns(4)
-    with s1:
-        is_active = current_screen == "Symptom Journal"
-        if st.button("📝 Journal", key="sub_btn_journal", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("Symptom Journal")
-    with s2:
-        is_active = current_screen == "Medication & Treatments"
-        if st.button("💊 Meds", key="sub_btn_meds", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("Medication & Treatments")
-    with s3:
-        is_active = current_screen == "Health Insights"
-        if st.button("📈 Insights", key="sub_btn_insights", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("Health Insights")
-    with s4:
-        is_active = current_screen == "My Health Report"
-        if st.button("📄 Report", key="sub_btn_report", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("My Health Report")
+    with st.container(key="subnav_container"):
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            is_active = current_screen == "Symptom Journal"
+            if st.button("📝 Journal", key="sub_btn_journal", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Symptom Journal")
+        with s2:
+            is_active = current_screen == "Medication & Treatments"
+            if st.button("💊 Meds", key="sub_btn_meds", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Medication & Treatments")
+        with s3:
+            is_active = current_screen == "Health Insights"
+            if st.button("📈 Insights", key="sub_btn_insights", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Health Insights")
+        with s4:
+            is_active = current_screen == "My Health Report"
+            if st.button("📄 Report", key="sub_btn_report", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("My Health Report")
 
 
 def render_learn_subnav(current_screen: str):
     """Renders a 2-segment sub-navigation pill bar for the Learn screens."""
-    l1, l2 = st.columns(2)
-    with l1:
-        is_active = current_screen == "Women's Health Library"
-        if st.button("📚 Evidence Library", key="sub_btn_library", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("Women's Health Library")
-    with l2:
-        is_active = current_screen == "Ask HERPath"
-        if st.button("💬 Ask HERPath", key="sub_btn_ask", use_container_width=True, type="primary" if is_active else "secondary"):
-            navigate_to("Ask HERPath")
+    with st.container(key="subnav_container"):
+        l1, l2 = st.columns(2)
+        with l1:
+            is_active = current_screen == "Women's Health Library"
+            if st.button("📚 Evidence Library", key="sub_btn_library", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Women's Health Library")
+        with l2:
+            is_active = current_screen == "Ask HERPath"
+            if st.button("💬 Ask HERPath", key="sub_btn_ask", use_container_width=True, type="primary" if is_active else "secondary"):
+                navigate_to("Ask HERPath")
 
 
 # ==========================================
@@ -235,8 +237,8 @@ st.markdown("""
 head_col1, head_col2 = st.columns([5, 1])
 with head_col1:
     st.markdown("""
-        <div class="brand-wordmark" style="font-size: 1.15rem; font-weight: 700; color: #B95F7B; display: flex; align-items: center; gap: 6px; padding-top: 2px;">
-            <span>🌸</span> HERPath <span style="font-size: 0.68rem; font-weight: 600; background: #F8E4EA; padding: 2px 6px; border-radius: 6px; color: #B95F7B; border: 1px solid #F0E2E6;">AI</span>
+        <div class="brand-wordmark">
+            <span>🌸</span> HERPath <span class="brand-badge">AI</span>
         </div>
     """, unsafe_allow_html=True)
 with head_col2:
@@ -251,22 +253,23 @@ with head_col2:
 # ==========================================
 with st.container(key="mobile_scroll_content"):
     if st.session_state["navigation"] == "Home Dashboard":
-        # 1. Warm Personal Greeting
+        # B. Greeting: Warm greeting and date on separate line with natural wrapping
         today_formatted = date.today().strftime("%A, %b %d")
         st.markdown(f"""
-            <div class="greeting-section" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
-                <div class="greeting-title" style="font-family: 'Outfit', -apple-system, sans-serif; font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em;">Good evening, {first_name} 🌸</div>
-                <div class="greeting-subtitle" style="font-size: 0.86rem; color: var(--text-secondary); margin-top: 2px;">
-                    How are you feeling today? &bull; <i>{today_formatted}</i> &bull; <span style="font-size: 0.8rem; color: var(--text-muted);">Welcome back</span>
-                </div>
+            <div class="greeting-block">
+                <div class="greeting-title">Good evening, {first_name} 🌸</div>
+                <div class="greeting-date">{today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
             </div>
         """, unsafe_allow_html=True)
 
-        # 2. Primary Action: One elegant, full-width primary button in dusty rose
+        # C. Primary Action: How are you feeling today? + One prominent Log a symptom button
+        st.markdown("""
+            <div class="primary-prompt-label">How are you feeling today?</div>
+        """, unsafe_allow_html=True)
         if st.button("＋ Log a symptom", use_container_width=True, type="primary", key="home_btn_log_symptom"):
             navigate_to("Symptom Journal")
 
-        # Secondary quick navigation actions kept in subtle collapsed menu
+        # D. Quick health actions (compact, properly spaced expandable section)
         with st.expander("⚡ Quick Health Actions", expanded=False):
             if st.button("➕ Log a New Symptom", key="home_quick_log_new", use_container_width=True):
                 navigate_to("Symptom Journal")
@@ -280,11 +283,13 @@ with st.container(key="mobile_scroll_content"):
         engine = InsightsEngine(user_entries)
         metrics = engine.calculate_summary_metrics()
 
-        # 3. Daily Wellbeing: Compact card titled "Your daily check-in"
+        # E. Daily check-in: Section heading + explanatory sentence + check-in expander
         st.markdown("""
-            <div class="clean-card" style="margin-top: 0.65rem; margin-bottom: 0.45rem; padding: 0.8rem 0.95rem;">
-                <div class="clean-card-title" style="font-size: 0.98rem; font-weight: 600;">Your daily check-in</div>
-                <div class="clean-card-subtext" style="font-size: 0.82rem; color: var(--text-secondary);">Take a moment to check in with yourself &bull; Daily Vitality Pulse</div>
+            <div class="section-header">Your daily check-in</div>
+            <div class="clean-card" style="margin-bottom: 0.55rem;">
+                <div class="clean-card-subtext">
+                    Take a moment to record your baseline energy, sleep, and emotional resilience.
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
@@ -292,7 +297,7 @@ with st.container(key="mobile_scroll_content"):
             st.markdown(
                 "<div class='clean-card-subtext' style='margin-bottom: 0.8rem;'>"
                 "Rate your baseline energy, sleep, and emotional resilience. "
-                "This personal tracking indicator is not a medical measurement."
+                "This personal tracking indicator is not a medical measurement &bull; Daily Vitality Pulse."
                 "</div>",
                 unsafe_allow_html=True
             )
@@ -325,13 +330,13 @@ with st.container(key="mobile_scroll_content"):
                 st.success(f"Recorded today's Vitality Pulse ({pulse_score}%)!")
                 st.rerun()
 
-        # 4. Recent Activity: Compact list rows with subtle dividers
-        st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0.75rem 0 0.35rem 0;'>Recent activity</div>", unsafe_allow_html=True)
+        # F. Recent activity: Section heading + up to 3 entries with dividers + separate View all button
+        st.markdown('<div class="section-header">Recent activity</div>', unsafe_allow_html=True)
         if metrics["total_entries"] == 0:
             st.markdown("""
-                <div class="clean-card" style="text-align: center; padding: 1rem;">
+                <div class="clean-card" style="text-align: center; padding: 1.1rem 1rem;">
                     <div style="font-size: 0.92rem; font-weight: 600;">No symptoms logged yet</div>
-                    <div style="font-size: 0.80rem; color: var(--text-muted); margin-top: 2px;">Tap '＋ Log a symptom' above to record your first entry.</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Tap '＋ Log a symptom' above to record your first entry.</div>
                 </div>
             """, unsafe_allow_html=True)
         else:
@@ -345,10 +350,10 @@ with st.container(key="mobile_scroll_content"):
                 )
                 border_bottom = "border-bottom: 1px solid #F0E2E7;" if i < len(recent_entries) - 1 else ""
                 st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.1rem; {border_bottom}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.2rem; {border_bottom}">
                         <div>
-                            <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">{entry.symptom}</div>
-                            <div style="font-size: 0.74rem; color: var(--text-muted);">{entry.onset_date} &bull; {entry.category}</div>
+                            <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">{entry.symptom}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">{entry.onset_date} &bull; {entry.category}</div>
                         </div>
                         <div>{sev_badge}</div>
                     </div>
@@ -358,13 +363,13 @@ with st.container(key="mobile_scroll_content"):
             if st.button("View all →", key="home_view_all_btn", use_container_width=True):
                 navigate_to("Symptom Journal")
 
-        # 5. Health Insight: One small insight based on real saved records
-        st.markdown("<div style='font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0.75rem 0 0.35rem 0;'>Health insight</div>", unsafe_allow_html=True)
+        # G. Health insight: Begins strictly after recent activity finishes
+        st.markdown('<div class="section-header">Health insight</div>', unsafe_allow_html=True)
         if metrics["total_entries"] == 0:
             st.markdown("""
-                <div class="clean-card" style="border-left: 3px solid var(--border-subtle); padding: 0.75rem 0.9rem;">
-                    <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">Building your baseline</div>
-                    <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px;">Record entries over time to uncover explainable pattern insights.</div>
+                <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 0.9rem 1rem;">
+                    <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">Building your baseline</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">Record entries over time to uncover explainable pattern insights.</div>
                 </div>
             """, unsafe_allow_html=True)
         else:
@@ -372,21 +377,21 @@ with st.container(key="mobile_scroll_content"):
             primary_insight = insights[0] if insights else None
             if primary_insight:
                 st.markdown(f"""
-                    <div class="clean-card" style="border-left: 3px solid var(--primary-rose); padding: 0.75rem 0.9rem;">
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">{primary_insight['title']}</div>
-                        <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px; line-height: 1.4;">{primary_insight['observation']}</div>
+                    <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); padding: 0.9rem 1rem;">
+                        <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">{primary_insight['title']}</div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">{primary_insight['observation']}</div>
                     </div>
                 """, unsafe_allow_html=True)
             else:
                 st.markdown("""
-                    <div class="clean-card" style="border-left: 3px solid var(--border-subtle); padding: 0.75rem 0.9rem;">
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">Baseline Stable</div>
-                        <div style="font-size: 0.80rem; color: var(--text-secondary); margin-top: 2px;">No significant clustering or severity spikes observed in recent logs.</div>
+                    <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 0.9rem 1rem;">
+                        <div style="font-weight: 600; font-size: 0.90rem; color: var(--text-primary);">Baseline Stable</div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.45;">No significant clustering or severity spikes observed in recent logs.</div>
                     </div>
                 """, unsafe_allow_html=True)
 
-        # 6. Anatomical Health Focus Explorer (Preserved inside clean expander for accessibility & tests)
-        st.markdown("#### 🌸 Anatomical Health Focus Explorer")
+        # Anatomical Health Focus Explorer (Preserved inside clean expander for accessibility & tests)
+        st.markdown('<div class="section-header">🌸 Anatomical Health Focus Explorer</div>', unsafe_allow_html=True)
         with st.expander("Explore body focus areas", expanded=False):
             st.caption("Quickly log targeted symptoms by body focus area:")
             b_c1, b_c2, b_c3 = st.columns(3)
@@ -409,13 +414,9 @@ with st.container(key="mobile_scroll_content"):
     # ==========================================
     elif st.session_state["navigation"] == "Symptom Journal":
         st.markdown("""
-            <div style="margin-top: 0.1rem; margin-bottom: 0.35rem;">
-                <div style="display: flex; align-items: center; gap: 6px; font-size: 1.28rem; font-weight: 700; color: #34272E; font-family: 'Outfit', sans-serif;">
-                    <span>📝</span> Symptom Journal
-                </div>
-                <div style="font-size: 0.85rem; color: #81717A; margin-top: 2px;">
-                    Let's record how you're feeling.
-                </div>
+            <div class="page-title-block">
+                <div class="page-title">📝 Symptom Journal</div>
+                <div class="page-subtitle">Let's record how you're feeling today.</div>
             </div>
             <span style="display:none; font-size:0px;">Smart Symptom Journal</span>
         """, unsafe_allow_html=True)
@@ -681,8 +682,12 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 3: HEALTH INSIGHTS (Patterns & Analytics)
     # ==========================================
     elif st.session_state["navigation"] == "Health Insights":
-        st.markdown("### 📊 Personal Health Insights & Pattern Discovery")
-        st.caption("Explainable analytics derived deterministically from your actual logged entries.")
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">📊 Health Insights</div>
+                <div class="page-subtitle">Explainable patterns derived deterministically from your logs.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
         render_my_health_subnav("Health Insights")
 
@@ -690,34 +695,32 @@ with st.container(key="mobile_scroll_content"):
         engine = InsightsEngine(all_entries)
         metrics = engine.calculate_summary_metrics()
 
-        # KPI Summary Row
-        m1, m2, m3, m4 = st.columns(4)
-        with m1:
+        # KPI Summary Grid (2x2 for mobile layout)
+        kpi_r1_c1, kpi_r1_c2 = st.columns(2)
+        with kpi_r1_c1:
             st.metric("Total Recorded Entries", metrics["total_entries"])
-        with m2:
+        with kpi_r1_c2:
             st.metric("Distinct Days Logged", metrics["distinct_days"])
-        with m3:
+
+        kpi_r2_c1, kpi_r2_c2 = st.columns(2)
+        with kpi_r2_c1:
             st.metric("Average Severity", f"{metrics['avg_severity']}/10")
-        with m4:
+        with kpi_r2_c2:
             st.metric("Primary Symptom", f"{metrics['top_symptom']}")
 
-        st.markdown("---")
-
         # Explainable Observation Statements
-        st.markdown("#### 💡 Explainable Observation Statements")
+        st.markdown('<div class="section-header">💡 Explainable Observation Statements</div>', unsafe_allow_html=True)
         insights_list = engine.generate_explainable_insights()
         for item in insights_list:
             st.markdown(f"""
-                <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); margin-bottom: 0.6rem;">
+                <div class="clean-card" style="border-left: 3.5px solid var(--primary-rose); margin-bottom: 0.65rem;">
                     <div class="clean-card-title">{item['title']}</div>
                     <div class="clean-card-subtext">{item['observation']}</div>
                 </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("---")
-
         # One Chart at a Time with Clear Explanations
-        st.markdown("#### 📈 Interactive Charts & Distributions")
+        st.markdown('<div class="section-header">📈 Interactive Charts & Distributions</div>', unsafe_allow_html=True)
         chart_tab1, chart_tab2, chart_tab3, chart_tab4, chart_tab5 = st.tabs([
             "Symptom Timeline",
             "Frequency Breakdown",
@@ -766,10 +769,8 @@ with st.container(key="mobile_scroll_content"):
             else:
                 st.info("Log symptoms across one or more days to generate calendar density.")
 
-        st.markdown("---")
-
         # Doctor Consultation Prep Kit
-        st.markdown("#### 📋 Doctor Consultation Prep Kit")
+        st.markdown('<div class="section-header">📋 Doctor Consultation Prep Kit</div>', unsafe_allow_html=True)
         goal_selection = st.radio(
             "Primary Consultation Objective:",
             ["Diagnostic Evaluation", "Medication & Treatment Review", "Transitional Care (Perimenopause / Cycle Changes)"],
@@ -799,8 +800,12 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 4: MEDICATION & TREATMENTS
     # ==========================================
     elif st.session_state["navigation"] == "Medication & Treatments":
-        st.markdown("### 💊 Medication & Health Intervention Tracker")
-        st.caption("Track prescribed medications, supplements, and supportive therapies.")
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">💊 Medication & Health Intervention Tracker</div>
+                <div class="page-subtitle">Track prescribed medications, supplements, and supportive therapies.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
         render_my_health_subnav("Medication & Treatments")
 
@@ -862,8 +867,12 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 5: CARE NAVIGATOR (Safety & Guidance)
     # ==========================================
     elif st.session_state["navigation"] == "Care Navigator":
-        st.markdown("### 🛡️ Care Guidance & Safety Navigator")
-        st.caption("Public health triage guidance to help you make informed care choices.")
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">🛡️ Care Guidance & Safety Navigator</div>
+                <div class="page-subtitle">Public health triage guidance to help you make informed care choices.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
         # Emergency safety notice (prominent, never collapsed)
         st.markdown(f"""
@@ -879,14 +888,14 @@ with st.container(key="mobile_scroll_content"):
         """, unsafe_allow_html=True)
 
         with st.form("safety_navigator_form"):
-            st.markdown("##### Describe Your Current Concern")
+            st.markdown('<div class="section-header" style="margin-top: 0.2rem;">Describe Your Current Concern</div>', unsafe_allow_html=True)
             nav_category = st.selectbox("Category", list(SYMPTOM_TAXONOMY.keys()))
             suggested = SYMPTOM_TAXONOMY.get(nav_category, [])
             nav_symptom = st.selectbox("Symptom", suggested)
             nav_severity = st.slider("Severity Rating (1 to 10)", min_value=1, max_value=10, value=6)
             nav_duration = st.number_input("Duration (hours)", min_value=0.0, max_value=720.0, value=12.0, step=1.0)
 
-            st.markdown("##### Clinical Warning Flags")
+            st.markdown('<div class="section-header">Clinical Warning Flags</div>', unsafe_allow_html=True)
             warning_flags = SafetyNavigator.get_supported_emergency_warning_signs()
             checked_flags = []
             for wf in warning_flags:
@@ -941,8 +950,7 @@ with st.container(key="mobile_scroll_content"):
                     </div>
                 """, unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.markdown("#### 🚨 Emergency SOS Numbers")
+        st.markdown('<div class="section-header">🚨 Emergency SOS Numbers</div>', unsafe_allow_html=True)
         st.markdown("""
             <div class="clean-card">
                 <div style="font-size: 0.9rem; line-height: 1.7;">
@@ -954,7 +962,7 @@ with st.container(key="mobile_scroll_content"):
         """, unsafe_allow_html=True)
 
         # Emergency Room Preparation Checklist
-        st.markdown("#### 🏥 Emergency Room (ER) Preparation Checklist")
+        st.markdown('<div class="section-header">🏥 Emergency Room (ER) Preparation Checklist</div>', unsafe_allow_html=True)
         st.markdown("""
             <div class="clean-card" style="margin-bottom: 0.8rem;">
                 <div style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.5;">
@@ -970,7 +978,7 @@ with st.container(key="mobile_scroll_content"):
         """, unsafe_allow_html=True)
 
         # Doctor Appointment Preparation & Questions
-        st.markdown("#### 🩺 Doctor Consultation Questions")
+        st.markdown('<div class="section-header">🩺 Doctor Consultation Questions</div>', unsafe_allow_html=True)
         st.caption("Evidence-grounded discussion prompts for your next doctor appointment:")
         care_questions = [
             "What potential underlying conditions could account for this pattern of symptoms?",
@@ -987,7 +995,7 @@ with st.container(key="mobile_scroll_content"):
             """, unsafe_allow_html=True)
 
         # Copyable Clinician Summary
-        st.markdown("#### 📋 Copyable Clinician Summary")
+        st.markdown('<div class="section-header">📋 Copyable Clinician Summary</div>', unsafe_allow_html=True)
         st.caption("One-tap copyable text block for telemedicine portals or doctor messages:")
         recent_entries = SymptomTrackerService.get_history(active_profile.id)[:5]
         summary_lines = [
@@ -1017,8 +1025,12 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 6: WOMEN'S HEALTH LIBRARY (Learn)
     # ==========================================
     elif st.session_state["navigation"] == "Women's Health Library":
-        st.markdown("### 📚 Women's Health Library")
-        st.caption("Evidence-based educational resources from WHO, NHS, CDC, and ACOG.")
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">📚 Women's Health Library</div>
+                <div class="page-subtitle">Evidence-based educational resources from WHO, NHS, CDC, and ACOG.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
         render_learn_subnav("Women's Health Library")
 
@@ -1050,8 +1062,12 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 7: MY HEALTH REPORT (Clinician PDF)
     # ==========================================
     elif st.session_state["navigation"] == "My Health Report":
-        st.markdown("### 📄 Clinician-Ready Health Report")
-        st.caption("Export a structured PDF summary of your observations for your doctor's appointment.")
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">📄 Clinician-Ready Health Report</div>
+                <div class="page-subtitle">Export a structured PDF summary of your observations for your doctor.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
         render_my_health_subnav("My Health Report")
 
@@ -1067,14 +1083,16 @@ with st.container(key="mobile_scroll_content"):
         rep_engine = InsightsEngine(report_entries)
         rep_metrics = rep_engine.calculate_summary_metrics()
 
-        p1, p2, p3, p4 = st.columns(4)
-        with p1:
+        rep_r1_c1, rep_r1_c2 = st.columns(2)
+        with rep_r1_c1:
             st.metric("Entries in Period", rep_metrics["total_entries"])
-        with p2:
+        with rep_r1_c2:
             st.metric("Distinct Dates", rep_metrics["distinct_days"])
-        with p3:
+
+        rep_r2_c1, rep_r2_c2 = st.columns(2)
+        with rep_r2_c1:
             st.metric("Avg Severity", f"{rep_metrics['avg_severity']}/10")
-        with p4:
+        with rep_r2_c2:
             st.metric("Top Reported Symptom", rep_metrics["top_symptom"])
 
         generator = ClinicianReportGenerator(
@@ -1105,8 +1123,13 @@ with st.container(key="mobile_scroll_content"):
     # SCREEN 8: ASK HERPATH ASSISTANT
     # ==========================================
     elif st.session_state["navigation"] == "Ask HERPath":
-        st.markdown("### 🤖 Ask HERPath — Health Literacy Assistant")
-        st.markdown("<div class='disclaimer-box'><b>Boundaries:</b> Strictly non-diagnostic health literacy assistant grounded in curated medical resources.</div>", unsafe_allow_html=True)
+        st.markdown("""
+            <div class="page-title-block">
+                <div class="page-title">🤖 Ask HERPath — Health Literacy Assistant</div>
+                <div class="page-subtitle">Curated educational findings grounded in verified health resources.</div>
+            </div>
+            <div class='disclaimer-box'><b>Boundaries:</b> Strictly non-diagnostic health literacy assistant grounded in curated medical resources.</div>
+        """, unsafe_allow_html=True)
 
         render_learn_subnav("Ask HERPath")
 
@@ -1151,18 +1174,14 @@ with st.container(key="mobile_scroll_content"):
     # ==========================================
     elif st.session_state["navigation"] == "Privacy and Settings":
         st.markdown("""
-            <div style="margin-top: 0.1rem; margin-bottom: 0.5rem;">
-                <div style="font-size: 1.25rem; font-weight: 700; color: #34272E; font-family: 'Outfit', sans-serif;">
-                    ⚙️ Settings & Profile Management
-                </div>
-                <div style="font-size: 0.84rem; color: #81717A; margin-top: 2px;">
-                    100% on-device SQLite storage &bull; Zero telemetry
-                </div>
+            <div class="page-title-block">
+                <div class="page-title">⚙️ Settings & Profile Management</div>
+                <div class="page-subtitle">100% on-device SQLite storage &bull; Zero telemetry</div>
             </div>
         """, unsafe_allow_html=True)
 
         # 1. Active Profile Section
-        st.markdown("##### 👤 Active Profile")
+        st.markdown('<div class="section-header">👤 Active Profile</div>', unsafe_allow_html=True)
         all_profiles = list_profiles()
         p_map = {p.id: p for p in all_profiles}
         current_pid = st.session_state.get("current_profile_id", all_profiles[0].id)
@@ -1197,7 +1216,7 @@ with st.container(key="mobile_scroll_content"):
                         st.error("Please provide both an ID and Display Name.")
 
         # 2. Profile Preferences Section
-        st.markdown("##### ⚙️ Profile Preferences")
+        st.markdown('<div class="section-header">⚙️ Profile Preferences</div>', unsafe_allow_html=True)
         with st.form("profile_customization_form"):
             display_name_val = st.text_input("Display Name / Pseudonym", value=active_profile.display_name)
             track_menstrual_toggle = st.checkbox("Track Menstrual Context", value=active_profile.preferences.get("track_menstrual", True))
@@ -1209,7 +1228,7 @@ with st.container(key="mobile_scroll_content"):
                 st.rerun()
 
         # 3. Privacy & Storage Architecture
-        st.markdown("##### 🔒 Privacy & Data Protection Architecture")
+        st.markdown('<div class="section-header">🔒 Privacy & Data Protection Architecture</div>', unsafe_allow_html=True)
         st.markdown("""
             <div class="clean-card" style="margin-bottom: 0.8rem;">
                 <div style="font-weight: 600; font-size: 0.90rem; color: #34272E;">Where your records are stored</div>
@@ -1224,7 +1243,7 @@ with st.container(key="mobile_scroll_content"):
         """, unsafe_allow_html=True)
 
         # 4. Data Portability Section
-        st.markdown("##### 📦 Data Portability")
+        st.markdown('<div class="section-header">📦 Data Portability</div>', unsafe_allow_html=True)
         col_p1, col_p2 = st.columns(2)
         with col_p1:
             json_backup_str = export_profile_data_json(active_profile.id)
@@ -1259,7 +1278,7 @@ with st.container(key="mobile_scroll_content"):
                         st.error(f"Error restoring backup: {str(e)}")
 
         # 5. Danger Zone / Data Deletion
-        st.markdown("##### ⚠️ Danger Zone & Record Deletion")
+        st.markdown('<div class="section-header">⚠️ Danger Zone & Record Deletion</div>', unsafe_allow_html=True)
         with st.expander("🗑️ Delete Active Profile & Data", expanded=False):
             st.warning(f"Permanently delete profile **'{active_profile.display_name}'** ({active_profile.id}) and all associated symptom and medication entries?")
             confirm_del = st.checkbox(f"Yes, permanently delete '{active_profile.display_name}' and all associated records", key="confirm_delete_profile_chk")
@@ -1272,6 +1291,9 @@ with st.container(key="mobile_scroll_content"):
                     st.session_state["current_profile_id"] = rem_profiles[0].id
                     st.success(f"Profile '{active_profile.display_name}' permanently deleted.")
                     st.rerun()
+
+    # Dedicated scroll clearance spacer at bottom of content
+    st.markdown('<div class="scroll-bottom-spacer" style="height: 36px; min-height: 36px;"></div>', unsafe_allow_html=True)
 
 
 # ==========================================
