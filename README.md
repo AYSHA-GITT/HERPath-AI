@@ -83,6 +83,7 @@ HERPath-AI/
 │   ├── health_resources.json  # Curated literature from WHO, NHS, CDC, ACOG
 │   └── seed_data.py           # Realistic, fictional demonstration data seeder
 ├── tests/
+│   ├── test_audit_complete_journey.py # End-to-end audit persona & full platform journey tests
 │   ├── test_auth.py           # Salted PIN hashing & user registration unit tests
 │   ├── test_database.py       # Persistence, CRUD, isolation & cascade tests
 │   ├── test_validators.py     # Input boundary & sanitization tests
@@ -113,7 +114,7 @@ HERPath-AI/
 - **Analytics & Data Handling:** [Pandas](https://pandas.pydata.org/) and NumPy.
 - **Interactive Visualizations:** [Plotly](https://plotly.com/python/) (Scatter timelines, bar charts).
 - **Document Generation:** [ReportLab](https://www.reportlab.com/) (Vector-based PDF compilation).
-- **Automated Testing:** [pytest](https://docs.pytest.org/) (112 comprehensive unit, integration & AppTest E2E tests).
+- **Automated Testing:** [pytest](https://docs.pytest.org/) (114 comprehensive unit, integration & AppTest E2E tests).
 
 ---
 
@@ -180,7 +181,8 @@ Execute the complete automated test suite:
 python -m pytest -v tests/
 ```
 
-### Verified Test Coverage (112/112 Passed):
+### Verified Test Coverage (114/114 Passed):
+- **Full User Journey Audit (`test_audit_complete_journey.py`):** Verified full platform journey with dedicated fictional demo persona ('Maya Lin'): salted SHA-256 PIN authentication, zero-leakage profile isolation, multi-system symptom CRUD, active medication tracking, monthly calendar heatmap rendering, non-diagnostic cycle variation analytics (PCOS boundaries), dual-period timeline intelligence, doctor consultation kit & plain-text export, ReportLab PDF generation, clinical safety triage hierarchy, health library search, 100% on-device JSON data backup, and Streamlit AppTest multi-view UI navigation.
 - **Cycle Intelligence & Full Month Calendar (`test_cycle_service.py`):** Verified profile isolation, honest handling of insufficient data (0 and 1 period recorded), mathematically accurate cycle intervals, exclusion of anomalous gaps (>75d), non-diagnostic PCOS safety boundaries, clear visual/logical separation of confirmed periods vs. estimated future periods without database writes, and Streamlit AppTest calendar UI interaction.
 - **Mobile Redesign & Home Dashboard (`test_mobile_redesign.py`):** Verified iOS bottom tab bar, 5-step quick logging flow, single-column mobile layout, dynamic Cycle Day & Phase Arc widget, milestone countdown horizon, 1-tap "My Period Started Today (Day 1)" instant SQLite reset, phase-specific nutrition/activity recommendations, 1-tap quick check-in SQLite persistence, spline energy curve across phases, and cycle personalization sheet with anchor start date picker.
 - **Smart Clinical Summary (`test_clinical_summary.py`):** Verified multi-preset date boundaries, null-safe duration metrics, non-causal medication comparison, patient concern synthesis, and ReportLab PDF compilation.
