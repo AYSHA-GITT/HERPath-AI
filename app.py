@@ -12,6 +12,7 @@ from datetime import datetime, date, timedelta
 from pathlib import Path
 import json
 import uuid
+import math
 
 # Internal Modules
 from config import (
@@ -614,21 +615,153 @@ with st.container(key="mobile_scroll_content"):
     elif st.session_state["navigation"] == "Account & Login":
         render_auth_login_screen()
     elif st.session_state["navigation"] == "Home Dashboard":
-        # B. Greeting: Warm greeting and date on separate line with natural wrapping
+        # B. Cycle & Greeting Header (Matching femtech mobile redesign)
         today_formatted = date.today().strftime("%A, %b %d")
+        
+        # Calculate or load cycle day
+        pref = active_profile.preferences or {}
+        cycle_len = pref.get("cycle_length", 28)
+        
+        # Determine current cycle day
+        if "cycle_day_override" in st.session_state:
+            cycle_day = st.session_state["cycle_day_override"]
+        elif pref.get("period_start_date"):
+            try:
+                p_start = datetime.strptime(pref["period_start_date"], "%Y-%m-%d").date()
+                diff_d = (date.today() - p_start).days
+                cycle_day = (diff_d % cycle_len) + 1
+            except Exception:
+                cycle_day = 2
+        else:
+            # Default to Day 2 for demonstration
+            cycle_day = 2
+
+        # Cycle Phase resolution
+        if 1 <= cycle_day <= 5:
+            phase_name = "Menstruation Phase"
+        elif 6 <= cycle_day <= 13:
+            phase_name = "Follicular Phase"
+        elif 14 <= cycle_day <= 16:
+            phase_name = "Ovulation Phase"
+        else:
+            phase_name = "Luteal Phase"
+
+        # 1. Top Greeting Row with Avatar Pill
         st.markdown(f"""
-            <div class="greeting-block">
-                <div class="greeting-title">Good evening, {first_name} 🌸</div>
-                <div class="greeting-date">{today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
+            <div class="cycle-greeting-row">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: #8C7B83;">Hi, {first_name}</div>
+                    <div class="cycle-greeting-title">Ready for a good day ?</div>
+                    <div style="font-size: 0.76rem; color: #A1929A; margin-top: 2px;">{today_formatted} &bull; <span style="color: var(--text-muted);">Welcome back</span></div>
+                </div>
+                <div class="cycle-avatar-circle" title="{active_profile.display_name}">🌸</div>
             </div>
         """, unsafe_allow_html=True)
 
-        # C. Primary Action: How are you feeling today? + One prominent Log a symptom button
-        st.markdown("""
-            <div class="primary-prompt-label">How are you feeling today?</div>
+        # 2. Horizontal Weekly Day Strip
+        # Display 6 surrounding days with 'Today' highlighted
+        day_pills_html = []
+        start_pill_day = max(1, cycle_day - 1)
+        if start_pill_day > cycle_len - 5:
+            start_pill_day = max(1, cycle_len - 5)
+            
+        for d_num in range(start_pill_day, start_pill_day + 6):
+            if d_num == cycle_day:
+                day_pills_html.append(f"""
+                    <div class="cycle-day-pill cycle-day-active">
+                        <span class="day-lbl">Today</span>
+                        <div class="today-dashed-ring"><span class="today-dot"></span></div>
+                    </div>
+                """)
+            elif d_num < cycle_day:
+                day_pills_html.append(f"""
+                    <div class="cycle-day-pill cycle-day-past">
+                        <span class="day-lbl">Day {d_num}</span>
+                        <span class="day-icon">✓</span>
+                    </div>
+                """)
+            else:
+                day_pills_html.append(f"""
+                    <div class="cycle-day-pill cycle-day-future">
+                        <span class="day-lbl">Day {d_num}</span>
+                        <span class="day-icon">✓</span>
+                    </div>
+                """)
+        
+        st.markdown(f'<div class="cycle-day-strip">{"".join(day_pills_html)}</div>', unsafe_allow_html=True)
+
+        # 3. Semi-Circular Phase Arc Card (Exact vector rendering)
+        frac = (min(28, max(1, cycle_day)) - 0.5) / 28.0
+        theta_deg = 180.0 - (frac * 180.0)
+        theta_rad = math.radians(theta_deg)
+        x_m = round(145.0 + 95.0 * math.cos(theta_rad), 1)
+        y_m = round(125.0 - 95.0 * math.sin(theta_rad), 1)
+        rot_deg = round(90.0 - theta_deg, 1)
+
+        st.markdown(f"""
+            <div class="cycle-arc-card">
+                <div class="cycle-arc-container">
+                    <svg viewBox="0 0 290 148" width="100%" height="auto" style="overflow: visible;">
+                        <defs>
+                            <linearGradient id="gradMenstrual" x1="0%" y1="100%" x2="50%" y2="0%">
+                                <stop offset="0%" stop-color="#F43F5E" />
+                                <stop offset="100%" stop-color="#FB7185" />
+                            </linearGradient>
+                            <linearGradient id="gradFollicular" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#FB923C" />
+                                <stop offset="100%" stop-color="#FDBA74" />
+                            </linearGradient>
+                            <linearGradient id="gradOvulation" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#F472B6" />
+                                <stop offset="100%" stop-color="#FBCFE8" />
+                            </linearGradient>
+                            <linearGradient id="gradLuteal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#C084FC" />
+                                <stop offset="100%" stop-color="#DDD6FE" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Arc Segments: Menstruation (Days 1-5) -->
+                        <path d="M 50.1 121.7 A 95 95 0 0 1 65.3 73.3" stroke="url(#gradMenstrual)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Follicular (Days 6-13) -->
+                        <path d="M 69.1 67.8 A 95 95 0 0 1 131.8 30.9" stroke="url(#gradFollicular)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Ovulation (Days 14-16) -->
+                        <path d="M 138.4 30.2 A 95 95 0 0 1 171.2 33.7" stroke="url(#gradOvulation)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Arc Segment: Luteal (Days 17-28) -->
+                        <path d="M 177.5 35.7 A 95 95 0 0 1 239.9 121.7" stroke="url(#gradLuteal)" stroke-width="13" stroke-linecap="round" fill="none" />
+                        <!-- Active Indicator Pointer Triangle -->
+                        <g transform="translate({x_m}, {y_m}) rotate({rot_deg})">
+                            <path d="M 0,-12 L 8,6 C 7,8 5,9 0,8.5 C -5,9 -7,8 -8,6 Z" fill="#4E394E" stroke="#FFFFFF" stroke-width="2.5" />
+                        </g>
+                    </svg>
+                    <div class="cycle-arc-center-text">
+                        <div class="cycle-arc-day-title">Day {cycle_day}</div>
+                        <div class="cycle-arc-phase-subtitle">{phase_name}</div>
+                    </div>
+                </div>
+                <!-- Phase Legend -->
+                <div class="cycle-phase-legend">
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #F43F5E;"></span> Menstruation</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #FB923C;"></span> Follicular phase</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #F472B6;"></span> Ovulation</span>
+                    <span class="cycle-legend-item"><span class="cycle-legend-dot" style="background: #C084FC;"></span> Luteal phase</span>
+                </div>
+            </div>
         """, unsafe_allow_html=True)
-        if st.button("＋ Log a symptom", use_container_width=True, type="primary", key="home_btn_log_symptom"):
+
+        # 4. Hero CTA Button: Log Your Symptoms (Full-width plum pill button matching design)
+        st.markdown('<div class="cycle-cta-container">', unsafe_allow_html=True)
+        if st.button("Log Your Symptoms", use_container_width=True, type="primary", key="home_btn_log_symptoms"):
+            st.session_state["default_cycle_phase"] = phase_name
             navigate_to("Symptom Journal")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # Optional Quick Cycle Day adjustment expander
+        with st.expander("⚙️ Adjust Today's Cycle Day", expanded=False):
+            st.caption("Change your active cycle day (1 to 28) to preview phase calculations or reflect your personal rhythm.")
+            new_c_day = st.slider("Active Cycle Day", min_value=1, max_value=28, value=int(cycle_day), key="slider_cycle_day_adjust")
+            if st.button("Update Cycle Day", key="btn_apply_cycle_day"):
+                st.session_state["cycle_day_override"] = new_c_day
+                st.rerun()
 
         # D. Quick health actions (compact, properly spaced expandable section)
         with st.expander("⚡ Quick Health Actions", expanded=False):
