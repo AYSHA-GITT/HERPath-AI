@@ -53,6 +53,7 @@ from insights_engine import InsightsEngine
 from safety_navigator import SafetyNavigator
 from health_library import HealthLibrary
 from report_generator import ClinicianReportGenerator
+from clinical_summary_service import ClinicalSummaryService, ClinicalSummaryData
 from data.seed_data import seed_demo_data
 from timeline_service import TimelineService, TimelineEvent
 from auth import (
@@ -1858,56 +1859,369 @@ with st.container(key="mobile_scroll_content"):
 
 
     # ==========================================
-    # SCREEN 7: MY HEALTH REPORT (Clinician PDF)
+    # SCREEN 7: SMART CLINICAL SUMMARY & CONSULTATION KIT
     # ==========================================
-    elif st.session_state["navigation"] == "My Health Report":
+    elif st.session_state["navigation"] in ["My Health Report", "Smart Clinical Summary"]:
         st.markdown("""
             <div class="page-title-block">
-                <div class="page-title">📄 Clinician-Ready Health Report</div>
-                <div class="page-subtitle">Export a structured PDF summary of your observations for your doctor.</div>
+                <div class="page-title">📋 Smart Clinical Summary & Consultation Kit</div>
+                <div class="page-subtitle">Convert your recorded health history into a concise, structured, doctor-friendly consultation summary.</div>
+            </div>
+            <div class="disclaimer-box">
+                <b>Clinical Purpose:</b> Synthesizes user-recorded health observations into a structured briefing for clinical consultations. Strictly non-diagnostic; timing observations do not establish medical causation.
             </div>
         """, unsafe_allow_html=True)
 
         render_my_health_subnav("My Health Report")
 
-        rep_start = st.date_input("Start Date", value=date.today() - timedelta(days=30))
-        rep_end = st.date_input("End Date", value=date.today() + timedelta(days=1))
+        # 1. Reporting Period Controls
+        st.markdown('<div class="section-header">📅 Select Reporting Period & Controls</div>', unsafe_allow_html=True)
 
-        report_entries = SymptomTrackerService.get_history(
-            profile_id=active_profile.id,
-            start_date=str(rep_start),
-            end_date=str(rep_end)
+        period_preset = st.radio(
+            "Reporting Period Preset",
+            ["Last 30 Days", "Last 7 Days", "Last 90 Days", "Custom Date Range"],
+            horizontal=True,
+            key="summary_period_preset"
         )
 
-        rep_engine = InsightsEngine(report_entries)
-        rep_metrics = rep_engine.calculate_summary_metrics()
+        today_val = date.today()
+        if period_preset == "Last 7 Days":
+            rep_start = today_val - timedelta(days=7)
+            rep_end = today_val
+        elif period_preset == "Last 30 Days":
+            rep_start = today_val - timedelta(days=30)
+            rep_end = today_val
+        elif period_preset == "Last 90 Days":
+            rep_start = today_val - timedelta(days=90)
+            rep_end = today_val
+        else: # Custom Date Range
+            c_d1, c_d2 = st.columns(2)
+            with c_d1:
+                rep_start = st.date_input("Start Date *", value=today_val - timedelta(days=30), key="summary_custom_start")
+            with c_d2:
+                rep_end = st.date_input("End Date *", value=today_val, key="summary_custom_end")
 
+        # Validate date range
+        if rep_start > rep_end:
+            st.error("⚠️ Start Date cannot be after End Date. Please select a valid date range.")
+            rep_start, rep_end = rep_end, rep_start
+
+        # 2. Patient's Main Concerns & Priorities
+        with st.expander("🎯 Patient Consultation Priorities & Questions (Optional)", expanded=True):
+            st.caption("Select or write the main topics you want to discuss with your doctor. These will be highlighted in your summary without being treated as medical diagnoses.")
+
+            common_concern_options = [
+                "Discussing baseline diagnostic evaluations (hormonal panels, ultrasound, CBC)",
+                "Evaluating current medication efficacy, dosages, or side effects",
+                "Severe symptom flare-ups causing work/study disruption or bedrest",
+                "Possible connections between symptom peaks and menstrual cycle phases",
+                "Non-pharmacological management strategies (nutrition, sleep hygiene, pain management)",
+                "Reviewing warning signs or red flags requiring urgent evaluation"
+            ]
+
+            selected_preset_concerns = st.multiselect(
+                "Common Consultation Priorities",
+                options=common_concern_options,
+                default=[],
+                key="summary_preset_concerns"
+            )
+
+            custom_concern_text = st.text_input(
+                "Add a Specific Question or Personal Concern for Your Doctor",
+                placeholder="e.g. Pelvic cramping has become more intense in days 1-3; want to discuss pelvic imaging.",
+                key="summary_custom_concern"
+            )
+
+            all_user_concerns = list(selected_preset_concerns)
+            if custom_concern_text and custom_concern_text.strip():
+                all_user_concerns.append(custom_concern_text.strip())
+
+        # Action: Generate / Refresh button
+        col_gen1, col_gen2 = st.columns([3, 1])
+        with col_gen1:
+            st.caption(f"Active Reporting Window: **{rep_start}** to **{rep_end}** &bull; Profile: **{active_profile.display_name}**")
+        with col_gen2:
+            refresh_clicked = st.button("🔄 Refresh Summary", key="btn_refresh_summary", use_container_width=True)
+
+        # 3. Instantiate ClinicalSummaryService
+        summary_service = ClinicalSummaryService(
+            profile_id=active_profile.id,
+            start_date=str(rep_start),
+            end_date=str(rep_end),
+            patient_concerns=all_user_concerns
+        )
+        clinical_data = summary_service.generate_summary()
+
+        # 4. KPI Metrics Bar (Preserves exact metric labels for test_frontend_e2e compatibility)
+        st.markdown('<div class="section-header">📊 Summary Highlights at a Glance</div>', unsafe_allow_html=True)
         rep_r1_c1, rep_r1_c2 = st.columns(2)
         with rep_r1_c1:
-            st.metric("Entries in Period", rep_metrics["total_entries"])
+            st.metric("Entries in Period", clinical_data.total_entries)
         with rep_r1_c2:
-            st.metric("Distinct Dates", rep_metrics["distinct_days"])
+            st.metric("Distinct Dates", clinical_data.distinct_days)
 
         rep_r2_c1, rep_r2_c2 = st.columns(2)
         with rep_r2_c1:
-            st.metric("Avg Severity", f"{rep_metrics['avg_severity']}/10")
+            avg_sev_str = f"{clinical_data.avg_severity}/10" if clinical_data.avg_severity is not None else "0.0/10"
+            st.metric("Avg Severity", avg_sev_str)
         with rep_r2_c2:
-            st.metric("Top Reported Symptom", rep_metrics["top_symptom"])
+            top_sym = clinical_data.frequent_symptoms[0].symptom if clinical_data.frequent_symptoms else "None"
+            st.metric("Top Reported Symptom", top_sym)
+
+        # Empty state notification if 0 entries in period
+        if clinical_data.total_entries == 0:
+            st.markdown(f"""
+                <div class="clean-card" style="border-left: 3.5px solid var(--border-subtle); padding: 1rem 1.2rem; margin: 1rem 0;">
+                    <div style="font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">No Records Found in Selected Period</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">
+                        No symptom entries were recorded between <b>{rep_start}</b> and <b>{rep_end}</b> for {active_profile.display_name}.
+                        You can adjust the reporting period above or record entries in your <a href="#" style="color: var(--primary-rose);">Symptom Journal</a>.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        # 5. Structured Clinical Summary Preview Tabs
+        st.markdown('<div class="section-header">📋 Structured Clinical Summary Sections</div>', unsafe_allow_html=True)
+
+        tab_ov, tab_sym, tab_life, tab_med, tab_check, tab_copy = st.tabs([
+            "1. Overview & Concerns",
+            "2. Symptom Patterns",
+            "3. Lifestyle & Impact",
+            "4. Medications & Treatments",
+            "5. Discussion Checklist",
+            "6. Copy Plain Text"
+        ])
+
+        with tab_ov:
+            st.markdown("##### Consultation Overview")
+            if clinical_data.patient_concerns:
+                st.markdown("**Patient-Reported Consultation Priorities:**")
+                for pc in clinical_data.patient_concerns:
+                    st.markdown(f"""
+                        <div class="clinical-concern-item">
+                            <span class="clinical-concern-badge">Patient Goal</span>
+                            <div style="font-size: 0.86rem; color: var(--text-primary); font-weight: 600;">{pc}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                st.markdown('<div style="height: 6px;"></div>', unsafe_allow_html=True)
+
+            max_sev_desc = (
+                f"Peak recorded severity was <b>{clinical_data.max_severity}/10</b> for <i>{clinical_data.max_severity_symptom}</i> on {clinical_data.max_severity_date}."
+                if clinical_data.max_severity else "No severity ratings logged."
+            )
+            st.markdown(f"""
+                <div class="clinical-summary-card clinical-summary-card-accent">
+                    <div class="clinical-section-title">🏥 Reporting Period Overview</div>
+                    <div style="font-size: 0.88rem; color: var(--text-primary); line-height: 1.5;">
+                        Across the <b>{clinical_data.calendar_days}</b>-day reporting window (<b>{clinical_data.start_date}</b> to <b>{clinical_data.end_date}</b>),
+                        a total of <b>{clinical_data.total_entries}</b> symptom entries were documented across <b>{clinical_data.distinct_days}</b> distinct days.
+                        The average recorded severity was <b>{clinical_data.avg_severity or 'N/A'}/10</b>. {max_sev_desc}
+                    </div>
+                    <div class="clinical-observation-callout">
+                        <b>Duration Documentation:</b> {clinical_data.duration_stats.summary_statement}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+        with tab_sym:
+            st.markdown("##### Symptom Frequencies, Severities & Trajectory")
+            if clinical_data.frequent_symptoms:
+                sym_rows = []
+                for fs in clinical_data.frequent_symptoms:
+                    sym_rows.append({
+                        "Symptom": fs.symptom,
+                        "Category": fs.category,
+                        "Logs": fs.entry_count,
+                        "Distinct Days": fs.distinct_days,
+                        "% of Total": f"{fs.percentage_of_entries}%",
+                        "Avg Severity": f"{fs.avg_severity}/10",
+                        "Range": f"{fs.min_severity}–{fs.max_severity}",
+                        "Avg Duration": f"{fs.avg_duration} hrs" if fs.avg_duration else "Not recorded"
+                    })
+                st.dataframe(pd.DataFrame(sym_rows), use_container_width=True, hide_index=True)
+            else:
+                st.info("No symptom records logged in this period.")
+
+            st.markdown(f"""
+                <div class="clinical-summary-card" style="border-left: 4.5px solid var(--primary-rose);">
+                    <div class="clinical-section-title">📈 Temporal Trajectory (Earlier vs. Recent Window)</div>
+                    <div style="font-size: 0.86rem; color: var(--text-primary); line-height: 1.45;">
+                        {clinical_data.progression.trajectory_statement}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+
+            if clinical_data.repeated_severe:
+                st.markdown("**Repeated High-Severity Findings (≥7/10):**")
+                for rs in clinical_data.repeated_severe:
+                    st.markdown(f"""
+                        <div class="clinical-concern-item" style="border-color: rgba(225, 29, 72, 0.3);">
+                            <span class="clinical-concern-badge" style="background: #E11D48;">Severe Cluster</span>
+                            <div style="font-size: 0.86rem; color: var(--text-primary);">
+                                <b>{rs.symptom}</b> ({rs.category}): recorded at high severity across <b>{rs.count_severe}</b> entries.
+                                Peaked at <b>{rs.max_severity}/10</b> on {', '.join(rs.dates)}.
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            if clinical_data.notable_episodes:
+                with st.expander(f"Notable Recorded Episodes ({len(clinical_data.notable_episodes)} entries with severity ≥8 or severe impact)", expanded=False):
+                    for ep in clinical_data.notable_episodes[:10]:
+                        st.markdown(f"• **{ep.date}** — **{ep.symptom}** ({ep.severity}/10) | Impact: *{ep.impact}* | Notes: *{ep.notes or 'None'}*")
+
+        with tab_life:
+            st.markdown("##### Lifestyle Context & Functional Impact")
+            st.caption("Summarizes recorded context. The doctor can distinguish recorded observations from missing or unrecorded fields.")
+
+            life = clinical_data.lifestyle_impact
+            life_records = [
+                {
+                    "Observation Area": "Sleep Quality",
+                    "Documented": f"{life.sleep.documented_entries} / {life.sleep.total_entries}",
+                    "Rate": f"{life.sleep.documentation_rate}%",
+                    "Summary Statement": life.sleep.summary_statement
+                },
+                {
+                    "Observation Area": "Stress Levels",
+                    "Documented": f"{life.stress.documented_entries} / {life.stress.total_entries}",
+                    "Rate": f"{life.stress.documentation_rate}%",
+                    "Summary Statement": life.stress.summary_statement
+                },
+                {
+                    "Observation Area": "Energy Vitality",
+                    "Documented": f"{life.energy.documented_entries} / {life.energy.total_entries}",
+                    "Rate": f"{life.energy.documentation_rate}%",
+                    "Summary Statement": life.energy.summary_statement
+                },
+                {
+                    "Observation Area": "Menstrual Cycle",
+                    "Documented": f"{life.cycle_phase.documented_entries} / {life.cycle_phase.total_entries}",
+                    "Rate": f"{life.cycle_phase.documentation_rate}%",
+                    "Summary Statement": life.cycle_phase.summary_statement
+                },
+                {
+                    "Observation Area": "Daily Functional Impact",
+                    "Documented": f"{life.functional_impact.documented_entries} / {life.functional_impact.total_entries}",
+                    "Rate": f"{life.functional_impact.documentation_rate}%",
+                    "Summary Statement": life.functional_impact.summary_statement
+                }
+            ]
+            st.dataframe(pd.DataFrame(life_records), use_container_width=True, hide_index=True)
+
+            c_imp1, c_imp2 = st.columns(2)
+            with c_imp1:
+                st.markdown(f"""
+                    <div class="clinical-summary-card clinical-summary-card-amber">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Work / Study Disruption</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #92400E; margin: 4px 0;">{life.work_study_disruption_count} entries</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Logged difficulty attending to work, study, or social plans.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            with c_imp2:
+                st.markdown(f"""
+                    <div class="clinical-summary-card clinical-summary-card-amber">
+                        <div style="font-size: 0.76rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Bedrest / Incapacitation</div>
+                        <div style="font-size: 1.45rem; font-weight: 800; color: #92400E; margin: 4px 0;">{life.bedrest_count} entries</div>
+                        <div style="font-size: 0.78rem; color: var(--text-secondary);">Required complete rest due to high symptom intensity.</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        with tab_med:
+            st.markdown("##### Medication & Treatment Chronology")
+            st.caption("Temporal observations around medication start dates. Phrased neutrally; timing alone does not establish causation.")
+
+            if clinical_data.treatments:
+                for t in clinical_data.treatments:
+                    with st.expander(f"💊 {t.name} ({t.category}) — Started: {t.started_date or 'Not logged'}", expanded=True):
+                        st.markdown(f"**Dosage & Frequency:** {t.dosage} &bull; {t.frequency}")
+                        if t.notes:
+                            st.markdown(f"**Notes:** *{t.notes}*")
+                        st.markdown(f"""
+                            <div class="clinical-observation-callout">
+                                <b>Before vs. After Observation:</b> {t.observation_statement}
+                            </div>
+                            <div class="clinical-noncausal-notice">
+                                Note: Symptom severity differences between observation periods are purely chronological and do not infer physiological causation or medication efficacy.
+                            </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("No medications or treatments currently recorded in database.")
+
+        with tab_check:
+            st.markdown("##### Doctor Discussion Checklist")
+            st.caption("Practical checklist prompts categorized for an efficient 10–15 minute medical consultation.")
+
+            st.markdown("###### A. Symptoms to Discuss")
+            for item in clinical_data.checklist.symptoms_to_discuss:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### B. Changes Noticed")
+            for item in clinical_data.checklist.changes_noticed:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### C. Effects on Daily Activities")
+            for item in clinical_data.checklist.effects_on_daily_activities:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### D. Medication & Treatment Questions")
+            for item in clinical_data.checklist.medication_questions:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("###### E. Questions for My Clinician")
+            for item in clinical_data.checklist.questions_for_clinician:
+                st.markdown(f"""
+                    <div class="clinical-checklist-row">
+                        <span class="clinical-checklist-checkbox">☐</span>
+                        <div style="font-size: 0.86rem; color: var(--text-primary);">{item}</div>
+                    </div>
+                """, unsafe_allow_html=True)
+
+        with tab_copy:
+            st.markdown("##### Copyable Clinical Summary Text")
+            st.caption("Clean plain text formatted for telehealth messaging, portal notes, or printing.")
+
+            plain_text = summary_service.generate_plain_text_summary()
+            st.text_area("Plain-Text Summary (Select All & Copy)", value=plain_text, height=340)
+
+        # 6. PDF Export & Download Button
+        st.markdown('<div class="section-header">📥 Export Clinician-Ready PDF</div>', unsafe_allow_html=True)
 
         generator = ClinicianReportGenerator(
             profile=active_profile,
-            entries=report_entries,
+            entries=summary_service.entries,
             start_date=str(rep_start),
             end_date=str(rep_end),
-            medications=get_medications(active_profile.id)
+            medications=summary_service.medications,
+            patient_concerns=all_user_concerns,
+            summary_data=clinical_data
         )
 
         try:
             pdf_bytes = generator.generate_pdf_bytes()
-            file_name = f"HERPath_Report_{active_profile.id}_{rep_start}_{rep_end}.pdf"
+            file_name = f"HERPath_Smart_Clinical_Summary_{active_profile.id}_{rep_start}_{rep_end}.pdf"
 
             st.download_button(
-                label="📥 Download Clinician Health Report",
+                label="📥 Download Clinician Health Report (Smart Summary PDF)",
                 data=pdf_bytes,
                 file_name=file_name,
                 mime="application/pdf",
@@ -1916,6 +2230,7 @@ with st.container(key="mobile_scroll_content"):
             )
         except Exception as e:
             st.error(f"Error compiling PDF: {str(e)}")
+
 
 
     # ==========================================

@@ -1960,6 +1960,137 @@ div[data-testid="stForm"] button[kind="primary"]:hover {
     margin: 1.5rem 0;
 }
 
+/* ==========================================
+   Smart Clinical Summary & Consultation Kit Styles
+   ========================================== */
+.clinical-summary-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1.15rem 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+}
+
+.clinical-summary-card-accent {
+    border-left: 4.5px solid var(--primary-rose);
+}
+
+.clinical-summary-card-teal {
+    border-left: 4.5px solid #2A9D8F;
+}
+
+.clinical-summary-card-amber {
+    border-left: 4.5px solid #D97706;
+}
+
+.clinical-section-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.5rem;
+}
+
+.clinical-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border-subtle);
+    padding: 3px 9px;
+    border-radius: 9999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.clinical-concern-item {
+    background: #FFF7F9;
+    border: 1px solid rgba(185, 95, 123, 0.25);
+    border-radius: 8px;
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.clinical-concern-badge {
+    background: var(--primary-rose);
+    color: #FFFFFF;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.clinical-checklist-row {
+    background: #FFFFFF;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    margin-bottom: 0.45rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    transition: all 0.15s ease;
+}
+
+.clinical-checklist-row:hover {
+    border-color: var(--primary-rose);
+    background: #FDF9FA;
+}
+
+.clinical-checklist-checkbox {
+    color: var(--primary-rose);
+    font-weight: 800;
+    font-size: 1.05rem;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+.clinical-observation-callout {
+    background: #F9FAFB;
+    border: 1px solid #E5E7EB;
+    border-left: 3.5px solid #6B7280;
+    border-radius: 6px;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.82rem;
+    color: #374151;
+    margin-top: 0.4rem;
+    line-height: 1.45;
+}
+
+.clinical-noncausal-notice {
+    font-size: 0.73rem;
+    color: #6B7280;
+    font-style: italic;
+    margin-top: 0.3rem;
+}
+
+.clinical-copy-container {
+    background: #2A1E24;
+    color: #F8E4EA;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    padding: 1rem;
+    border-radius: 10px;
+    max-height: 350px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: 1px solid #48333E;
+}
+
+
 
 
 
