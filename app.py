@@ -1451,19 +1451,15 @@ with st.container(key="mobile_scroll_content"):
         st.markdown('<div class="section-header">🌸 Anatomical Health Focus Explorer</div>', unsafe_allow_html=True)
         with st.expander("Explore body focus areas", expanded=False):
             st.caption("Quickly log targeted symptoms by body focus area:")
-            b_c1, b_c2, b_c3 = st.columns(3)
-            with b_c1:
-                if st.button("Explore Head & Neuro", key="focus_neuro", use_container_width=True):
-                    st.session_state["selected_body_focus"] = "Neurological & Head"
-                    navigate_to("Symptom Journal")
-            with b_c2:
-                if st.button("Explore Pelvic Care", key="focus_pelvic", use_container_width=True):
-                    st.session_state["selected_body_focus"] = "Pelvic & Menstrual"
-                    navigate_to("Symptom Journal")
-            with b_c3:
-                if st.button("Explore Hormonal", key="focus_hormonal", use_container_width=True):
-                    st.session_state["selected_body_focus"] = "Hormonal & Vasomotor"
-                    navigate_to("Symptom Journal")
+            if st.button("🧠 Explore Head & Neuro — Headaches, Migraines & Brain Fog", key="focus_neuro", use_container_width=True):
+                st.session_state["selected_body_focus"] = "Neurological & Head"
+                navigate_to("Symptom Journal")
+            if st.button("🌸 Explore Pelvic Care — Cramps, Cycles & Bleeding", key="focus_pelvic", use_container_width=True):
+                st.session_state["selected_body_focus"] = "Pelvic & Menstrual"
+                navigate_to("Symptom Journal")
+            if st.button("⚡ Explore Hormonal — Energy, Mood & Temperature", key="focus_hormonal", use_container_width=True):
+                st.session_state["selected_body_focus"] = "Hormonal & Vasomotor"
+                navigate_to("Symptom Journal")
 
 
     # ==========================================
